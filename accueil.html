@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Pain Nature — Accueil</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#6b3a1f">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/shared.css">
+<style>
+.topbar{
+  background:var(--wheat); color:#fff; padding:0 1.2rem; height:54px;
+  display:flex; align-items:center; justify-content:space-between;
+  box-shadow:0 2px 8px rgba(0,0,0,.2);
+}
+.topbar .marque{font-weight:800; font-size:1rem;}
+.topbar .deco{
+  background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3);
+  color:#fff; padding:6px 13px; border-radius:var(--r); font-size:.82rem; font-weight:600;
+  cursor:pointer;
+}
+main{max-width:640px; margin:2rem auto; padding:0 1.2rem;}
+.bienvenue{
+  text-align:center; padding:2rem 1rem;
+}
+.bienvenue .role-badge{
+  display:inline-block; background:var(--wheat-light); color:var(--wheat);
+  padding:4px 14px; border-radius:20px; font-size:.78rem; font-weight:700;
+  font-family:var(--mono); text-transform:uppercase; letter-spacing:.04em;
+  margin-top:.6rem;
+}
+.bienvenue h2{font-size:1.5rem; margin-top:.8rem; color:var(--text);}
+.note{
+  margin-top:2rem; padding:1.2rem; border-radius:var(--r-lg);
+  background:var(--wheat-light); color:var(--wheat); font-size:.88rem; text-align:center;
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="marque">🌾 PAIN NATURE</span>
+  <button class="deco" onclick="deconnexion()">Déconnexion</button>
+</div>
+
+<main>
+  <div class="card bienvenue">
+    <h2 id="texte-bienvenue">Connexion en cours…</h2>
+    <span class="role-badge" id="badge-role"></span>
+  </div>
+
+  <div class="note">
+    ✅ L'authentification fonctionne. Les écrans Production, Commandes et Marges seront connectés ici dans les prochaines étapes.
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/supabase-client.js"></script>
+<script>
+(async () => {
+  const profil = await exigerConnexion();
+  if (!profil) return; // redirection déjà gérée par exigerConnexion()
+
+  const labelsRole = {
+    gerant: 'Gérant', boulanger: 'Boulanger', patissier: 'Pâtissier',
+    vendeur: 'Vendeur', apprenti: 'Apprenti'
+  };
+
+  document.getElementById('texte-bienvenue').textContent = `Bonjour ${profil.prenom || profil.nom} 👋`;
+  document.getElementById('badge-role').textContent = labelsRole[profil.role] || profil.role;
+})();
+</script>
+</body>
+</html>

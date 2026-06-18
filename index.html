@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Pain Nature — Connexion</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#6b3a1f">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/shared.css">
+<style>
+body{
+  display:flex; align-items:center; justify-content:center;
+  min-height:100vh; padding:1.5rem;
+  background:linear-gradient(160deg, var(--wheat) 0%, #4a2814 100%);
+}
+.login-box{
+  width:100%; max-width:380px;
+  background:var(--surface);
+  border-radius:18px;
+  padding:2.25rem 2rem 2rem;
+  box-shadow:0 24px 60px rgba(0,0,0,.35);
+}
+.logo{
+  text-align:center; margin-bottom:1.75rem;
+}
+.logo .mark{font-size:2.4rem; line-height:1;}
+.logo h1{
+  font-size:1.15rem; font-weight:800; color:var(--wheat);
+  margin-top:.5rem; letter-spacing:.01em;
+}
+.logo p{font-size:.78rem; color:var(--text-light); margin-top:2px; font-family:var(--mono);}
+
+.field{margin-bottom:1.1rem;}
+.field label{
+  display:block; font-size:.72rem; font-weight:700; text-transform:uppercase;
+  letter-spacing:.06em; color:var(--text-light); margin-bottom:.4rem; font-family:var(--mono);
+}
+.field input[type=text]{
+  width:100%; padding:13px 14px; font-size:1rem;
+  border:2px solid var(--border-strong); border-radius:var(--r);
+  background:var(--surface2); color:var(--text);
+}
+.field input[type=text]:focus{outline:none; border-color:var(--wheat); background:#fff;}
+
+/* ---- PIN PAD ---- */
+.pin-display{
+  display:flex; gap:10px; justify-content:center; margin-bottom:1.25rem;
+}
+.pin-dot{
+  width:46px; height:54px;
+  border:2px solid var(--border-strong); border-radius:var(--r);
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.6rem; font-weight:800; font-family:var(--mono); color:var(--wheat);
+  background:var(--surface2);
+}
+.pin-dot.filled{border-color:var(--wheat); background:var(--wheat-light);}
+.pin-dot.error{border-color:var(--red); background:var(--red-light); animation:shake .3s;}
+@keyframes shake{
+  0%,100%{transform:translateX(0);} 25%{transform:translateX(-5px);} 75%{transform:translateX(5px);}
+}
+
+.pin-pad{
+  display:grid; grid-template-columns:repeat(3,1fr); gap:9px; margin-bottom:1.4rem;
+}
+.pin-key{
+  padding:0; height:58px;
+  border:1.5px solid var(--border); border-radius:var(--r);
+  background:var(--surface2); color:var(--text);
+  font-size:1.35rem; font-weight:700; font-family:var(--mono);
+  cursor:pointer; transition:background .1s, transform .05s;
+}
+.pin-key:active{background:var(--wheat-light); transform:scale(.96);}
+.pin-key.empty{visibility:hidden;}
+.pin-key.del{font-size:1.1rem; color:var(--red);}
+
+.btn-login{
+  width:100%; padding:14px; font-size:1rem;
+}
+
+.msg-erreur{
+  display:none; background:var(--red-light); color:var(--red);
+  padding:.7rem .9rem; border-radius:var(--r); font-size:.85rem;
+  font-weight:600; margin-bottom:1rem; text-align:center;
+}
+.msg-erreur.visible{display:block;}
+
+.statut-connexion{
+  text-align:center; font-size:.8rem; color:var(--text-light);
+  margin-top:1rem; font-family:var(--mono);
+}
+</style>
+</head>
+<body>
+
+<div class="login-box">
+  <div class="logo">
+    <div class="mark">🌾</div>
+    <h1>PAIN NATURE</h1>
+    <p>Espace équipe</p>
+  </div>
+
+  <div id="msg-erreur" class="msg-erreur"></div>
+
+  <form id="form-login" onsubmit="return false;">
+    <div class="field">
+      <label for="identifiant">Identifiant</label>
+      <input type="text" id="identifiant" autocomplete="username" autocapitalize="none" autocorrect="off" placeholder="ex : marie" inputmode="text">
+    </div>
+
+    <div class="field">
+      <label>Code à 4 chiffres</label>
+      <div class="pin-display" id="pin-display">
+        <div class="pin-dot" data-i="0"></div>
+        <div class="pin-dot" data-i="1"></div>
+        <div class="pin-dot" data-i="2"></div>
+        <div class="pin-dot" data-i="3"></div>
+      </div>
+      <div class="pin-pad" id="pin-pad">
+        <button type="button" class="pin-key" data-k="1">1</button>
+        <button type="button" class="pin-key" data-k="2">2</button>
+        <button type="button" class="pin-key" data-k="3">3</button>
+        <button type="button" class="pin-key" data-k="4">4</button>
+        <button type="button" class="pin-key" data-k="5">5</button>
+        <button type="button" class="pin-key" data-k="6">6</button>
+        <button type="button" class="pin-key" data-k="7">7</button>
+        <button type="button" class="pin-key" data-k="8">8</button>
+        <button type="button" class="pin-key" data-k="9">9</button>
+        <div class="pin-key empty"></div>
+        <button type="button" class="pin-key" data-k="0">0</button>
+        <button type="button" class="pin-key del" data-k="del">⌫</button>
+      </div>
+    </div>
+
+    <button type="submit" id="btn-login" class="btn btn-primary btn-login" disabled>Se connecter</button>
+  </form>
+
+  <div class="statut-connexion" id="statut-connexion"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/supabase-client.js"></script>
+<script>
+let pin = '';
+
+function rafraichirAffichagePin(estErreur = false) {
+  const dots = document.querySelectorAll('.pin-dot');
+  dots.forEach((dot, i) => {
+    dot.textContent = i < pin.length ? '●' : '';
+    dot.classList.toggle('filled', i < pin.length);
+    dot.classList.toggle('error', estErreur);
+  });
+  document.getElementById('btn-login').disabled = !(pin.length === 4 && document.getElementById('identifiant').value.trim().length > 0);
+}
+
+document.getElementById('pin-pad').addEventListener('click', (e) => {
+  const btn = e.target.closest('.pin-key');
+  if (!btn || btn.classList.contains('empty')) return;
+  const k = btn.dataset.k;
+  if (k === 'del') {
+    pin = pin.slice(0, -1);
+  } else if (pin.length < 4) {
+    pin += k;
+  }
+  rafraichirAffichagePin();
+});
+
+document.getElementById('identifiant').addEventListener('input', () => rafraichirAffichagePin());
+
+async function tenterConnexion() {
+  const identifiant = document.getElementById('identifiant').value.trim();
+  const msgErreur = document.getElementById('msg-erreur');
+  const btnLogin = document.getElementById('btn-login');
+  const statut = document.getElementById('statut-connexion');
+
+  if (!identifiant || pin.length !== 4) return;
+
+  msgErreur.classList.remove('visible');
+  btnLogin.disabled = true;
+  statut.textContent = 'Connexion en cours…';
+
+  try {
+    await connexionIdentifiantPin(identifiant, pin);
+    statut.textContent = 'Connecté ✓';
+    window.location.href = 'accueil.html';
+  } catch (err) {
+    msgErreur.textContent = err.message || 'Identifiant ou PIN incorrect.';
+    msgErreur.classList.add('visible');
+    statut.textContent = '';
+    pin = '';
+    rafraichirAffichagePin(true);
+    setTimeout(() => rafraichirAffichagePin(false), 400);
+  }
+}
+
+document.getElementById('form-login').addEventListener('submit', tenterConnexion);
+
+// Connexion automatique dès que le 4e chiffre est saisi (plus rapide sur tablette)
+const observerPin = () => {
+  if (pin.length === 4 && document.getElementById('identifiant').value.trim().length > 0) {
+    tenterConnexion();
+  }
+};
+document.getElementById('pin-pad').addEventListener('click', () => setTimeout(observerPin, 50));
+
+// Si déjà connecté, redirection immédiate vers l'accueil
+(async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) window.location.href = 'accueil.html';
+})();
+</script>
+</body>
+</html>
