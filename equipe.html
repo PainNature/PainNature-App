@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Pain Nature — Équipe</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#6b3a1f">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/shared.css">
+<style>
+.topbar{
+  background:var(--wheat); color:#fff; padding:0 1.2rem; height:54px;
+  display:flex; align-items:center; justify-content:space-between;
+  box-shadow:0 2px 8px rgba(0,0,0,.2); position:sticky; top:0; z-index:10;
+}
+.topbar .marque{font-weight:800; font-size:1rem; display:flex; align-items:center; gap:.6rem;}
+.topbar .retour{color:#fff; text-decoration:none; font-size:1.3rem; opacity:.85;}
+.topbar .deco{
+  background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3);
+  color:#fff; padding:6px 13px; border-radius:var(--r); font-size:.82rem; font-weight:600;
+  cursor:pointer;
+}
+main{max-width:760px; margin:1.5rem auto 3rem; padding:0 1.2rem;}
+
+.entete-page{display:flex; justify-content:space-between; align-items:center; margin-bottom:1.2rem;}
+.entete-page h1{font-size:1.3rem; color:var(--wheat);}
+
+.liste-equipe{padding:0; margin-bottom:1.5rem;}
+.membre{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:14px 16px; border-bottom:1px solid var(--border);
+}
+.membre:last-child{border-bottom:none;}
+.membre.inactif{opacity:.5;}
+.membre-info{display:flex; align-items:center; gap:12px;}
+.avatar{
+  width:38px; height:38px; border-radius:50%; background:var(--wheat-light);
+  color:var(--wheat); display:flex; align-items:center; justify-content:center;
+  font-weight:700; font-size:.95rem; flex-shrink:0;
+}
+.membre-nom{font-weight:600; font-size:.95rem;}
+.membre-id{font-size:.78rem; color:var(--text-light); font-family:var(--mono);}
+.role-badge{
+  display:inline-block; background:var(--surface2); color:var(--wheat);
+  padding:3px 11px; border-radius:20px; font-size:.7rem; font-weight:700;
+  font-family:var(--mono); text-transform:uppercase; letter-spacing:.04em;
+  border:1px solid var(--border); margin-top:2px;
+}
+.membre-actions{display:flex; gap:8px;}
+.btn-icon{
+  width:34px; height:34px; border-radius:50%; border:1.5px solid var(--border);
+  background:var(--surface); cursor:pointer; font-size:1rem;
+  display:flex; align-items:center; justify-content:center;
+}
+.btn-icon.danger:hover{background:var(--red-light); border-color:var(--red);}
+.btn-icon.success:hover{background:var(--green-light); border-color:var(--green);}
+
+.btn-ajouter{
+  width:100%; padding:14px; font-size:.95rem; margin-bottom:1.5rem;
+}
+
+/* ---- Modale d'ajout ---- */
+.overlay{
+  display:none; position:fixed; inset:0; background:rgba(20,12,6,.55);
+  align-items:center; justify-content:center; z-index:50; padding:1.2rem;
+}
+.overlay.visible{display:flex;}
+.modale{
+  background:var(--surface); border-radius:var(--r-lg); padding:1.6rem;
+  width:100%; max-width:400px; box-shadow:0 20px 50px rgba(0,0,0,.3);
+}
+.modale h3{color:var(--wheat); margin-bottom:1.1rem; font-size:1.1rem;}
+.field{margin-bottom:1rem;}
+.field label{
+  display:block; font-size:.72rem; font-weight:700; text-transform:uppercase;
+  letter-spacing:.06em; color:var(--text-light); margin-bottom:.4rem; font-family:var(--mono);
+}
+.field input, .field select{
+  width:100%; padding:11px 12px; font-size:.95rem;
+  border:2px solid var(--border-strong); border-radius:var(--r);
+  background:var(--surface2); color:var(--text);
+}
+.field input:focus, .field select:focus{outline:none; border-color:var(--wheat); background:#fff;}
+.modale-actions{display:flex; gap:10px; margin-top:1.4rem;}
+.modale-actions .btn{flex:1;}
+.msg-erreur-modale{
+  display:none; background:var(--red-light); color:var(--red);
+  padding:.6rem .8rem; border-radius:var(--r); font-size:.82rem;
+  font-weight:600; margin-bottom:.9rem;
+}
+.msg-erreur-modale.visible{display:block;}
+
+.vide{text-align:center; padding:2rem; color:var(--text-light); font-size:.9rem;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="marque"><a href="accueil.html" class="retour">←</a> 🌾 ÉQUIPE</span>
+  <button class="deco" onclick="deconnexion()">Déconnexion</button>
+</div>
+
+<main>
+  <div class="entete-page">
+    <h1>Gestion de l'équipe</h1>
+  </div>
+
+  <button class="btn btn-primary btn-ajouter" onclick="ouvrirModaleAjout()">+ Ajouter un membre</button>
+
+  <div class="card">
+    <div class="liste-equipe" id="liste-equipe">
+      <div class="vide">Chargement…</div>
+    </div>
+  </div>
+</main>
+
+<!-- Modale ajout membre -->
+<div class="overlay" id="overlay-ajout">
+  <div class="modale">
+    <h3>Ajouter un membre</h3>
+    <div class="msg-erreur-modale" id="erreur-ajout"></div>
+    <form id="form-ajout" onsubmit="return false;">
+      <div class="field">
+        <label for="add-prenom">Prénom</label>
+        <input type="text" id="add-prenom" required>
+      </div>
+      <div class="field">
+        <label for="add-nom">Nom</label>
+        <input type="text" id="add-nom">
+      </div>
+      <div class="field">
+        <label for="add-role">Rôle</label>
+        <select id="add-role" required>
+          <option value="boulanger">Boulanger</option>
+          <option value="patissier">Pâtissier</option>
+          <option value="vendeur">Vendeur</option>
+          <option value="apprenti">Apprenti</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="add-identifiant">Identifiant de connexion</label>
+        <input type="text" id="add-identifiant" placeholder="ex : marie" required pattern="[a-z0-9_]{2,20}">
+      </div>
+      <div class="field">
+        <label for="add-pin">Code PIN (4 chiffres)</label>
+        <input type="text" id="add-pin" inputmode="numeric" maxlength="4" placeholder="ex : 4821" required pattern="[0-9]{4}">
+      </div>
+    </form>
+    <div class="modale-actions">
+      <button class="btn btn-ghost" onclick="fermerModaleAjout()">Annuler</button>
+      <button class="btn btn-primary" id="btn-confirmer-ajout" onclick="confirmerAjout()">Créer le compte</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/supabase-client.js"></script>
+<script>
+const labelsRole = {
+  gerant: 'Gérant', boulanger: 'Boulanger', patissier: 'Pâtissier',
+  vendeur: 'Vendeur', apprenti: 'Apprenti'
+};
+
+function initiales(prenom, nom) {
+  return ((prenom?.[0] || '') + (nom?.[0] || '')).toUpperCase() || '?';
+}
+
+async function chargerEquipe() {
+  const { data, error } = await sb.rpc('lister_equipe');
+  const conteneur = document.getElementById('liste-equipe');
+
+  if (error) {
+    conteneur.innerHTML = `<div class="vide">Erreur de chargement : ${error.message}</div>`;
+    return;
+  }
+  if (!data || data.length === 0) {
+    conteneur.innerHTML = `<div class="vide">Aucun membre pour l'instant.</div>`;
+    return;
+  }
+
+  conteneur.innerHTML = data.map(m => `
+    <div class="membre ${m.actif ? '' : 'inactif'}">
+      <div class="membre-info">
+        <div class="avatar">${initiales(m.prenom, m.nom)}</div>
+        <div>
+          <div class="membre-nom">${m.prenom || ''} ${m.nom || ''}</div>
+          <div class="membre-id">@${m.identifiant} ${m.actif ? '' : '· désactivé'}</div>
+          <span class="role-badge">${labelsRole[m.role] || m.role}</span>
+        </div>
+      </div>
+      <div class="membre-actions">
+        ${m.role !== 'gerant' ? (
+          m.actif
+            ? `<button class="btn-icon danger" title="Désactiver" onclick="desactiverMembre('${m.user_id}')">🗑️</button>`
+            : `<button class="btn-icon success" title="Réactiver" onclick="reactiverMembre('${m.user_id}')">↺</button>`
+        ) : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function ouvrirModaleAjout() {
+  document.getElementById('erreur-ajout').classList.remove('visible');
+  document.getElementById('form-ajout').reset();
+  document.getElementById('overlay-ajout').classList.add('visible');
+}
+function fermerModaleAjout() {
+  document.getElementById('overlay-ajout').classList.remove('visible');
+}
+
+async function confirmerAjout() {
+  const prenom = document.getElementById('add-prenom').value.trim();
+  const nom = document.getElementById('add-nom').value.trim();
+  const role = document.getElementById('add-role').value;
+  const identifiant = document.getElementById('add-identifiant').value.trim().toLowerCase();
+  const pin = document.getElementById('add-pin').value.trim();
+  const erreur = document.getElementById('erreur-ajout');
+  const btn = document.getElementById('btn-confirmer-ajout');
+
+  erreur.classList.remove('visible');
+
+  if (!prenom || !identifiant || !/^[0-9]{4}$/.test(pin) || !/^[a-z0-9_]{2,20}$/.test(identifiant)) {
+    erreur.textContent = 'Vérifiez les champs : identifiant (lettres/chiffres) et PIN (4 chiffres) sont obligatoires.';
+    erreur.classList.add('visible');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Création…';
+
+  const { error } = await sb.rpc('creer_compte_equipe', {
+    p_identifiant: identifiant,
+    p_pin: pin,
+    p_nom: nom,
+    p_prenom: prenom,
+    p_role: role
+  });
+
+  btn.disabled = false;
+  btn.textContent = 'Créer le compte';
+
+  if (error) {
+    erreur.textContent = error.message || 'Erreur lors de la création du compte.';
+    erreur.classList.add('visible');
+    return;
+  }
+
+  fermerModaleAjout();
+  await chargerEquipe();
+}
+
+async function desactiverMembre(userId) {
+  if (!confirm('Désactiver ce membre ? Il ne pourra plus se connecter, mais son historique est conservé.')) return;
+  const { error } = await sb.rpc('desactiver_compte_equipe', { p_user_id: userId });
+  if (error) { alert('Erreur : ' + error.message); return; }
+  await chargerEquipe();
+}
+
+async function reactiverMembre(userId) {
+  const { error } = await sb.rpc('reactiver_compte_equipe', { p_user_id: userId });
+  if (error) { alert('Erreur : ' + error.message); return; }
+  await chargerEquipe();
+}
+
+(async () => {
+  const profil = await exigerRole(['gerant']);
+  if (!profil) return;
+  await chargerEquipe();
+})();
+</script>
+</body>
+</html>
