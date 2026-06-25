@@ -73,6 +73,18 @@ main{max-width:920px; margin:1.2rem auto 3rem; padding:0 1.2rem;}
   background:var(--surface); cursor:pointer; font-size:.9rem;
 }
 
+.btn-remise{
+  font-size:.72rem; padding:5px 11px; border-radius:14px; border:1.5px solid var(--green);
+  background:var(--surface); color:var(--green); cursor:pointer; font-weight:700; margin-top:6px;
+}
+.btn-remise.remis{background:var(--green); color:#fff;}
+.pdf-link{
+  display:inline-flex; align-items:center; gap:5px; font-size:.78rem; color:var(--wheat);
+  text-decoration:none; margin-top:6px; font-weight:600;
+}
+.upload-pdf-zone{margin-top:6px;}
+.upload-pdf-zone input[type=file]{font-size:.78rem;}
+
 .vide{text-align:center; padding:2rem; color:var(--text-light); font-size:.9rem;}
 
 .btn-nouvelle{width:100%; padding:13px; margin-bottom:1rem;}
@@ -306,6 +318,9 @@ async function chargerCommandesJour() {
           <span class="statut-pill statut-${c.statut}">${labelsStatut[c.statut] || c.statut}</span>
         </div>
         <div class="commande-contenu">${c.contenu || ''}</div>
+        <button class="btn-remise ${c.collectee ? 'remis' : ''}" onclick="basculerRemise('${c.id}', ${!c.collectee})">
+          ${c.collectee ? '✓ Remise au client' : 'Marquer comme remise'}
+        </button>
       </div>
       <div class="commande-actions">
         <button class="btn-icon" title="Supprimer" onclick="supprimerCommande('${c.id}')">🗑️</button>
@@ -336,6 +351,15 @@ async function chargerCommandesJourPro() {
           <span class="statut-pill statut-${c.statut}">${labelsStatut[c.statut] || c.statut}</span>
         </div>
         <div class="commande-contenu">${c.contenu || ''}</div>
+        <button class="btn-remise ${c.collectee ? 'remis' : ''}" onclick="basculerRemise('${c.id}', ${!c.collectee})">
+          ${c.collectee ? '✓ Remise au client' : 'Marquer comme remise'}
+        </button>
+        <div>
+          ${c.bon_commande_path
+            ? `<a class="pdf-link" href="#" onclick="ouvrirBonCommande('${c.bon_commande_path}'); return false;">📄 Voir le bon de commande</a>`
+            : `<div class="upload-pdf-zone"><input type="file" accept="application/pdf" onchange="uploaderBonCommande('${c.id}', this.files[0])"></div>`
+          }
+        </div>
       </div>
       <div class="commande-actions">
         <button class="btn-icon" title="Supprimer" onclick="supprimerCommande('${c.id}')">🗑️</button>
@@ -426,6 +450,41 @@ async function supprimerCommande(id) {
   if (error) { alert('Erreur : ' + error.message); return; }
   await chargerCommandesJour();
   await chargerCommandesJourPro();
+}
+
+async function basculerRemise(id, nouvelleValeur) {
+  const champs = nouvelleValeur
+    ? { collectee: true, remise_le: new Date().toISOString() }
+    : { collectee: false, remise_le: null };
+
+  const { error } = await sb.from('commandes').update(champs).eq('id', id);
+  if (error) { alert('Erreur : ' + error.message); return; }
+  await chargerCommandesJour();
+  await chargerCommandesJourPro();
+}
+
+async function uploaderBonCommande(commandeId, fichier) {
+  if (!fichier) return;
+  if (fichier.type !== 'application/pdf') { alert('Seuls les fichiers PDF sont acceptés.'); return; }
+  if (fichier.size > 10 * 1024 * 1024) { alert('Fichier trop volumineux (max 10 Mo).'); return; }
+
+  const chemin = `${commandeId}/${Date.now()}-${fichier.name}`;
+
+  const { error: errUpload } = await sb.storage.from('bons-commande').upload(chemin, fichier, {
+    cacheControl: '3600', upsert: false
+  });
+  if (errUpload) { alert('Erreur upload : ' + errUpload.message); return; }
+
+  const { error: errMaj } = await sb.from('commandes').update({ bon_commande_path: chemin }).eq('id', commandeId);
+  if (errMaj) { alert('Erreur enregistrement : ' + errMaj.message); return; }
+
+  await chargerCommandesJourPro();
+}
+
+async function ouvrirBonCommande(chemin) {
+  const { data, error } = await sb.storage.from('bons-commande').createSignedUrl(chemin, 60);
+  if (error) { alert('Erreur : ' + error.message); return; }
+  window.open(data.signedUrl, '_blank');
 }
 
 function ouvrirModaleClientPro() {
