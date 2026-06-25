@@ -24,6 +24,17 @@ main{max-width:640px; margin:2rem auto; padding:0 1.2rem;}
 .bienvenue{
   text-align:center; padding:2rem 1rem;
 }
+.menu-grille{
+  display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:1.5rem;
+}
+.menu-item{
+  background:var(--surface); border:1.5px solid var(--border); border-radius:var(--r-lg);
+  padding:1.3rem 1rem; text-align:center; text-decoration:none; color:var(--text);
+  box-shadow:var(--shadow); transition:transform .1s;
+}
+.menu-item:active{transform:scale(.97);}
+.menu-item .emoji{font-size:1.8rem; display:block; margin-bottom:.5rem;}
+.menu-item .label{font-weight:700; font-size:.88rem;}
 .bienvenue .role-badge{
   display:inline-block; background:var(--wheat-light); color:var(--wheat);
   padding:4px 14px; border-radius:20px; font-size:.78rem; font-weight:700;
@@ -50,9 +61,7 @@ main{max-width:640px; margin:2rem auto; padding:0 1.2rem;}
     <span class="role-badge" id="badge-role"></span>
   </div>
 
-  <div class="note">
-    ✅ L'authentification fonctionne. Les écrans Production, Commandes et Marges seront connectés ici dans les prochaines étapes.
-  </div>
+  <div class="menu-grille" id="menu-grille"></div>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -60,7 +69,7 @@ main{max-width:640px; margin:2rem auto; padding:0 1.2rem;}
 <script>
 (async () => {
   const profil = await exigerConnexion();
-  if (!profil) return; // redirection déjà gérée par exigerConnexion()
+  if (!profil) return;
 
   const labelsRole = {
     gerant: 'Gérant', boulanger: 'Boulanger', patissier: 'Pâtissier',
@@ -69,6 +78,19 @@ main{max-width:640px; margin:2rem auto; padding:0 1.2rem;}
 
   document.getElementById('texte-bienvenue').textContent = `Bonjour ${profil.prenom || profil.nom} 👋`;
   document.getElementById('badge-role').textContent = labelsRole[profil.role] || profil.role;
+
+  const items = [
+    { href: 'production.html', emoji: '🥖', label: 'Production', roles: ['gerant','boulanger','patissier','vendeur','apprenti'] },
+    { href: 'commandes.html', emoji: '📋', label: 'Commandes', roles: ['gerant','boulanger','patissier','vendeur','apprenti'] },
+    { href: 'marges.html', emoji: '💶', label: 'Marges', roles: ['gerant'] },
+    { href: 'equipe.html', emoji: '👥', label: 'Équipe', roles: ['gerant'] },
+  ];
+
+  const grille = document.getElementById('menu-grille');
+  grille.innerHTML = items
+    .filter(i => i.roles.includes(profil.role))
+    .map(i => `<a class="menu-item" href="${i.href}"><span class="emoji">${i.emoji}</span><span class="label">${i.label}</span></a>`)
+    .join('');
 })();
 </script>
 </body>

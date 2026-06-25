@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Pain Nature — Commandes</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#6b3a1f">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/shared.css">
+<style>
+.topbar{
+  background:var(--wheat); color:#fff; padding:0 1.2rem; height:54px;
+  display:flex; align-items:center; justify-content:space-between;
+  box-shadow:0 2px 8px rgba(0,0,0,.2); position:sticky; top:0; z-index:10;
+}
+.topbar .marque{font-weight:800; font-size:1rem; display:flex; align-items:center; gap:.6rem;}
+.topbar .retour{color:#fff; text-decoration:none; font-size:1.3rem; opacity:.85;}
+.topbar .deco{
+  background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3);
+  color:#fff; padding:6px 13px; border-radius:var(--r); font-size:.82rem; font-weight:600; cursor:pointer;
+}
+main{max-width:920px; margin:1.2rem auto 3rem; padding:0 1.2rem;}
+
+.tabs{display:flex; gap:8px; margin-bottom:1.2rem;}
+.tab-btn{
+  flex:1; padding:11px; border:1.5px solid var(--border); background:var(--surface);
+  border-radius:var(--r); font-weight:700; font-size:.85rem; cursor:pointer; color:var(--text-muted);
+}
+.tab-btn.active{background:var(--wheat); color:#fff; border-color:var(--wheat);}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+.bar-jour{
+  display:flex; align-items:center; gap:10px; margin-bottom:1.1rem;
+}
+.bar-jour input[type=date]{
+  flex:1; padding:11px 12px; border:2px solid var(--border-strong); border-radius:var(--r);
+  font-size:.95rem; background:var(--surface);
+}
+.bar-jour .nav-jour{
+  width:40px; height:40px; border-radius:var(--r); border:1.5px solid var(--border-strong);
+  background:var(--surface); font-size:1.1rem; cursor:pointer; flex-shrink:0;
+}
+
+.section-titre{
+  font-size:.95rem; font-weight:700; color:var(--wheat); margin:1.3rem 0 .6rem;
+}
+
+.commande-card{
+  padding:14px 16px; border-bottom:1px solid var(--border);
+  display:flex; justify-content:space-between; gap:12px;
+}
+.commande-card:last-child{border-bottom:none;}
+.commande-nom{font-weight:700; font-size:.95rem;}
+.commande-meta{font-size:.78rem; color:var(--text-light); font-family:var(--mono); margin-top:1px;}
+.commande-contenu{font-size:.88rem; color:var(--text-muted); margin-top:5px;}
+.lieu-pill{
+  display:inline-block; padding:2px 10px; border-radius:14px; font-size:.7rem; font-weight:700;
+  text-transform:uppercase; letter-spacing:.03em; margin-right:6px;
+}
+.lieu-boutique{background:var(--blue-light); color:var(--blue);}
+.lieu-marche{background:var(--green-light); color:var(--green);}
+.statut-pill{
+  display:inline-block; padding:2px 10px; border-radius:14px; font-size:.7rem; font-weight:700;
+}
+.statut-todo{background:var(--red-light); color:var(--red);}
+.statut-pending{background:#fff4d6; color:#8a6300;}
+.statut-validated{background:var(--green-light); color:var(--green);}
+.commande-actions{display:flex; flex-direction:column; gap:6px; flex-shrink:0;}
+.btn-icon{
+  width:32px; height:32px; border-radius:50%; border:1.5px solid var(--border);
+  background:var(--surface); cursor:pointer; font-size:.9rem;
+}
+
+.vide{text-align:center; padding:2rem; color:var(--text-light); font-size:.9rem;}
+
+.btn-nouvelle{width:100%; padding:13px; margin-bottom:1rem;}
+
+/* Modale */
+.overlay{display:none; position:fixed; inset:0; background:rgba(20,12,6,.55); align-items:center; justify-content:center; z-index:50; padding:1.2rem; overflow-y:auto;}
+.overlay.visible{display:flex;}
+.modale{background:var(--surface); border-radius:var(--r-lg); padding:1.6rem; width:100%; max-width:480px; box-shadow:0 20px 50px rgba(0,0,0,.3); margin:auto;}
+.modale h3{color:var(--wheat); margin-bottom:1.1rem; font-size:1.1rem;}
+.field{margin-bottom:1rem;}
+.field label{display:block; font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--text-light); margin-bottom:.4rem; font-family:var(--mono);}
+.field input, .field select, .field textarea{
+  width:100%; padding:11px 12px; font-size:.95rem; border:2px solid var(--border-strong);
+  border-radius:var(--r); background:var(--surface2); color:var(--text); font-family:inherit;
+}
+.field textarea{resize:vertical; min-height:70px;}
+.field input:focus, .field select:focus, .field textarea:focus{outline:none; border-color:var(--wheat); background:#fff;}
+.row2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+.modale-actions{display:flex; gap:10px; margin-top:1.3rem;}
+.modale-actions .btn{flex:1;}
+.msg-erreur-modale{display:none; background:var(--red-light); color:var(--red); padding:.6rem .8rem; border-radius:var(--r); font-size:.82rem; font-weight:600; margin-bottom:.9rem;}
+.msg-erreur-modale.visible{display:block;}
+
+.gestion-clients-pro{margin-top:1.5rem;}
+.client-pro-item{display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-bottom:1px solid var(--border);}
+.client-pro-item:last-child{border-bottom:none;}
+.client-pro-nom{font-weight:600; font-size:.9rem;}
+.lien-gestion{font-size:.82rem; color:var(--wheat); text-decoration:underline; cursor:pointer; background:none; border:none; font-family:inherit; padding:0; margin-top:.6rem;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="marque"><a href="accueil.html" class="retour">←</a> 🌾 COMMANDES</span>
+  <button class="deco" onclick="deconnexion()">Déconnexion</button>
+</div>
+
+<main>
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="particuliers" onclick="changerTab('particuliers')">Particuliers</button>
+    <button class="tab-btn" data-tab="pro" onclick="changerTab('pro')">Professionnels</button>
+  </div>
+
+  <!-- ===== ONGLET PARTICULIERS ===== -->
+  <div class="tab-panel active" id="panel-particuliers">
+    <div class="bar-jour">
+      <button class="nav-jour" onclick="changerJour(-1)">‹</button>
+      <input type="date" id="date-jour" onchange="chargerCommandesJour()">
+      <button class="nav-jour" onclick="changerJour(1)">›</button>
+    </div>
+
+    <button class="btn btn-primary btn-nouvelle" onclick="ouvrirModaleCommande('particulier')">+ Nouvelle commande</button>
+
+    <div class="card">
+      <div id="liste-commandes-particuliers"><div class="vide">Chargement…</div></div>
+    </div>
+  </div>
+
+  <!-- ===== ONGLET PRO ===== -->
+  <div class="tab-panel" id="panel-pro">
+    <div class="bar-jour">
+      <button class="nav-jour" onclick="changerJour(-1)">‹</button>
+      <input type="date" id="date-jour-pro" onchange="chargerCommandesJourPro()">
+      <button class="nav-jour" onclick="changerJour(1)">›</button>
+    </div>
+
+    <button class="btn btn-primary btn-nouvelle" onclick="ouvrirModaleCommande('pro')">+ Nouvelle commande pro</button>
+
+    <div class="card">
+      <div id="liste-commandes-pro"><div class="vide">Chargement…</div></div>
+    </div>
+
+    <div class="card gestion-clients-pro">
+      <div style="padding:14px 16px 0;">
+        <strong style="font-size:.9rem;">Clients professionnels</strong>
+      </div>
+      <div id="liste-clients-pro" style="padding:0 0 8px;"></div>
+      <div style="padding:8px 16px 14px;">
+        <button class="lien-gestion" onclick="ouvrirModaleClientPro()">+ Ajouter un client pro</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ===== MODALE NOUVELLE COMMANDE ===== -->
+<div class="overlay" id="overlay-commande">
+  <div class="modale">
+    <h3 id="titre-modale-commande">Nouvelle commande</h3>
+    <div class="msg-erreur-modale" id="erreur-commande"></div>
+    <form id="form-commande" onsubmit="return false;">
+      <input type="hidden" id="cmd-type">
+
+      <!-- Champs particulier -->
+      <div id="champs-particulier">
+        <div class="row2">
+          <div class="field"><label>Prénom</label><input type="text" id="cmd-prenom"></div>
+          <div class="field"><label>Nom</label><input type="text" id="cmd-nom" required></div>
+        </div>
+        <div class="field"><label>Téléphone</label><input type="tel" id="cmd-tel"></div>
+      </div>
+
+      <!-- Champs pro -->
+      <div id="champs-pro" style="display:none;">
+        <div class="field">
+          <label>Client professionnel</label>
+          <select id="cmd-client-pro"></select>
+        </div>
+      </div>
+
+      <div class="row2">
+        <div class="field"><label>Date de retrait</label><input type="date" id="cmd-date" required></div>
+        <div class="field">
+          <label>Lieu de retrait</label>
+          <select id="cmd-lieu"><option value="">—</option></select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Contenu (texte libre)</label>
+        <textarea id="cmd-contenu" placeholder="ex : 2 pains tradition, 6 croissants…"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Statut</label>
+        <select id="cmd-statut">
+          <option value="todo">À préparer</option>
+          <option value="pending">En attente</option>
+          <option value="validated">Validée</option>
+        </select>
+      </div>
+    </form>
+    <div class="modale-actions">
+      <button class="btn btn-ghost" onclick="fermerModaleCommande()">Annuler</button>
+      <button class="btn btn-primary" id="btn-confirmer-commande" onclick="confirmerCommande()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODALE CLIENT PRO ===== -->
+<div class="overlay" id="overlay-client-pro">
+  <div class="modale">
+    <h3>Ajouter un client professionnel</h3>
+    <div class="msg-erreur-modale" id="erreur-client-pro"></div>
+    <form id="form-client-pro" onsubmit="return false;">
+      <div class="field"><label>Raison sociale</label><input type="text" id="cp-raison-sociale" required placeholder="ex : Colibri Beaulieu"></div>
+      <div class="field"><label>Contact (nom)</label><input type="text" id="cp-nom"></div>
+      <div class="field"><label>Téléphone</label><input type="tel" id="cp-tel"></div>
+    </form>
+    <div class="modale-actions">
+      <button class="btn btn-ghost" onclick="fermerModaleClientPro()">Annuler</button>
+      <button class="btn btn-primary" onclick="confirmerClientPro()">Ajouter</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/supabase-client.js"></script>
+<script>
+let profilCourant = null;
+let lieuxRetrait = [];
+let clientsPro = [];
+
+const labelsStatut = { todo: 'À préparer', pending: 'En attente', validated: 'Validée' };
+
+function dateAujourdhui() {
+  const d = new Date();
+  return d.toISOString().slice(0, 10);
+}
+
+function changerTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+  if (tab === 'pro') chargerCommandesJourPro();
+}
+
+function changerJour(delta) {
+  const inputActif = document.getElementById('panel-pro').classList.contains('active') ? 'date-jour-pro' : 'date-jour';
+  const input = document.getElementById(inputActif);
+  const d = new Date(input.value);
+  d.setDate(d.getDate() + delta);
+  input.value = d.toISOString().slice(0, 10);
+  if (inputActif === 'date-jour-pro') chargerCommandesJourPro();
+  else chargerCommandesJour();
+}
+
+async function chargerLieux() {
+  const { data, error } = await sb.from('lieux_retrait').select('*').eq('actif', true);
+  if (!error) {
+    lieuxRetrait = data;
+    const select = document.getElementById('cmd-lieu');
+    select.innerHTML = '<option value="">—</option>' + data.map(l => `<option value="${l.id}">${l.nom}</option>`).join('');
+  }
+}
+
+async function chargerClientsPro() {
+  const { data, error } = await sb.from('clients').select('*').eq('is_pro', true).order('raison_sociale');
+  if (!error) {
+    clientsPro = data;
+    document.getElementById('cmd-client-pro').innerHTML = data.map(c => `<option value="${c.id}">${c.raison_sociale}</option>`).join('');
+    document.getElementById('liste-clients-pro').innerHTML = data.length
+      ? data.map(c => `
+          <div class="client-pro-item">
+            <span class="client-pro-nom">${c.raison_sociale}</span>
+            <button class="btn-icon" title="Supprimer" onclick="supprimerClientPro('${c.id}')">🗑️</button>
+          </div>`).join('')
+      : '<div class="vide">Aucun client pro enregistré.</div>';
+  }
+}
+
+async function chargerCommandesJour() {
+  const date = document.getElementById('date-jour').value;
+  const { data, error } = await sb
+    .from('vue_commandes_jour')
+    .select('*')
+    .eq('date_retrait', date)
+    .eq('is_pro', false)
+    .order('nom');
+
+  const conteneur = document.getElementById('liste-commandes-particuliers');
+  if (error) { conteneur.innerHTML = `<div class="vide">Erreur : ${error.message}</div>`; return; }
+  if (!data || data.length === 0) { conteneur.innerHTML = '<div class="vide">Aucune commande pour ce jour.</div>'; return; }
+
+  conteneur.innerHTML = data.map(c => `
+    <div class="commande-card">
+      <div>
+        <div class="commande-nom">${c.prenom || ''} ${c.nom}</div>
+        <div class="commande-meta">${c.telephone || ''}</div>
+        <div style="margin-top:6px;">
+          ${c.lieu_retrait ? `<span class="lieu-pill ${c.lieu_retrait === 'Marché' ? 'lieu-marche' : 'lieu-boutique'}">${c.lieu_retrait}</span>` : ''}
+          <span class="statut-pill statut-${c.statut}">${labelsStatut[c.statut] || c.statut}</span>
+        </div>
+        <div class="commande-contenu">${c.contenu || ''}</div>
+      </div>
+      <div class="commande-actions">
+        <button class="btn-icon" title="Supprimer" onclick="supprimerCommande('${c.id}')">🗑️</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function chargerCommandesJourPro() {
+  const date = document.getElementById('date-jour-pro').value;
+  const { data, error } = await sb
+    .from('vue_commandes_jour')
+    .select('*')
+    .eq('date_retrait', date)
+    .eq('is_pro', true)
+    .order('raison_sociale');
+
+  const conteneur = document.getElementById('liste-commandes-pro');
+  if (error) { conteneur.innerHTML = `<div class="vide">Erreur : ${error.message}</div>`; return; }
+  if (!data || data.length === 0) { conteneur.innerHTML = '<div class="vide">Aucune commande pro pour ce jour.</div>'; return; }
+
+  conteneur.innerHTML = data.map(c => `
+    <div class="commande-card">
+      <div>
+        <div class="commande-nom">${c.raison_sociale}</div>
+        <div style="margin-top:6px;">
+          ${c.lieu_retrait ? `<span class="lieu-pill lieu-boutique">${c.lieu_retrait}</span>` : ''}
+          <span class="statut-pill statut-${c.statut}">${labelsStatut[c.statut] || c.statut}</span>
+        </div>
+        <div class="commande-contenu">${c.contenu || ''}</div>
+      </div>
+      <div class="commande-actions">
+        <button class="btn-icon" title="Supprimer" onclick="supprimerCommande('${c.id}')">🗑️</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+let typeCommandeCourant = 'particulier';
+
+function ouvrirModaleCommande(type) {
+  typeCommandeCourant = type;
+  document.getElementById('erreur-commande').classList.remove('visible');
+  document.getElementById('form-commande').reset();
+  document.getElementById('cmd-date').value = document.getElementById('date-jour').value || dateAujourdhui();
+  document.getElementById('champs-particulier').style.display = type === 'particulier' ? '' : 'none';
+  document.getElementById('champs-pro').style.display = type === 'pro' ? '' : 'none';
+  document.getElementById('titre-modale-commande').textContent = type === 'pro' ? 'Nouvelle commande pro' : 'Nouvelle commande';
+  document.getElementById('overlay-commande').classList.add('visible');
+}
+function fermerModaleCommande() {
+  document.getElementById('overlay-commande').classList.remove('visible');
+}
+
+async function confirmerCommande() {
+  const erreur = document.getElementById('erreur-commande');
+  const btn = document.getElementById('btn-confirmer-commande');
+  erreur.classList.remove('visible');
+
+  const dateRetrait = document.getElementById('cmd-date').value;
+  const lieuId = document.getElementById('cmd-lieu').value || null;
+  const contenu = document.getElementById('cmd-contenu').value.trim();
+  const statut = document.getElementById('cmd-statut').value;
+
+  if (!dateRetrait) {
+    erreur.textContent = 'La date de retrait est obligatoire.';
+    erreur.classList.add('visible');
+    return;
+  }
+
+  btn.disabled = true; btn.textContent = 'Enregistrement…';
+
+  try {
+    let clientId;
+
+    if (typeCommandeCourant === 'pro') {
+      clientId = document.getElementById('cmd-client-pro').value;
+      if (!clientId) throw new Error('Sélectionnez un client professionnel.');
+    } else {
+      const nom = document.getElementById('cmd-nom').value.trim();
+      const prenom = document.getElementById('cmd-prenom').value.trim();
+      const tel = document.getElementById('cmd-tel').value.trim();
+      if (!nom) throw new Error('Le nom du client est obligatoire.');
+
+      const { data: client, error: errClient } = await sb
+        .from('clients')
+        .insert({ nom, prenom, telephone: tel, is_pro: false })
+        .select()
+        .single();
+      if (errClient) throw errClient;
+      clientId = client.id;
+    }
+
+    const { error: errCmd } = await sb.from('commandes').insert({
+      client_id: clientId,
+      date_retrait: dateRetrait,
+      contenu,
+      statut,
+      lieu_retrait_id: lieuId
+    });
+    if (errCmd) throw errCmd;
+
+    fermerModaleCommande();
+    if (typeCommandeCourant === 'pro') await chargerCommandesJourPro();
+    else await chargerCommandesJour();
+
+  } catch (err) {
+    erreur.textContent = err.message || 'Erreur lors de l\'enregistrement.';
+    erreur.classList.add('visible');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Enregistrer';
+  }
+}
+
+async function supprimerCommande(id) {
+  if (!confirm('Supprimer cette commande ?')) return;
+  const { error } = await sb.from('commandes').delete().eq('id', id);
+  if (error) { alert('Erreur : ' + error.message); return; }
+  await chargerCommandesJour();
+  await chargerCommandesJourPro();
+}
+
+function ouvrirModaleClientPro() {
+  document.getElementById('erreur-client-pro').classList.remove('visible');
+  document.getElementById('form-client-pro').reset();
+  document.getElementById('overlay-client-pro').classList.add('visible');
+}
+function fermerModaleClientPro() {
+  document.getElementById('overlay-client-pro').classList.remove('visible');
+}
+
+async function confirmerClientPro() {
+  const raisonSociale = document.getElementById('cp-raison-sociale').value.trim();
+  const nom = document.getElementById('cp-nom').value.trim();
+  const tel = document.getElementById('cp-tel').value.trim();
+  const erreur = document.getElementById('erreur-client-pro');
+
+  if (!raisonSociale) {
+    erreur.textContent = 'La raison sociale est obligatoire.';
+    erreur.classList.add('visible');
+    return;
+  }
+
+  const { error } = await sb.from('clients').insert({
+    raison_sociale: raisonSociale, nom, telephone: tel, is_pro: true
+  });
+  if (error) { erreur.textContent = error.message; erreur.classList.add('visible'); return; }
+
+  fermerModaleClientPro();
+  await chargerClientsPro();
+}
+
+async function supprimerClientPro(id) {
+  if (!confirm('Supprimer ce client professionnel ? Ses commandes passées resteront visibles.')) return;
+  const { error } = await sb.from('clients').delete().eq('id', id);
+  if (error) { alert('Erreur : ' + error.message); return; }
+  await chargerClientsPro();
+}
+
+(async () => {
+  profilCourant = await exigerConnexion();
+  if (!profilCourant) return;
+
+  const aujourdhui = dateAujourdhui();
+  document.getElementById('date-jour').value = aujourdhui;
+  document.getElementById('date-jour-pro').value = aujourdhui;
+
+  await chargerLieux();
+  await chargerClientsPro();
+  await chargerCommandesJour();
+})();
+</script>
+</body>
+</html>

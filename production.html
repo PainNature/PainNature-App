@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Pain Nature — Production</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#6b3a1f">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/shared.css">
+<style>
+.topbar{
+  background:var(--wheat); color:#fff; padding:0 1.2rem; height:54px;
+  display:flex; align-items:center; justify-content:space-between;
+  box-shadow:0 2px 8px rgba(0,0,0,.2); position:sticky; top:0; z-index:10;
+}
+.topbar .marque{font-weight:800; font-size:1rem; display:flex; align-items:center; gap:.6rem;}
+.topbar .retour{color:#fff; text-decoration:none; font-size:1.3rem; opacity:.85;}
+.topbar .deco{background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3); color:#fff; padding:6px 13px; border-radius:var(--r); font-size:.82rem; font-weight:600; cursor:pointer;}
+main{max-width:920px; margin:1.2rem auto 3rem; padding:0 1.2rem;}
+
+.bar-jour{display:flex; align-items:center; gap:10px; margin-bottom:1.2rem;}
+.bar-jour input[type=date]{flex:1; padding:11px 12px; border:2px solid var(--border-strong); border-radius:var(--r); font-size:.95rem; background:var(--surface);}
+.bar-jour .nav-jour{width:40px; height:40px; border-radius:var(--r); border:1.5px solid var(--border-strong); background:var(--surface); font-size:1.1rem; cursor:pointer; flex-shrink:0;}
+.btn-resync{padding:11px 16px; font-size:.85rem; flex-shrink:0;}
+
+.tabs{display:flex; gap:8px; margin-bottom:1.1rem;}
+.tab-btn{flex:1; padding:10px; border:1.5px solid var(--border); background:var(--surface); border-radius:var(--r); font-weight:700; font-size:.82rem; cursor:pointer; color:var(--text-muted);}
+.tab-btn.active{background:var(--wheat); color:#fff; border-color:var(--wheat);}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+table{width:100%; border-collapse:collapse;}
+th{text-align:left; font-size:.7rem; text-transform:uppercase; letter-spacing:.04em; color:var(--text-light); padding:10px 14px; border-bottom:2px solid var(--border); font-family:var(--mono);}
+td{padding:10px 14px; border-bottom:1px solid var(--border); font-size:.9rem;}
+tr:last-child td{border-bottom:none;}
+.nom-recette{font-weight:600;}
+.input-qte{
+  width:64px; padding:7px 8px; border:1.5px solid var(--border-strong); border-radius:var(--r);
+  font-size:.92rem; text-align:center; font-family:var(--mono); font-weight:700;
+}
+.ecart{font-weight:700; font-family:var(--mono); font-size:.85rem;}
+.ecart.neg{color:var(--red);}
+.ecart.pos{color:var(--green);}
+.ecart.zero{color:var(--text-light);}
+.qte-commandee{font-family:var(--mono); color:var(--text-muted);}
+
+.besoin-row{display:flex; justify-content:space-between; padding:11px 16px; border-bottom:1px solid var(--border);}
+.besoin-row:last-child{border-bottom:none;}
+.besoin-nom{font-weight:600; font-size:.9rem;}
+.besoin-bio{font-size:.7rem; background:var(--green-light); color:var(--green); padding:1px 8px; border-radius:10px; margin-left:6px;}
+.besoin-qte{font-family:var(--mono); font-weight:700; color:var(--wheat);}
+
+.section-titre{font-size:.95rem; font-weight:700; color:var(--wheat); margin:1.3rem 0 .6rem;}
+.vide{text-align:center; padding:2rem; color:var(--text-light); font-size:.9rem;}
+.note-info{font-size:.78rem; color:var(--text-light); margin-bottom:1rem; font-style:italic;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="marque"><a href="accueil.html" class="retour">←</a> 🌾 PRODUCTION</span>
+  <button class="deco" onclick="deconnexion()">Déconnexion</button>
+</div>
+
+<main>
+  <div class="bar-jour">
+    <button class="nav-jour" onclick="changerJour(-1)">‹</button>
+    <input type="date" id="date-jour" onchange="chargerTout()">
+    <button class="nav-jour" onclick="changerJour(1)">›</button>
+    <button class="btn btn-ghost btn-resync" onclick="resynchroniserDepuisCommandes()">↻ Resynchroniser</button>
+  </div>
+
+  <p class="note-info">Le plan est pré-rempli à partir des commandes du jour. Ajustez les quantités selon le prévisionnel boutique/marché, elles sont enregistrées automatiquement.</p>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="plan" onclick="changerTab('plan')">Plan du jour</button>
+    <button class="tab-btn" data-tab="besoins" onclick="changerTab('besoins')">Besoins matières</button>
+  </div>
+
+  <div class="tab-panel active" id="panel-plan">
+    <div class="card">
+      <table>
+        <thead>
+          <tr><th>Recette</th><th>Commandé</th><th>À produire</th><th>Écart</th></tr>
+        </thead>
+        <tbody id="corps-plan-prod">
+          <tr><td colspan="4" class="vide">Chargement…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="panel-besoins">
+    <div class="card">
+      <div id="liste-besoins"><div class="vide">Chargement…</div></div>
+    </div>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/supabase-client.js"></script>
+<script>
+let profilCourant = null;
+let toutesRecettes = [];
+
+function dateAujourdhui() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function changerTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+  if (tab === 'besoins') chargerBesoins();
+}
+
+function changerJour(delta) {
+  const input = document.getElementById('date-jour');
+  const d = new Date(input.value);
+  d.setDate(d.getDate() + delta);
+  input.value = d.toISOString().slice(0, 10);
+  chargerTout();
+}
+
+async function chargerTout() {
+  await chargerSynthese();
+  if (document.getElementById('panel-besoins').classList.contains('active')) await chargerBesoins();
+}
+
+// Charge la synthèse jour (commandé / prévu / écart) — utilise la fonction
+// serveur get_synthese_jour() qui ne renvoie aucune donnée financière.
+async function chargerSynthese() {
+  const date = document.getElementById('date-jour').value;
+  const { data, error } = await sb.rpc('get_synthese_jour', { p_date: date });
+  const corps = document.getElementById('corps-plan-prod');
+
+  if (error) { corps.innerHTML = `<tr><td colspan="4" class="vide">Erreur : ${error.message}</td></tr>`; return; }
+
+  // On charge aussi TOUTES les recettes actives, pour permettre d'ajouter
+  // manuellement une recette qui n'a pas (encore) de commande ce jour-là.
+  if (toutesRecettes.length === 0) {
+    const { data: recs } = await sb.from('recettes').select('id, nom, metier').eq('actif', true).order('nom');
+    toutesRecettes = recs || [];
+  }
+
+  // Fusionne : recettes ayant déjà une ligne (data) + recettes sans ligne du tout
+  const idsAvecLigne = new Set((data || []).map(d => d.recette_id));
+  const lignesCompletes = [...(data || [])];
+  // On n'affiche les recettes "vides" que si on veut les ajouter manuellement —
+  // pour rester simple, on les liste aussi mais avec 0/0.
+  toutesRecettes.forEach(r => {
+    if (!idsAvecLigne.has(r.id)) {
+      lignesCompletes.push({ recette_id: r.id, nom_recette: r.nom, metier: r.metier, qte_commandee: 0, nb_pieces_prevues: 0, ecart: 0 });
+    }
+  });
+
+  if (lignesCompletes.length === 0) {
+    corps.innerHTML = '<tr><td colspan="4" class="vide">Aucune recette active.</td></tr>';
+    return;
+  }
+
+  lignesCompletes.sort((a, b) => a.nom_recette.localeCompare(b.nom_recette));
+
+  corps.innerHTML = lignesCompletes.map(l => {
+    const classeEcart = l.ecart > 0 ? 'pos' : (l.ecart < 0 ? 'neg' : 'zero');
+    const signeEcart = l.ecart > 0 ? '+' : '';
+    return `
+      <tr>
+        <td class="nom-recette">${l.nom_recette}</td>
+        <td class="qte-commandee">${l.qte_commandee}</td>
+        <td>
+          <input type="number" min="0" class="input-qte" value="${l.nb_pieces_prevues}"
+                 data-recette-id="${l.recette_id}"
+                 onchange="majProduction('${l.recette_id}', this.value)">
+        </td>
+        <td class="ecart ${classeEcart}">${signeEcart}${l.ecart}</td>
+      </tr>`;
+  }).join('');
+}
+
+async function majProduction(recetteId, valeur) {
+  const date = document.getElementById('date-jour').value;
+  const nbPieces = parseInt(valeur, 10) || 0;
+
+  const { error } = await sb.from('production_jour').upsert({
+    date_prod: date,
+    recette_id: recetteId,
+    nb_pieces: nbPieces
+  }, { onConflict: 'date_prod,recette_id' });
+
+  if (error) { alert('Erreur d\'enregistrement : ' + error.message); return; }
+  await chargerSynthese();
+}
+
+// Pré-remplit production_jour à partir des commandes du jour
+// (appelle get_demande_par_recette puis insère/met à jour production_jour)
+async function resynchroniserDepuisCommandes() {
+  const date = document.getElementById('date-jour').value;
+  const { data, error } = await sb.rpc('get_demande_par_recette', { p_date: date });
+  if (error) { alert('Erreur : ' + error.message); return; }
+
+  if (!data || data.length === 0) {
+    alert('Aucune commande structurée trouvée pour ce jour.');
+    return;
+  }
+
+  for (const ligne of data) {
+    await sb.from('production_jour').upsert({
+      date_prod: date,
+      recette_id: ligne.recette_id,
+      nb_pieces: ligne.qte_commandee
+    }, { onConflict: 'date_prod,recette_id' });
+  }
+
+  await chargerSynthese();
+  alert('Plan de production resynchronisé avec les commandes du jour.');
+}
+
+async function chargerBesoins() {
+  const date = document.getElementById('date-jour').value;
+  const { data, error } = await sb.rpc('get_besoins_matieres', { p_date_debut: date, p_date_fin: date });
+  const conteneur = document.getElementById('liste-besoins');
+
+  if (error) { conteneur.innerHTML = `<div class="vide">Erreur : ${error.message}</div>`; return; }
+  if (!data || data.length === 0) { conteneur.innerHTML = '<div class="vide">Aucun besoin calculé — renseignez le plan du jour.</div>'; return; }
+
+  data.sort((a, b) => a.nom_matiere.localeCompare(b.nom_matiere));
+
+  conteneur.innerHTML = data.map(b => `
+    <div class="besoin-row">
+      <span class="besoin-nom">${b.nom_matiere}${b.bio ? '<span class="besoin-bio">BIO</span>' : ''}</span>
+      <span class="besoin-qte">${b.quantite_totale_kg} kg</span>
+    </div>
+  `).join('');
+}
+
+(async () => {
+  profilCourant = await exigerConnexion();
+  if (!profilCourant) return;
+  document.getElementById('date-jour').value = dateAujourdhui();
+  await chargerSynthese();
+})();
+</script>
+</body>
+</html>
