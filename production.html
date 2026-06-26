@@ -190,7 +190,7 @@ function changerVue(vue) {
 }
 
 async function chargerReferentiels() {
-  const { data: recs } = await sb.from('recettes').select('*').eq('actif', true).order('nom');
+  const { data: recs } = await sb.from('recettes').select('*').eq('actif', true).order('ordre_affichage').order('nom');
   toutesRecettes = recs || [];
   const { data: fmts } = await sb.from('recette_formats').select('*').order('ordre');
   tousFormats = fmts || [];
