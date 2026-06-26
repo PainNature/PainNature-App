@@ -401,6 +401,11 @@ function calculerResultat(coutTotalMP, poidsTotalIngredients, financeActuelle) {
 
   const poidsRef = poidsCuit > 0 ? poidsCuit : poidsCru;
   const prixKiloTtc = poidsRef > 0 ? (prixVenteTtc / poidsRef) * 1000 : 0;
+  // Coût matière au kilo : permet de comparer deux recettes de poids
+  // différents sans se laisser tromper par les valeurs absolues
+  // (ex : 1100g de pâte coûtent forcément moins en absolu que 2347g,
+  // même si le coût AU KILO est plus élevé).
+  const coutMatiereKiloHt = poidsRef > 0 ? (coutAvecPerteHT / poidsRef) * 1000 : 0;
   const avertissementPoids = (!document.getElementById('finance-poids-cuit')?.value) && poidsCru > 0
     ? '<div class="resultat-ligne" style="color:var(--text-light);font-size:.75rem;">⚠ Poids cuit non renseigné — calcul basé sur le poids cru</div>'
     : '';
@@ -409,6 +414,7 @@ function calculerResultat(coutTotalMP, poidsTotalIngredients, financeActuelle) {
     <div class="resultat-ligne"><span>Coût matière (poids fiche)</span><span class="resultat-val">${coutTotalMP.toFixed(4)} €</span></div>
     <div class="resultat-ligne"><span>Coût ramené au poids cru</span><span class="resultat-val">${coutBaseHT.toFixed(4)} €</span></div>
     <div class="resultat-ligne"><span>Coût + perte</span><span class="resultat-val">${coutAvecPerteHT.toFixed(4)} €</span></div>
+    <div class="resultat-ligne"><span>Coût matière (€/kg)</span><span class="resultat-val">${coutMatiereKiloHt.toFixed(3)} €/kg</span></div>
     <div class="resultat-ligne"><span>Méthode Coef — TTC</span><span class="resultat-val">${prixMagCoefTTC.toFixed(2)} €</span></div>
     <div class="resultat-ligne"><span>Méthode Marge — TTC</span><span class="resultat-val">${prixMagMargeTTC.toFixed(2)} €</span></div>
     <div class="resultat-ligne total"><span>Prix de vente TTC (moyenne)</span><span class="resultat-val">${prixVenteTtc.toFixed(2)} €</span></div>
