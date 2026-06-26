@@ -359,9 +359,13 @@ function renderCarteRecette(recette) {
         <span class="mi"><span class="mk">Pâte </span><span class="mv">${fmt(res.totalPate)} g</span></span>
         <span class="mi"><span class="mk">Bacs </span><span class="mv ${nbBacs > 3 ? 'warn' : ''}">${nbBacs > 0 ? nbBacs + ' bac' + (nbBacs > 1 ? 's' : '') : '—'}</span></span>
         <span class="mi"><span class="mk">Pièces </span><span class="mv">${res.totalPieces > 0 ? res.totalPieces : '—'}</span></span>
-        ${recette.poids_piece_g ? `<span class="mi"><span class="mk">Poids cru </span><span class="mv">${fmt(recette.poids_piece_g)} g/pce</span></span>` : ''}
+        ${res.formats.length === 0 && recette.poids_piece_g ? `<span class="mi"><span class="mk">Poids </span><span class="mv">${fmt(recette.poids_piece_g)}${recette.poids_cuit_g ? ' → ' + fmt(recette.poids_cuit_g) : ''} g/pce</span></span>` : ''}
         ${calculerHydratation(ingredients) !== null ? `<span class="mi"><span class="mk">Hydratation </span><span class="mv">${calculerHydratation(ingredients)}%</span></span>` : ''}
       </div>
+      ${res.formats.length > 0 ? `
+      <div class="rmeta" style="background:#fbfaf8; font-size:9px;">
+        ${res.formats.map(f => `<span class="mi"><span class="mk">${f.label} </span><span class="mv">${fmt(f.poids_g)}${f.poids_cuit_g ? ' → ' + fmt(f.poids_cuit_g) : ''} g</span></span>`).join('')}
+      </div>` : ''}
       <table class="itable">
         <thead><tr><th>Ingrédient</th><th>Base</th><th>Jour</th></tr></thead>
         <tbody>${lignesHtml}</tbody>
