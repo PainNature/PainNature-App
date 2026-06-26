@@ -149,6 +149,39 @@ tr:last-child td{border-bottom:none;}
 <script>
 let profilCourant = null;
 let recetteSelectionneeId = null;
+let prixFarineT110 = 0;
+let prixFarineEngrain = 0;
+let prixEau = 0;
+
+// Miroir JS de la fonction SQL get_cout_levain() — évite un aller-retour
+// réseau par ligne. Règles fixes : levain dur/liquide -> Farine T110 Bio,
+// levain engrain -> Farine T110 Engrain Bio. Ratios : dur 2:1, liquide 1:1.
+function coutLigneIngredient(nomMatiere, quantiteG, prixHtKg) {
+  if (nomMatiere === 'Levain liquide') {
+    const eauG = quantiteG * 0.5, farineG = quantiteG - eauG;
+    return (farineG / 1000) * prixFarineT110 + (eauG / 1000) * prixEau;
+  }
+  if (nomMatiere === 'Levain dur') {
+    const eauG = quantiteG * (1 / 3), farineG = quantiteG - eauG;
+    return (farineG / 1000) * prixFarineT110 + (eauG / 1000) * prixEau;
+  }
+  if (nomMatiere === 'Levain liquide Engrain') {
+    const eauG = quantiteG * 0.5, farineG = quantiteG - eauG;
+    return (farineG / 1000) * prixFarineEngrain + (eauG / 1000) * prixEau;
+  }
+  return (quantiteG / 1000) * (prixHtKg || 0);
+}
+
+async function chargerPrixReference() {
+  const { data } = await sb.from('matieres_premieres')
+    .select('nom, prix_ht_kg')
+    .in('nom', ['Farine T110 Bio', 'Farine T110 Engrain Bio', 'Eau']);
+  (data || []).forEach(mp => {
+    if (mp.nom === 'Farine T110 Bio') prixFarineT110 = mp.prix_ht_kg;
+    if (mp.nom === 'Farine T110 Engrain Bio') prixFarineEngrain = mp.prix_ht_kg;
+    if (mp.nom === 'Eau') prixEau = mp.prix_ht_kg;
+  });
+}
 
 function changerTab(tab) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
@@ -259,8 +292,7 @@ async function chargerFicheRecette(recetteId) {
   if (errR || errI) { panneau.innerHTML = `<div class="vide">Erreur de chargement.</div>`; return; }
 
   const coutTotalMP = (ingredients || []).reduce((s, i) => {
-    const prix = i.matieres_premieres?.prix_ht_kg || 0;
-    return s + (i.quantite_base_g / 1000) * prix;
+    return s + coutLigneIngredient(i.nom_affiche, i.quantite_base_g, i.matieres_premieres?.prix_ht_kg);
   }, 0);
 
   panneau.innerHTML = `
@@ -309,7 +341,7 @@ async function chargerFicheRecette(recetteId) {
             <tr>
               <td>${i.nom_affiche}${i.matieres_premieres?.bio ? '<span class="bio-tag">BIO</span>' : ''}</td>
               <td style="font-family:var(--mono);">${i.quantite_base_g}</td>
-              <td style="font-family:var(--mono);">${((i.quantite_base_g/1000) * (i.matieres_premieres?.prix_ht_kg || 0)).toFixed(4)} €</td>
+              <td style="font-family:var(--mono);">${coutLigneIngredient(i.nom_affiche, i.quantite_base_g, i.matieres_premieres?.prix_ht_kg).toFixed(4)} €</td>
             </tr>`).join('') || '<tr><td colspan="3" class="vide">Aucun ingrédient.</td></tr>'}
         </tbody>
       </table>
@@ -360,10 +392,12 @@ function calculerResultat(coutTotalMP, financeActuelle) {
 async function recalculerEtEnregistrer(enregistrer = true) {
   const { data: ingredients } = await sb
     .from('recette_ingredients')
-    .select('quantite_base_g, mp_id, matieres_premieres(prix_ht_kg)')
+    .select('quantite_base_g, mp_id, nom_affiche, matieres_premieres(prix_ht_kg)')
     .eq('recette_id', recetteSelectionneeId);
 
-  const coutTotalMP = (ingredients || []).reduce((s, i) => s + (i.quantite_base_g / 1000) * (i.matieres_premieres?.prix_ht_kg || 0), 0);
+  const coutTotalMP = (ingredients || []).reduce((s, i) => {
+    return s + coutLigneIngredient(i.nom_affiche, i.quantite_base_g, i.matieres_premieres?.prix_ht_kg);
+  }, 0);
 
   const coefficient = parseFloat(document.getElementById('finance-coefficient')?.value || 3.5);
   const margePct = parseFloat(document.getElementById('finance-marge')?.value || 70);
@@ -389,6 +423,7 @@ async function recalculerEtEnregistrer(enregistrer = true) {
 (async () => {
   profilCourant = await exigerRole(['gerant']);
   if (!profilCourant) return;
+  await chargerPrixReference();
   await chargerMP();
   await chargerListeRecettes();
 })();
