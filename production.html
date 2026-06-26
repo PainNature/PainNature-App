@@ -274,6 +274,29 @@ function calculerRecette(recette) {
   return { totalPate, totalPieces, formats, variantes, extra };
 }
 
+function calculerHydratation(ingredients) {
+  // Eau totale (y compris la part eau du levain liquide/dur, calculée
+  // selon son ratio) / farine totale (y compris la part farine du levain).
+  let eau = 0, farine = 0;
+  ingredients.forEach(i => {
+    const nom = i.nom_affiche.toLowerCase();
+    const qte = Number(i.quantite_base_g);
+    if (nom === 'levain liquide') {
+      eau += qte * 0.5; farine += qte * 0.5;
+    } else if (nom === 'levain dur') {
+      eau += qte * (1 / 3); farine += qte * (2 / 3);
+    } else if (nom === 'levain liquide engrain') {
+      eau += qte * 0.5; farine += qte * 0.5;
+    } else if (nom.includes('eau')) {
+      eau += qte;
+    } else if (nom.includes('farine') || nom.includes('seigle') || nom.includes('josette') || nom.includes('engrain')) {
+      farine += qte;
+    }
+  });
+  if (farine === 0) return null;
+  return Math.round((eau / farine) * 100);
+}
+
 function renderCarteRecette(recette) {
   const res = calculerRecette(recette);
   const totalBase = (recetteIngredientsCache[recette.id] || []).reduce((s, i) => s + Number(i.quantite_base_g), 0);
@@ -336,6 +359,8 @@ function renderCarteRecette(recette) {
         <span class="mi"><span class="mk">Pâte </span><span class="mv">${fmt(res.totalPate)} g</span></span>
         <span class="mi"><span class="mk">Bacs </span><span class="mv ${nbBacs > 3 ? 'warn' : ''}">${nbBacs > 0 ? nbBacs + ' bac' + (nbBacs > 1 ? 's' : '') : '—'}</span></span>
         <span class="mi"><span class="mk">Pièces </span><span class="mv">${res.totalPieces > 0 ? res.totalPieces : '—'}</span></span>
+        ${recette.poids_piece_g ? `<span class="mi"><span class="mk">Poids cru </span><span class="mv">${fmt(recette.poids_piece_g)} g/pce</span></span>` : ''}
+        ${calculerHydratation(ingredients) !== null ? `<span class="mi"><span class="mk">Hydratation </span><span class="mv">${calculerHydratation(ingredients)}%</span></span>` : ''}
       </div>
       <table class="itable">
         <thead><tr><th>Ingrédient</th><th>Base</th><th>Jour</th></tr></thead>
@@ -360,6 +385,23 @@ function renderTout() {
   const parMetier = { B: [], V: [], GV: [], P: [] };
   toutesRecettes.forEach(r => { if (parMetier[r.metier]) parMetier[r.metier].push(r); });
   const labelsMetier = { B: 'Boulangerie', V: 'Viennoiserie', GV: 'Gâteaux de voyage', P: 'Pâtisserie' };
+  const labelsFamille = {
+    baguettes: 'Baguettes', bles_levain: 'Blés au levain',
+    autres_cereales_levain: 'Autres céréales au levain', pains_sucres: 'Pains sucrés'
+  };
+  const ordreFamilles = ['baguettes', 'bles_levain', 'autres_cereales_levain', 'pains_sucres'];
+
+  function renderGroupeRecettes(recs) {
+    let h = '';
+    for (let i = 0; i < recs.length; i += 2) {
+      h += '<div class="recipe-row">';
+      h += `<div class="recipe-col">${renderCarteRecette(recs[i])}</div>`;
+      if (recs[i + 1]) h += `<div class="recipe-col">${renderCarteRecette(recs[i + 1])}</div>`;
+      else h += `<div class="recipe-col recipe-col-empty"></div>`;
+      h += '</div>';
+    }
+    return h;
+  }
 
   let html = '';
   let totalPateGlobal = 0, totalPiecesGlobal = 0;
@@ -368,12 +410,27 @@ function renderTout() {
     const recs = parMetier[metier];
     if (recs.length === 0) return;
     html += `<div class="recipe-section-title">${labelsMetier[metier]}</div>`;
-    for (let i = 0; i < recs.length; i += 2) {
-      html += '<div class="recipe-row">';
-      html += `<div class="recipe-col">${renderCarteRecette(recs[i])}</div>`;
-      if (recs[i + 1]) html += `<div class="recipe-col">${renderCarteRecette(recs[i + 1])}</div>`;
-      else html += `<div class="recipe-col recipe-col-empty"></div>`;
-      html += '</div>';
+
+    if (metier === 'B') {
+      // Sous-groupement par famille pour la Boulangerie uniquement
+      const parFamille = {};
+      const sansFamille = [];
+      recs.forEach(r => {
+        if (r.famille) { (parFamille[r.famille] = parFamille[r.famille] || []).push(r); }
+        else sansFamille.push(r);
+      });
+      ordreFamilles.forEach(fam => {
+        if (parFamille[fam] && parFamille[fam].length > 0) {
+          html += `<div class="recipe-section-title" style="font-size:8px; opacity:.75; margin-top:.5rem; border-bottom-style:dashed;">↳ ${labelsFamille[fam]}</div>`;
+          html += renderGroupeRecettes(parFamille[fam]);
+        }
+      });
+      if (sansFamille.length > 0) {
+        html += `<div class="recipe-section-title" style="font-size:8px; opacity:.75; margin-top:.5rem; border-bottom-style:dashed;">↳ Sans famille</div>`;
+        html += renderGroupeRecettes(sansFamille);
+      }
+    } else {
+      html += renderGroupeRecettes(recs);
     }
   });
 

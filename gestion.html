@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Pain Nature — Gestion des recettes</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#6b3a1f">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/shared.css">
+<style>
+.topbar{
+  background:var(--wheat); color:#fff; padding:0 1.2rem; height:54px;
+  display:flex; align-items:center; justify-content:space-between;
+  box-shadow:0 2px 8px rgba(0,0,0,.2); position:sticky; top:0; z-index:10;
+}
+.topbar .marque{font-weight:800; font-size:1rem; display:flex; align-items:center; gap:.6rem;}
+.topbar .marque .lock{font-size:.75rem; background:rgba(255,255,255,.2); padding:2px 9px; border-radius:10px; font-family:var(--mono);}
+.topbar .retour{color:#fff; text-decoration:none; font-size:1.3rem; opacity:.85;}
+.topbar .deco{background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3); color:#fff; padding:6px 13px; border-radius:var(--r); font-size:.82rem; font-weight:600; cursor:pointer;}
+main{max-width:980px; margin:1.2rem auto 3rem; padding:0 1.2rem;}
+
+.tabs{display:flex; gap:8px; margin-bottom:1.1rem;}
+.tab-btn{flex:1; padding:10px; border:1.5px solid var(--border); background:var(--surface); border-radius:var(--r); font-weight:700; font-size:.82rem; cursor:pointer; color:var(--text-muted);}
+.tab-btn.active{background:var(--wheat); color:#fff; border-color:var(--wheat);}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+table{width:100%; border-collapse:collapse;}
+th{text-align:left; font-size:.7rem; text-transform:uppercase; letter-spacing:.04em; color:var(--text-light); padding:10px 12px; border-bottom:2px solid var(--border); font-family:var(--mono);}
+td{padding:9px 12px; border-bottom:1px solid var(--border); font-size:.88rem;}
+tr:last-child td{border-bottom:none;}
+.input-mini{width:100%; padding:6px 8px; border:1.5px solid var(--border-strong); border-radius:var(--r); font-size:.85rem; font-family:var(--mono);}
+.bio-tag{font-size:.68rem; background:var(--green-light); color:var(--green); padding:1px 7px; border-radius:9px; margin-left:5px;}
+
+.btn-nouvelle{padding:9px 16px; font-size:.82rem;}
+.bar-actions{display:flex; justify-content:flex-end; margin-bottom:.8rem;}
+
+.fiche-recette{display:grid; grid-template-columns:280px 1fr; gap:1.2rem;}
+@media (max-width:760px){.fiche-recette{grid-template-columns:1fr;}}
+
+.liste-recettes-nav{max-height:560px; overflow-y:auto;}
+.recette-nav-item{padding:11px 14px; border-bottom:1px solid var(--border); cursor:pointer; font-size:.88rem; font-weight:600;}
+.recette-nav-item:hover{background:var(--surface2);}
+.recette-nav-item.active{background:var(--wheat-light); color:var(--wheat); border-left:3px solid var(--wheat);}
+
+.panneau-finance{padding:1.2rem;}
+.panneau-finance h3{color:var(--wheat); margin-bottom:1rem; font-size:1.05rem;}
+
+.mode-toggle{display:flex; gap:8px; margin-bottom:1.1rem;}
+.mode-btn{flex:1; padding:9px; border:1.5px solid var(--border); background:var(--surface); border-radius:var(--r); font-size:.82rem; font-weight:700; cursor:pointer; color:var(--text-muted);}
+.mode-btn.active{background:var(--wheat-mid); color:#fff; border-color:var(--wheat-mid);}
+
+.field-row{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:.9rem;}
+.field label{display:block; font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--text-light); margin-bottom:.35rem; font-family:var(--mono);}
+.field input{width:100%; padding:9px 11px; border:1.5px solid var(--border-strong); border-radius:var(--r); font-size:.9rem; font-family:var(--mono);}
+
+.toggle-option{display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-top:1px dashed var(--border); margin-top:.6rem;}
+.toggle-option label{font-size:.82rem; font-weight:600; color:var(--text-muted);}
+.toggle-option input[type=checkbox]{width:18px; height:18px;}
+
+.resultat-box{background:var(--wheat-light); border-radius:var(--r); padding:1rem 1.1rem; margin-top:1.2rem;}
+.resultat-ligne{display:flex; justify-content:space-between; font-size:.85rem; padding:3px 0;}
+.resultat-ligne.total{font-weight:800; font-size:1rem; color:var(--wheat); border-top:1.5px solid var(--border-strong); margin-top:6px; padding-top:8px;}
+.resultat-val{font-family:var(--mono); font-weight:700;}
+
+.ingredients-recette{margin-top:1.3rem;}
+.ingredients-recette table td{font-size:.85rem;}
+.vide{text-align:center; padding:1.6rem; color:var(--text-light); font-size:.88rem;}
+
+.overlay{display:none; position:fixed; inset:0; background:rgba(20,12,6,.55); align-items:center; justify-content:center; z-index:50; padding:1.2rem; overflow-y:auto;}
+.overlay.visible{display:flex;}
+.modale{background:var(--surface); border-radius:var(--r-lg); padding:1.5rem; width:100%; max-width:420px; box-shadow:0 20px 50px rgba(0,0,0,.3); margin:auto;}
+.modale h3{color:var(--wheat); margin-bottom:1rem; font-size:1.05rem;}
+.modale-actions{display:flex; gap:10px; margin-top:1.2rem;}
+.modale-actions .btn{flex:1;}
+.row2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+.field{margin-bottom:.9rem;}
+.field select{width:100%; padding:9px 11px; border:1.5px solid var(--border-strong); border-radius:var(--r); font-size:.9rem; background:#fff;}
+.msg-erreur-modale{display:none; background:var(--red-light); color:var(--red); padding:.55rem .75rem; border-radius:var(--r); font-size:.8rem; font-weight:600; margin-bottom:.8rem;}
+.msg-erreur-modale.visible{display:block;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="marque"><a href="accueil.html" class="retour">←</a> 🌾 GESTION <span class="lock">🔒 gérant</span></span>
+  <button class="deco" onclick="deconnexion()">Déconnexion</button>
+</div>
+
+<main>
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="matieres" onclick="changerTab('matieres')">Matières premières</button>
+    <button class="tab-btn" data-tab="recettes" onclick="changerTab('recettes')">Recettes & marges</button>
+  </div>
+
+  <!-- ===== MATIÈRES PREMIÈRES ===== -->
+  <div class="tab-panel active" id="panel-matieres">
+    <div class="bar-actions">
+      <button class="btn btn-primary btn-nouvelle" onclick="ouvrirModaleMP()">+ Nouvelle matière première</button>
+    </div>
+    <div class="card">
+      <table>
+        <thead><tr><th>Nom</th><th>Fournisseur</th><th>Prix HT/kg</th><th></th></tr></thead>
+        <tbody id="corps-mp"><tr><td colspan="4" class="vide">Chargement…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ===== RECETTES & GESTION ===== -->
+  <div class="tab-panel" id="panel-recettes">
+    <div class="fiche-recette">
+      <div class="card liste-recettes-nav" id="liste-recettes-nav">
+        <div class="vide">Chargement…</div>
+      </div>
+
+      <div class="card panneau-finance" id="panneau-finance">
+        <div class="vide">Sélectionnez une recette à gauche.</div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Modale matière première -->
+<div class="overlay" id="overlay-mp">
+  <div class="modale">
+    <h3>Nouvelle matière première</h3>
+    <div class="msg-erreur-modale" id="erreur-mp"></div>
+    <form onsubmit="return false;">
+      <div class="field"><label>Nom</label><input type="text" id="mp-nom" required style="width:100%;padding:9px 11px;border:1.5px solid var(--border-strong);border-radius:var(--r);font-size:.9rem;"></div>
+      <div class="row2">
+        <div class="field"><label>Fournisseur</label><input type="text" id="mp-fournisseur" style="width:100%;padding:9px 11px;border:1.5px solid var(--border-strong);border-radius:var(--r);font-size:.9rem;"></div>
+        <div class="field"><label>Prix HT / kg (€)</label><input type="number" step="0.0001" id="mp-prix" required style="width:100%;padding:9px 11px;border:1.5px solid var(--border-strong);border-radius:var(--r);font-size:.9rem;font-family:var(--mono);"></div>
+      </div>
+      <div class="field" style="display:flex; align-items:center; gap:8px;">
+        <input type="checkbox" id="mp-bio" style="width:18px;height:18px;">
+        <label style="margin:0;">Matière première biologique</label>
+      </div>
+    </form>
+    <div class="modale-actions">
+      <button class="btn btn-ghost" onclick="fermerModaleMP()">Annuler</button>
+      <button class="btn btn-primary" onclick="confirmerMP()">Ajouter</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/supabase-client.js"></script>
+<script>
+let profilCourant = null;
+let recetteSelectionneeId = null;
+let prixFarineT110 = 0;
+let prixFarineEngrain = 0;
+let prixEau = 0;
+let cacheCoutRecetteSource = {}; // recette_id -> coût total HT (évite de re-demander)
+
+// Miroir JS de la fonction SQL get_cout_levain() — évite un aller-retour
+// réseau par ligne. Règles fixes : levain dur/liquide -> Farine T110 Bio,
+// levain engrain -> Farine T110 Engrain Bio. Ratios : dur 2:1, liquide 1:1.
+//
+// Gère aussi les lignes "recette_source" (ex: "Pâte Odette (propre)" dans
+// Odette aux Graines) : le coût est alors résolu via la fonction serveur
+// get_cout_total_recette(), ramené au prorata de la quantité utilisée.
+async function coutLigneIngredient(ingredient) {
+  const { nom_affiche: nomMatiere, quantite_base_g: quantiteG, matieres_premieres, recette_source_id } = ingredient;
+  const prixHtKg = matieres_premieres?.prix_ht_kg;
+
+  if (recette_source_id) {
+    if (!(recette_source_id in cacheCoutRecetteSource)) {
+      const [{ data: coutTotal }, { data: ingredientsSource }] = await Promise.all([
+        sb.rpc('get_cout_total_recette', { p_recette_id: recette_source_id }),
+        sb.from('recette_ingredients').select('quantite_base_g').eq('recette_id', recette_source_id)
+      ]);
+      const baseSource = (ingredientsSource || []).reduce((s, i) => s + Number(i.quantite_base_g), 0);
+      cacheCoutRecetteSource[recette_source_id] = { coutTotal: coutTotal || 0, baseSource };
+    }
+    const { coutTotal, baseSource } = cacheCoutRecetteSource[recette_source_id];
+    return baseSource > 0 ? (quantiteG / baseSource) * coutTotal : 0;
+  }
+
+  if (nomMatiere === 'Levain liquide') {
+    const eauG = quantiteG * 0.5, farineG = quantiteG - eauG;
+    return (farineG / 1000) * prixFarineT110 + (eauG / 1000) * prixEau;
+  }
+  if (nomMatiere === 'Levain dur') {
+    const eauG = quantiteG * (1 / 3), farineG = quantiteG - eauG;
+    return (farineG / 1000) * prixFarineT110 + (eauG / 1000) * prixEau;
+  }
+  if (nomMatiere === 'Levain liquide Engrain') {
+    const eauG = quantiteG * 0.5, farineG = quantiteG - eauG;
+    return (farineG / 1000) * prixFarineEngrain + (eauG / 1000) * prixEau;
+  }
+  return (quantiteG / 1000) * (prixHtKg || 0);
+}
+
+async function chargerPrixReference() {
+  const { data } = await sb.from('matieres_premieres')
+    .select('nom, prix_ht_kg')
+    .in('nom', ['Farine T110 Bio', 'Farine T110 Engrain Bio', 'Eau']);
+  (data || []).forEach(mp => {
+    if (mp.nom === 'Farine T110 Bio') prixFarineT110 = mp.prix_ht_kg;
+    if (mp.nom === 'Farine T110 Engrain Bio') prixFarineEngrain = mp.prix_ht_kg;
+    if (mp.nom === 'Eau') prixEau = mp.prix_ht_kg;
+  });
+}
+
+function changerTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+}
+
+// ---------------- MATIÈRES PREMIÈRES ----------------
+async function chargerMP() {
+  const { data, error } = await sb.from('matieres_premieres').select('*').order('nom');
+  const corps = document.getElementById('corps-mp');
+  if (error) { corps.innerHTML = `<tr><td colspan="4" class="vide">Erreur : ${error.message}</td></tr>`; return; }
+  if (!data || data.length === 0) { corps.innerHTML = '<tr><td colspan="4" class="vide">Aucune matière première.</td></tr>'; return; }
+
+  corps.innerHTML = data.map(mp => `
+    <tr>
+      <td>${mp.nom}${mp.bio ? '<span class="bio-tag">BIO</span>' : ''}</td>
+      <td>${mp.fournisseur || '—'}</td>
+      <td>
+        <input type="number" step="0.0001" class="input-mini" value="${mp.prix_ht_kg}"
+               onchange="majPrixMP('${mp.id}', this.value)">
+      </td>
+      <td><button class="btn-icon" onclick="supprimerMP('${mp.id}')">🗑️</button></td>
+    </tr>
+  `).join('');
+}
+
+async function majPrixMP(id, valeur) {
+  const prix = parseFloat(valeur);
+  if (isNaN(prix) || prix < 0) return;
+  const { error } = await sb.from('matieres_premieres').update({ prix_ht_kg: prix }).eq('id', id);
+  if (error) alert('Erreur : ' + error.message);
+  else if (recetteSelectionneeId) await chargerFicheRecette(recetteSelectionneeId);
+}
+
+async function supprimerMP(id) {
+  if (!confirm('Supprimer cette matière première ? Impossible si elle est utilisée dans une recette.')) return;
+  const { error } = await sb.from('matieres_premieres').delete().eq('id', id);
+  if (error) { alert('Erreur : ' + error.message); return; }
+  await chargerMP();
+}
+
+function ouvrirModaleMP() {
+  document.getElementById('erreur-mp').classList.remove('visible');
+  document.getElementById('mp-nom').value = '';
+  document.getElementById('mp-fournisseur').value = '';
+  document.getElementById('mp-prix').value = '';
+  document.getElementById('mp-bio').checked = false;
+  document.getElementById('overlay-mp').classList.add('visible');
+}
+function fermerModaleMP() { document.getElementById('overlay-mp').classList.remove('visible'); }
+
+async function confirmerMP() {
+  const nom = document.getElementById('mp-nom').value.trim();
+  const fournisseur = document.getElementById('mp-fournisseur').value.trim();
+  const prix = parseFloat(document.getElementById('mp-prix').value);
+  const bio = document.getElementById('mp-bio').checked;
+  const erreur = document.getElementById('erreur-mp');
+
+  if (!nom || isNaN(prix)) {
+    erreur.textContent = 'Le nom et le prix sont obligatoires.';
+    erreur.classList.add('visible');
+    return;
+  }
+
+  const { error } = await sb.from('matieres_premieres').insert({ nom, fournisseur, prix_ht_kg: prix, bio });
+  if (error) { erreur.textContent = error.message; erreur.classList.add('visible'); return; }
+
+  fermerModaleMP();
+  await chargerMP();
+}
+
+// ---------------- RECETTES & FINANCE ----------------
+async function chargerListeRecettes() {
+  const { data, error } = await sb.from('recettes').select('id, nom, metier').order('nom');
+  const conteneur = document.getElementById('liste-recettes-nav');
+  if (error) { conteneur.innerHTML = `<div class="vide">Erreur : ${error.message}</div>`; return; }
+  if (!data || data.length === 0) { conteneur.innerHTML = '<div class="vide">Aucune recette. Créez-en depuis l\'écran Production.</div>'; return; }
+
+  conteneur.innerHTML = data.map(r => `
+    <div class="recette-nav-item ${r.id === recetteSelectionneeId ? 'active' : ''}" onclick="chargerFicheRecette('${r.id}')">
+      ${r.nom}
+    </div>
+  `).join('');
+}
+
+async function chargerFicheRecette(recetteId) {
+  recetteSelectionneeId = recetteId;
+  await chargerListeRecettes(); // pour mettre à jour le surlignage actif
+
+  const { data: recette, error: errR } = await sb.from('recettes').select('*').eq('id', recetteId).single();
+  const { data: ingredients, error: errI } = await sb
+    .from('recette_ingredients')
+    .select('id, quantite_base_g, nom_affiche, mp_id, recette_source_id, matieres_premieres(prix_ht_kg, bio)')
+    .eq('recette_id', recetteId);
+  let { data: finance } = await sb.from('recette_finance').select('*').eq('recette_id', recetteId).maybeSingle();
+
+  if (!finance) {
+    const { data: nf } = await sb.from('recette_finance').insert({
+      recette_id: recetteId, coefficient: 3.5, marge_pct: 70, tva_pct: 10
+    }).select().single();
+    finance = nf;
+  }
+
+  const panneau = document.getElementById('panneau-finance');
+  if (errR || errI) { panneau.innerHTML = `<div class="vide">Erreur de chargement.</div>`; return; }
+
+  // Précalcule le coût de chaque ligne (async à cause des recette_source)
+  // avant de construire le HTML, puisqu'on ne peut pas await dans un .map().
+  const coutsParLigne = await Promise.all((ingredients || []).map(i => coutLigneIngredient(i)));
+  const coutTotalMP = coutsParLigne.reduce((s, c) => s + c, 0);
+
+  panneau.innerHTML = `
+    <div class="field-row">
+      <div class="field" style="flex:1;">
+        <label>Nom de la recette</label>
+        <input type="text" id="finance-nom-recette" value="${recette.nom}" style="font-size:1.05rem; font-weight:700; color:var(--wheat); padding:9px 11px; border:2px solid var(--border-strong); border-radius:var(--r); width:100%;">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Métier</label>
+        <select id="finance-metier" style="width:100%; padding:9px 11px; border:1.5px solid var(--border-strong); border-radius:var(--r); font-size:.9rem; background:#fff;">
+          <option value="B" ${recette.metier === 'B' ? 'selected' : ''}>Boulangerie</option>
+          <option value="P" ${recette.metier === 'P' ? 'selected' : ''}>Pâtisserie</option>
+          <option value="V" ${recette.metier === 'V' ? 'selected' : ''}>Viennoiserie</option>
+          <option value="GV" ${recette.metier === 'GV' ? 'selected' : ''}>Gâteaux de voyage</option>
+        </select>
+      </div>
+      <div class="field"><label>Famille (si Boulangerie)</label>
+        <select id="finance-famille" style="width:100%; padding:9px 11px; border:1.5px solid var(--border-strong); border-radius:var(--r); font-size:.9rem; background:#fff;">
+          <option value="" ${!recette.famille ? 'selected' : ''}>—</option>
+          <option value="baguettes" ${recette.famille === 'baguettes' ? 'selected' : ''}>Baguettes</option>
+          <option value="bles_levain" ${recette.famille === 'bles_levain' ? 'selected' : ''}>Blés au levain</option>
+          <option value="autres_cereales_levain" ${recette.famille === 'autres_cereales_levain' ? 'selected' : ''}>Autres céréales au levain</option>
+          <option value="pains_sucres" ${recette.famille === 'pains_sucres' ? 'selected' : ''}>Pains sucrés</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="mode-toggle">
+      <button class="mode-btn active" onclick="basculerOnglet('finance', this)">💶 Finance</button>
+      <button class="mode-btn" onclick="basculerOnglet('ingredients', this)">🧂 Ingrédients</button>
+    </div>
+
+    <div id="onglet-finance">
+      <div class="field-row">
+        <div class="field"><label>Coefficient multiplicateur</label>
+          <input type="number" step="0.01" id="finance-coefficient" value="${finance.coefficient}" oninput="recalculerEtEnregistrer(false)">
+        </div>
+        <div class="field"><label>Taux de marge (%)</label>
+          <input type="number" step="0.1" id="finance-marge" value="${finance.marge_pct}" oninput="recalculerEtEnregistrer(false)">
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field"><label>TVA (%)</label><input type="number" step="0.1" id="finance-tva" value="${finance.tva_pct}" oninput="recalculerEtEnregistrer(false)"></div>
+        <div class="field"><label>Poids cru/pâte (g)</label><input type="number" step="1" id="finance-poids" value="${recette.poids_piece_g || ''}" oninput="recalculerEtEnregistrer(false)"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Poids cuit (g)</label><input type="number" step="1" id="finance-poids-cuit" value="${recette.poids_cuit_g || ''}" placeholder="si différent du cru" oninput="recalculerEtEnregistrer(false)"></div>
+        <div class="field"></div>
+      </div>
+
+      <div class="toggle-option">
+        <label>Taux de perte (%)</label>
+        <input type="number" step="0.1" id="finance-perte" value="${finance.taux_perte_pct || 0}" style="width:80px; padding:6px 8px; border:1.5px solid var(--border-strong); border-radius:var(--r); font-family:var(--mono);" oninput="recalculerEtEnregistrer(false)">
+      </div>
+      <div class="toggle-option">
+        <label>Emballage (€ HT)</label>
+        <input type="number" step="0.01" id="finance-emballage" value="${finance.prix_emballage_ht || 0}" style="width:80px; padding:6px 8px; border:1.5px solid var(--border-strong); border-radius:var(--r); font-family:var(--mono);" oninput="recalculerEtEnregistrer(false)">
+      </div>
+
+      <div class="resultat-box" id="resultat-box"></div>
+    </div>
+
+    <div id="onglet-ingredients" style="display:none;">
+      <table>
+        <thead><tr><th>Ingrédient</th><th>Qté (g)</th><th>Coût HT</th><th></th></tr></thead>
+        <tbody id="corps-ingredients-edit">
+          ${(ingredients || []).map((i, idx) => `
+            <tr data-ligne-id="${i.id}">
+              <td>${i.nom_affiche}${i.matieres_premieres?.bio ? '<span class="bio-tag">BIO</span>' : ''}${i.recette_source_id ? '<span class="bio-tag" style="background:var(--blue-light);color:var(--blue);">SOUS-RECETTE</span>' : ''}</td>
+              <td>
+                <input type="number" step="0.01" class="input-mini" value="${i.quantite_base_g}"
+                       onchange="modifierQuantiteIngredient('${i.id}', this.value)" style="width:80px;">
+              </td>
+              <td style="font-family:var(--mono);">${coutsParLigne[idx].toFixed(4)} €</td>
+              <td><button class="btn-icon" onclick="supprimerIngredient('${i.id}')">🗑️</button></td>
+            </tr>`).join('') || '<tr><td colspan="4" class="vide">Aucun ingrédient.</td></tr>'}
+        </tbody>
+      </table>
+      <button class="lien-gestion" style="margin-top:.8rem;" onclick="ouvrirModaleAjoutIngredient()">+ Ajouter un ingrédient</button>
+    </div>
+
+    <button class="btn btn-primary" style="width:100%; margin-top:1.1rem;" onclick="recalculerEtEnregistrer(true)">Enregistrer toutes les modifications</button>
+  `;
+
+  recalculerEtEnregistrer(false);
+}
+
+function calculerResultat(coutTotalMP, poidsTotalIngredients, financeActuelle) {
+  const perte = parseFloat(document.getElementById('finance-perte')?.value || 0);
+  const emballage = parseFloat(document.getElementById('finance-emballage')?.value || 0);
+  const tvaPct = parseFloat(document.getElementById('finance-tva')?.value || 0);
+  const tva = 1 + tvaPct / 100;
+  const coef = parseFloat(document.getElementById('finance-coefficient')?.value || financeActuelle.coefficient);
+  const margePct = parseFloat(document.getElementById('finance-marge')?.value || financeActuelle.marge_pct);
+  const poidsCru = parseFloat(document.getElementById('finance-poids')?.value || 0) || poidsTotalIngredients || 0;
+  const poidsCuit = parseFloat(document.getElementById('finance-poids-cuit')?.value || 0) || poidsCru || 0;
+
+  // Coût ramené au poids cru saisi (si différent du poids total des
+  // ingrédients de la fiche — ex: une partie seulement est utilisée).
+  let coutBaseHT = coutTotalMP;
+  if (poidsTotalIngredients > 0 && poidsCru > 0) {
+    coutBaseHT = (coutTotalMP / poidsTotalIngredients) * poidsCru;
+  }
+
+  // ⚠️ Formule fidèle à l'ancien outil : la perte AUGMENTE le coût
+  // (facteur multiplicatif 1 + perte%), elle ne le divise pas.
+  const facteurPerte = perte > 0 ? 1 + perte / 100 : 1;
+  const coutAvecPerteHT = coutBaseHT * facteurPerte;
+
+  const prixMagCoefHT = (coutBaseHT * facteurPerte * coef) + emballage;
+  const prixMagMargeHT = margePct >= 100 ? 0 : (coutBaseHT * facteurPerte / (1 - margePct / 100)) + emballage;
+  const prixMagCoefTTC = prixMagCoefHT * tva;
+  const prixMagMargeTTC = prixMagMargeHT * tva;
+
+  // Prix final = moyenne des deux méthodes, comme l'ancien outil
+  const prixVenteTtc = (prixMagCoefTTC + prixMagMargeTTC) / 2;
+  const prixVenteHt = (prixMagCoefHT + prixMagMargeHT) / 2;
+
+  const poidsRef = poidsCuit > 0 ? poidsCuit : poidsCru;
+  const prixKiloTtc = poidsRef > 0 ? (prixVenteTtc / poidsRef) * 1000 : 0;
+  // Coût matière au kilo : permet de comparer deux recettes de poids
+  // différents sans se laisser tromper par les valeurs absolues
+  // (ex : 1100g de pâte coûtent forcément moins en absolu que 2347g,
+  // même si le coût AU KILO est plus élevé).
+  const coutMatiereKiloHt = poidsRef > 0 ? (coutAvecPerteHT / poidsRef) * 1000 : 0;
+  const avertissementPoids = (!document.getElementById('finance-poids-cuit')?.value) && poidsCru > 0
+    ? '<div class="resultat-ligne" style="color:var(--text-light);font-size:.75rem;">⚠ Poids cuit non renseigné — calcul basé sur le poids cru</div>'
+    : '';
+
+  document.getElementById('resultat-box').innerHTML = `
+    <div class="resultat-ligne"><span>Coût matière (poids fiche)</span><span class="resultat-val">${coutTotalMP.toFixed(4)} €</span></div>
+    <div class="resultat-ligne"><span>Coût ramené au poids cru</span><span class="resultat-val">${coutBaseHT.toFixed(4)} €</span></div>
+    <div class="resultat-ligne"><span>Coût + perte</span><span class="resultat-val">${coutAvecPerteHT.toFixed(4)} €</span></div>
+    <div class="resultat-ligne"><span>Coût matière (€/kg)</span><span class="resultat-val">${coutMatiereKiloHt.toFixed(3)} €/kg</span></div>
+    <div class="resultat-ligne"><span>Méthode Coef — TTC</span><span class="resultat-val">${prixMagCoefTTC.toFixed(2)} €</span></div>
+    <div class="resultat-ligne"><span>Méthode Marge — TTC</span><span class="resultat-val">${prixMagMargeTTC.toFixed(2)} €</span></div>
+    <div class="resultat-ligne total"><span>Prix de vente TTC (moyenne)</span><span class="resultat-val">${prixVenteTtc.toFixed(2)} €</span></div>
+    <div class="resultat-ligne total"><span>Prix de vente TTC (€/kg)</span><span class="resultat-val">${prixKiloTtc.toFixed(2)} €/kg</span></div>
+    ${avertissementPoids}
+  `;
+
+  return { coutMpHt: coutAvecPerteHT + emballage, prixVenteHt, prixVenteTtc };
+}
+
+async function recalculerEtEnregistrer(enregistrer = true) {
+  const { data: ingredients } = await sb
+    .from('recette_ingredients')
+    .select('quantite_base_g, mp_id, nom_affiche, recette_source_id, matieres_premieres(prix_ht_kg)')
+    .eq('recette_id', recetteSelectionneeId);
+
+  const coutsParLigne = await Promise.all((ingredients || []).map(i => coutLigneIngredient(i)));
+  const coutTotalMP = coutsParLigne.reduce((s, c) => s + c, 0);
+  const poidsTotalIngredients = (ingredients || []).reduce((s, i) => s + (i.quantite_base_g || 0), 0);
+
+  const coefficient = parseFloat(document.getElementById('finance-coefficient')?.value || 3.5);
+  const margePct = parseFloat(document.getElementById('finance-marge')?.value || 70);
+  const tvaPct = parseFloat(document.getElementById('finance-tva')?.value || 10);
+  const poidsPiece = parseFloat(document.getElementById('finance-poids')?.value || 0);
+  const poidsCuit = parseFloat(document.getElementById('finance-poids-cuit')?.value || 0);
+  const tauxPerte = parseFloat(document.getElementById('finance-perte')?.value || 0);
+  const emballage = parseFloat(document.getElementById('finance-emballage')?.value || 0);
+
+  const resultat = calculerResultat(coutTotalMP, poidsTotalIngredients, { coefficient, marge_pct: margePct });
+
+  if (enregistrer) {
+    const nom = document.getElementById('finance-nom-recette')?.value.trim();
+    const metier = document.getElementById('finance-metier')?.value;
+    const famille = document.getElementById('finance-famille')?.value || null;
+
+    await sb.from('recettes').update({
+      nom, metier, famille,
+      poids_piece_g: poidsPiece, poids_cuit_g: poidsCuit || null
+    }).eq('id', recetteSelectionneeId);
+
+    await sb.from('recette_finance').update({
+      coefficient, marge_pct: margePct, tva_pct: tvaPct,
+      taux_perte_pct: tauxPerte, prix_emballage_ht: emballage,
+      cout_mp_ht: resultat.coutMpHt, prix_vente_ttc: resultat.prixVenteTtc,
+      updated_at: new Date().toISOString()
+    }).eq('recette_id', recetteSelectionneeId);
+
+    await chargerListeRecettes();
+  }
+}
+
+// ---------------- ÉDITION DES INGRÉDIENTS ----------------
+
+function basculerOnglet(onglet, btn) {
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('onglet-finance').style.display = onglet === 'finance' ? '' : 'none';
+  document.getElementById('onglet-ingredients').style.display = onglet === 'ingredients' ? '' : 'none';
+}
+
+async function modifierQuantiteIngredient(ligneId, valeur) {
+  const qte = parseFloat(valeur);
+  if (isNaN(qte) || qte < 0) return;
+  const { error } = await sb.from('recette_ingredients').update({ quantite_base_g: qte }).eq('id', ligneId);
+  if (error) { alert('Erreur : ' + error.message); return; }
+  await chargerFicheRecette(recetteSelectionneeId);
+  // Reste sur l'onglet ingrédients après rafraîchissement
+  basculerOnglet('ingredients', document.querySelectorAll('.mode-btn')[1]);
+}
+
+async function supprimerIngredient(ligneId) {
+  if (!confirm('Supprimer cet ingrédient de la recette ?')) return;
+  const { error } = await sb.from('recette_ingredients').delete().eq('id', ligneId);
+  if (error) { alert('Erreur : ' + error.message); return; }
+  await chargerFicheRecette(recetteSelectionneeId);
+  basculerOnglet('ingredients', document.querySelectorAll('.mode-btn')[1]);
+}
+
+let toutesMatieresPourAjout = [];
+
+async function ouvrirModaleAjoutIngredient() {
+  if (toutesMatieresPourAjout.length === 0) {
+    const { data } = await sb.from('matieres_premieres').select('id, nom').order('nom');
+    toutesMatieresPourAjout = data || [];
+  }
+  const optionsHtml = toutesMatieresPourAjout.map(mp => `<option value="${mp.id}">${mp.nom}</option>`).join('');
+  const html = `
+    <div class="modale" style="position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:200; max-width:380px;" id="modale-ajout-ingredient">
+      <h3>Ajouter un ingrédient</h3>
+      <div class="field"><label>Matière première</label>
+        <select id="ai-mp" style="width:100%; padding:9px 11px; border:1.5px solid var(--border-strong); border-radius:var(--r); background:#fff;">${optionsHtml}</select>
+      </div>
+      <div class="field"><label>Quantité (g)</label>
+        <input type="number" step="0.01" id="ai-qte" style="width:100%; padding:9px 11px; border:1.5px solid var(--border-strong); border-radius:var(--r); font-family:var(--mono);">
+      </div>
+      <div class="modale-actions">
+        <button class="btn btn-ghost" onclick="document.getElementById('overlay-ajout-ingredient').remove()">Annuler</button>
+        <button class="btn btn-primary" onclick="confirmerAjoutIngredient()">Ajouter</button>
+      </div>
+    </div>`;
+  const overlay = document.createElement('div');
+  overlay.className = 'overlay visible';
+  overlay.id = 'overlay-ajout-ingredient';
+  overlay.innerHTML = html;
+  document.body.appendChild(overlay);
+}
+
+async function confirmerAjoutIngredient() {
+  const mpId = document.getElementById('ai-mp').value;
+  const qte = parseFloat(document.getElementById('ai-qte').value);
+  const mp = toutesMatieresPourAjout.find(m => m.id === mpId);
+  if (!mpId || isNaN(qte) || qte <= 0) { alert('Renseignez une matière et une quantité valide.'); return; }
+
+  const { data: maxOrdre } = await sb.from('recette_ingredients').select('ordre').eq('recette_id', recetteSelectionneeId).order('ordre', { ascending: false }).limit(1).maybeSingle();
+
+  const { error } = await sb.from('recette_ingredients').insert({
+    recette_id: recetteSelectionneeId, mp_id: mpId, nom_affiche: mp.nom,
+    quantite_base_g: qte, ordre: (maxOrdre?.ordre || 0) + 1
+  });
+  if (error) { alert('Erreur : ' + error.message); return; }
+
+  document.getElementById('overlay-ajout-ingredient')?.remove();
+  await chargerFicheRecette(recetteSelectionneeId);
+  basculerOnglet('ingredients', document.querySelectorAll('.mode-btn')[1]);
+}
+
+(async () => {
+  profilCourant = await exigerRole(['gerant']);
+  if (!profilCourant) return;
+  await chargerPrixReference();
+  await chargerMP();
+  await chargerListeRecettes();
+})();
+</script>
+</body>
+</html>
