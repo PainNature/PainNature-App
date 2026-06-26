@@ -7,92 +7,162 @@
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#6b3a1f">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <link rel="stylesheet" href="css/shared.css">
 <style>
+:root{
+  --amber:#5a420a; --amber-light:#faf0d0;
+}
+body{font-size:13px;}
 .topbar{
-  background:var(--wheat); color:#fff; padding:0 1.2rem; height:54px;
+  background:var(--wheat); color:#fff; padding:0 1rem; height:50px;
   display:flex; align-items:center; justify-content:space-between;
-  box-shadow:0 2px 8px rgba(0,0,0,.2); position:sticky; top:0; z-index:10;
+  position:sticky; top:0; z-index:200; box-shadow:0 2px 6px rgba(0,0,0,.25);
 }
-.topbar .marque{font-weight:800; font-size:1rem; display:flex; align-items:center; gap:.6rem;}
-.topbar .retour{color:#fff; text-decoration:none; font-size:1.3rem; opacity:.85;}
-.topbar .deco{background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3); color:#fff; padding:6px 13px; border-radius:var(--r); font-size:.82rem; font-weight:600; cursor:pointer;}
-main{max-width:920px; margin:1.2rem auto 3rem; padding:0 1.2rem;}
+.topbar .marque{font-weight:800; font-size:15px; display:flex; align-items:center; gap:.6rem;}
+.topbar .retour{color:#fff; text-decoration:none; font-size:1.2rem; opacity:.85;}
+.topbar-right{display:flex; gap:6px; align-items:center;}
+.btn-tab{background:rgba(255,255,255,.12); color:#fff; border:1px solid rgba(255,255,255,.25); border-radius:var(--r); padding:5px 11px; font-size:12px; font-weight:600; cursor:pointer;}
+.btn-tab.active{background:rgba(255,255,255,.32); font-weight:700; border-color:rgba(255,255,255,.5);}
+.date-input{background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3); border-radius:var(--r); padding:4px 9px; font-family:var(--mono); font-size:12px; color:#fff;}
+.date-input::-webkit-calendar-picker-indicator{filter:invert(1);}
 
-.bar-jour{display:flex; align-items:center; gap:10px; margin-bottom:1.2rem;}
-.bar-jour input[type=date]{flex:1; padding:11px 12px; border:2px solid var(--border-strong); border-radius:var(--r); font-size:.95rem; background:var(--surface);}
-.bar-jour .nav-jour{width:40px; height:40px; border-radius:var(--r); border:1.5px solid var(--border-strong); background:var(--surface); font-size:1.1rem; cursor:pointer; flex-shrink:0;}
-.btn-resync{padding:11px 16px; font-size:.85rem; flex-shrink:0;}
+main{max-width:1200px; margin:0 auto; padding:.75rem 1rem 3rem;}
 
-.tabs{display:flex; gap:8px; margin-bottom:1.1rem;}
-.tab-btn{flex:1; padding:10px; border:1.5px solid var(--border); background:var(--surface); border-radius:var(--r); font-weight:700; font-size:.82rem; cursor:pointer; color:var(--text-muted);}
-.tab-btn.active{background:var(--wheat); color:#fff; border-color:var(--wheat);}
-.tab-panel{display:none;}
-.tab-panel.active{display:block;}
+.qtotals{display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:7px; margin-bottom:.75rem;}
+.qtot{background:var(--surface); border:2px solid var(--border); border-radius:var(--r-lg); padding:.5rem .6rem; text-align:center;}
+.qtot .ql{font-family:var(--mono); font-size:9px; letter-spacing:.07em; text-transform:uppercase; color:#555; font-weight:700;}
+.qtot .qv{font-family:var(--mono); font-size:18px; font-weight:800; color:var(--wheat);}
+.qtot .qu{font-size:9px; color:#555; font-family:var(--mono); font-weight:600;}
 
-table{width:100%; border-collapse:collapse;}
-th{text-align:left; font-size:.7rem; text-transform:uppercase; letter-spacing:.04em; color:var(--text-light); padding:10px 14px; border-bottom:2px solid var(--border); font-family:var(--mono);}
-td{padding:10px 14px; border-bottom:1px solid var(--border); font-size:.9rem;}
-tr:last-child td{border-bottom:none;}
-.nom-recette{font-weight:600;}
-.input-qte{
-  width:64px; padding:7px 8px; border:1.5px solid var(--border-strong); border-radius:var(--r);
-  font-size:.92rem; text-align:center; font-family:var(--mono); font-weight:700;
-}
-.ecart{font-weight:700; font-family:var(--mono); font-size:.85rem;}
-.ecart.neg{color:var(--red);}
-.ecart.pos{color:var(--green);}
-.ecart.zero{color:var(--text-light);}
-.qte-commandee{font-family:var(--mono); color:var(--text-muted);}
+.levains-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:7px; margin-bottom:.75rem;}
+.levain-card{background:var(--surface); border:2px solid var(--border); border-radius:var(--r-lg); overflow:hidden;}
+.levain-head{padding:6px 10px; font-size:12px; font-weight:800; display:flex; align-items:center; justify-content:space-between;}
+.lh-liq{background:var(--blue-light); color:var(--blue); border-bottom:2px solid #b0ccec;}
+.lh-eng{background:var(--amber-light); color:var(--amber); border-bottom:2px solid #d8c070;}
+.lh-dur{background:var(--green-light); color:var(--green); border-bottom:2px solid #90c8a8;}
+.lh-total{font-family:var(--mono); font-size:13px; font-weight:800;}
+.levain-rows{padding:3px 0;}
+.levain-row{display:flex; align-items:center; justify-content:space-between; padding:3px 10px; font-size:12px;}
+.lr-name{color:#333; font-weight:600;}
+.lr-val{font-family:var(--mono); font-weight:700; color:#000;}
+.lr-souche{border-bottom:1px solid var(--border);}
+.lr-souche .lr-val{color:var(--red); font-weight:800; font-size:13px;}
 
-.besoin-row{display:flex; justify-content:space-between; padding:11px 16px; border-bottom:1px solid var(--border);}
-.besoin-row:last-child{border-bottom:none;}
-.besoin-nom{font-weight:600; font-size:.9rem;}
-.besoin-bio{font-size:.7rem; background:var(--green-light); color:var(--green); padding:1px 8px; border-radius:10px; margin-left:6px;}
-.besoin-qte{font-family:var(--mono); font-weight:700; color:var(--wheat);}
+.recipe-section-title{font-family:var(--mono); font-size:9px; letter-spacing:.1em; text-transform:uppercase; color:#555; font-weight:700; padding-bottom:4px; margin:.75rem 0 .4rem; border-bottom:2px solid var(--border-strong);}
+.recipe-row{display:grid; grid-template-columns:1fr 1fr; gap:.5rem; margin-bottom:.4rem;}
+@media (max-width:700px){.recipe-row{grid-template-columns:1fr;}}
 
-.section-titre{font-size:.95rem; font-weight:700; color:var(--wheat); margin:1.3rem 0 .6rem;}
+.rcard{background:var(--surface); border:2px solid var(--border-strong); border-radius:var(--r-lg); overflow:hidden;}
+.rcard.print-off{opacity:.4;}
+.rcard.no-production .rhead{background:#ccc !important;}
+.rhead{padding:5px 8px; background:var(--wheat-light); border-bottom:2px solid var(--border-strong); display:flex; align-items:flex-start; justify-content:space-between; gap:.4rem; flex-wrap:wrap;}
+.rname{font-size:12px; font-weight:800; color:var(--wheat);}
+.rcontrols{display:flex; align-items:center; gap:6px; flex-wrap:wrap;}
+.cg{display:flex; align-items:center; gap:3px;}
+.cg label{font-size:10px; color:var(--text-muted); font-family:var(--mono); white-space:nowrap; font-weight:600;}
+.cg input[type=number]{width:52px; padding:2px 5px; border:2px solid var(--border-strong); border-radius:var(--r); font-family:var(--mono); font-size:12px; font-weight:700; color:var(--wheat); background:#fff; text-align:center;}
+.cg input[type=number]:focus{outline:none; border-color:var(--wheat);}
+.sportif-cg{border-left:2px solid var(--border-strong); padding-left:6px; margin-left:2px;}
+.sportif-cg label{color:var(--green) !important;}
+.sportif-cg input{color:var(--green) !important; border-color:var(--green) !important;}
+
+.rmeta{padding:3px 8px; background:#f5f3ef; border-bottom:1px solid var(--border); display:flex; gap:.75rem; flex-wrap:wrap; font-size:10px; font-family:var(--mono);}
+.mi .mk{color:var(--text-light); font-weight:600;}
+.mi .mv{color:var(--text); font-weight:700;}
+.mi .mv.warn{color:var(--amber); font-weight:800;}
+
+.itable{width:100%; border-collapse:collapse; font-size:11px;}
+.itable th{font-family:var(--mono); font-size:8.5px; letter-spacing:.06em; text-transform:uppercase; padding:3px 7px; border-bottom:2px solid var(--border-strong); font-weight:700;}
+.itable th:first-child{text-align:left; background:#d8d3cc; color:#000;}
+.itable th:nth-child(2){text-align:right; background:#d8d3cc; color:#444;}
+.itable th:nth-child(3){text-align:right; background:#333; color:#fff;}
+.itable tr:nth-child(even){background:#f5f3f0;}
+.itable td{padding:4px 7px; border-bottom:1px solid var(--border);}
+.itable .td-name{font-weight:600; color:#000; text-align:left;}
+.itable .td-base{text-align:right; font-family:var(--mono); font-size:10px; color:#555; background:#eee;}
+.itable .td-jour{text-align:right; font-family:var(--mono); font-size:12px; background:#fff;}
+.itable .td-jour strong{color:#000; font-weight:800;}
+.itable .no-prod{color:#aaa; font-size:9px;}
+.itable .tr-total td{border-top:2px solid var(--border-strong);}
+.itable .tr-total .td-name{background:#e0dbd4; color:#333; font-size:8px; font-weight:800; text-transform:uppercase;}
+.itable .tr-total .td-base{background:#e0dbd4; color:#555; font-weight:600;}
+.itable .tr-total .td-jour{background:#e0dbd4;}
+.itable .tr-total .td-jour strong{color:#000; font-size:13px; font-weight:800;}
+.itable .row-sportif td, .itable .row-cran td{background:#e8e8e8; border-top:1px solid #bbb; border-bottom:1px solid #bbb;}
+.itable .row-sportif .td-name, .itable .row-cran .td-name{font-weight:800; color:#000;}
+
+.print-cb-wrap{display:flex; align-items:center; gap:4px; margin-left:auto; padding-left:8px;}
+.print-cb-wrap input[type=checkbox]{width:15px; height:15px; accent-color:var(--wheat); cursor:pointer;}
+.print-cb-wrap label{font-family:var(--mono); font-size:8px; color:var(--text-light); font-weight:600; text-transform:uppercase; cursor:pointer; white-space:nowrap;}
+
+.print-header{display:none;}
 .vide{text-align:center; padding:2rem; color:var(--text-light); font-size:.9rem;}
-.note-info{font-size:.78rem; color:var(--text-light); margin-bottom:1rem; font-style:italic;}
+.note-info{font-size:.78rem; color:var(--text-light); margin-bottom:.8rem; font-style:italic;}
+
+#print-select-bar{display:flex; gap:8px; margin-bottom:.7rem; align-items:center;}
+.btn-action{padding:6px 12px; border:1.5px solid var(--border-strong); border-radius:var(--r); background:#fff; font-family:var(--mono); font-size:11px; cursor:pointer; color:var(--text-muted);}
+.btn-action:hover{border-color:var(--wheat-mid); color:var(--wheat);}
+
+@media print {
+  @page { size:A4; margin:10mm; }
+  body { background:#fff !important; font-size:10px; }
+  * { -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
+  .topbar, .qtotals, .no-print, #print-select-bar, .note-info { display:none !important; }
+  .rcard.print-off { display:none !important; }
+  .rcard.no-production { display:none !important; }
+  main { padding:0; max-width:none; }
+  .print-header { display:flex !important; background:#111 !important; color:#fff !important; padding:3px 5mm; margin-bottom:4px; align-items:center; justify-content:space-between; gap:8px; }
+  .ph-date { font-size:10px; font-weight:800; color:#fff !important; white-space:nowrap; }
+  .ph-totals { display:flex; gap:0; flex:1; justify-content:flex-end; }
+  .ph-item { display:flex; flex-direction:column; align-items:center; padding:0 8px; border-left:1px solid #444; }
+  .ph-label { font-size:6px; text-transform:uppercase; color:#aaa !important; }
+  .ph-val { font-size:10px; font-weight:800; color:#fff !important; font-family:monospace; }
+  .recipe-row { display:block; width:100%; overflow:hidden; margin-bottom:1mm; page-break-inside:avoid; break-inside:avoid; }
+  .recipe-row::after { content:""; display:table; clear:both; }
+  .recipe-col { float:left; width:48.5%; margin-right:3%; }
+  .recipe-col:last-child { margin-right:0; }
+  .rcard { page-break-inside:avoid; break-inside:avoid; }
+  .print-cb-wrap { display:none !important; }
+}
 </style>
 </head>
 <body>
 
 <div class="topbar">
   <span class="marque"><a href="accueil.html" class="retour">←</a> 🌾 PRODUCTION</span>
-  <button class="deco" onclick="deconnexion()">Déconnexion</button>
+  <div class="topbar-right">
+    <button class="btn-tab active" data-vue="plan" onclick="changerVue('plan')">Plan du jour</button>
+    <button class="btn-tab" data-vue="besoins" onclick="changerVue('besoins')">Besoins matières</button>
+    <input type="date" id="date-jour" class="date-input" onchange="chargerTout()">
+  </div>
 </div>
 
 <main>
-  <div class="bar-jour">
-    <button class="nav-jour" onclick="changerJour(-1)">‹</button>
-    <input type="date" id="date-jour" onchange="chargerTout()">
-    <button class="nav-jour" onclick="changerJour(1)">›</button>
-    <button class="btn btn-ghost btn-resync" onclick="resynchroniserDepuisCommandes()">↻ Resynchroniser</button>
-  </div>
+  <div class="qtotals" id="qtotals"></div>
 
-  <p class="note-info">Le plan est pré-rempli à partir des commandes du jour. Ajustez les quantités selon le prévisionnel boutique/marché, elles sont enregistrées automatiquement.</p>
+  <div id="vue-plan">
+    <div id="print-select-bar" class="no-print">
+      <button class="btn-action" onclick="toutSelectionner(true)">☑ Tout sélectionner</button>
+      <button class="btn-action" onclick="toutSelectionner(false)">☐ Tout désélectionner</button>
+      <button class="btn-action" onclick="resynchroniserDepuisCommandes()">↻ Resynchroniser depuis commandes</button>
+      <button class="btn-action" style="margin-left:auto; background:var(--wheat); color:#fff; border-color:var(--wheat);" onclick="exporterPDF()">🖨️ Exporter en PDF</button>
+    </div>
 
-  <div class="tabs">
-    <button class="tab-btn active" data-tab="plan" onclick="changerTab('plan')">Plan du jour</button>
-    <button class="tab-btn" data-tab="besoins" onclick="changerTab('besoins')">Besoins matières</button>
-  </div>
+    <p class="note-info">Cochez les recettes à inclure dans l'export PDF. Les recettes sans production du jour sont automatiquement exclues.</p>
 
-  <div class="tab-panel active" id="panel-plan">
-    <div class="card">
-      <table>
-        <thead>
-          <tr><th>Recette</th><th>Commandé</th><th>À produire</th><th>Écart</th></tr>
-        </thead>
-        <tbody id="corps-plan-prod">
-          <tr><td colspan="4" class="vide">Chargement…</td></tr>
-        </tbody>
-      </table>
+    <div class="levains-grid" id="levains-grid"></div>
+
+    <div class="print-header" id="print-header"></div>
+
+    <div id="zone-recettes">
+      <div class="vide">Chargement…</div>
     </div>
   </div>
 
-  <div class="tab-panel" id="panel-besoins">
-    <div class="card">
+  <div id="vue-besoins" style="display:none;">
+    <div class="card" style="background:var(--surface); border:2px solid var(--border-strong); border-radius:var(--r-lg); overflow:hidden;">
       <div id="liste-besoins"><div class="vide">Chargement…</div></div>
     </div>
   </div>
@@ -103,143 +173,313 @@ tr:last-child td{border-bottom:none;}
 <script>
 let profilCourant = null;
 let toutesRecettes = [];
+let tousFormats = [];
+let toutesVariantes = [];
+let planJour = {};
+let selectionImpression = {};
+let recetteIngredientsCache = {};
 
-function dateAujourdhui() {
-  return new Date().toISOString().slice(0, 10);
+function fmt(n){ return Math.round(n).toLocaleString('fr-FR'); }
+function dateAujourdhui(){ return new Date().toISOString().slice(0,10); }
+
+function changerVue(vue) {
+  document.querySelectorAll('.btn-tab').forEach(b => b.classList.toggle('active', b.dataset.vue === vue));
+  document.getElementById('vue-plan').style.display = vue === 'plan' ? '' : 'none';
+  document.getElementById('vue-besoins').style.display = vue === 'besoins' ? '' : 'none';
+  if (vue === 'besoins') chargerBesoins();
 }
 
-function changerTab(tab) {
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  document.getElementById('panel-' + tab).classList.add('active');
-  if (tab === 'besoins') chargerBesoins();
+async function chargerReferentiels() {
+  const { data: recs } = await sb.from('recettes').select('*').eq('actif', true).order('nom');
+  toutesRecettes = recs || [];
+  const { data: fmts } = await sb.from('recette_formats').select('*').order('ordre');
+  tousFormats = fmts || [];
+  const { data: vars } = await sb.from('recette_variantes').select('*').order('ordre');
+  toutesVariantes = vars || [];
 }
 
-function changerJour(delta) {
-  const input = document.getElementById('date-jour');
-  const d = new Date(input.value);
-  d.setDate(d.getDate() + delta);
-  input.value = d.toISOString().slice(0, 10);
-  chargerTout();
+async function chargerIngredients() {
+  const { data } = await sb.from('recette_ingredients').select('*').order('ordre');
+  recetteIngredientsCache = {};
+  (data || []).forEach(ing => {
+    if (!recetteIngredientsCache[ing.recette_id]) recetteIngredientsCache[ing.recette_id] = [];
+    recetteIngredientsCache[ing.recette_id].push(ing);
+  });
 }
 
-async function chargerTout() {
-  await chargerSynthese();
-  if (document.getElementById('panel-besoins').classList.contains('active')) await chargerBesoins();
-}
-
-// Charge la synthèse jour (commandé / prévu / écart) — utilise la fonction
-// serveur get_synthese_jour() qui ne renvoie aucune donnée financière.
-async function chargerSynthese() {
+async function chargerPlanJour() {
   const date = document.getElementById('date-jour').value;
-  const { data, error } = await sb.rpc('get_synthese_jour', { p_date: date });
-  const corps = document.getElementById('corps-plan-prod');
+  const { data } = await sb.from('production_jour').select('*').eq('date_prod', date);
+  planJour = {};
+  (data || []).forEach(pj => {
+    const cle = `${pj.recette_id}|${pj.format_id || ''}|${pj.variante_id || ''}`;
+    planJour[cle] = pj.nb_pieces;
+  });
+}
 
-  if (error) { corps.innerHTML = `<tr><td colspan="4" class="vide">Erreur : ${error.message}</td></tr>`; return; }
+function getNbPieces(recetteId, formatId, variantId) {
+  const cle = `${recetteId}|${formatId || ''}|${variantId || ''}`;
+  return planJour[cle] || 0;
+}
 
-  // On charge aussi TOUTES les recettes actives, pour permettre d'ajouter
-  // manuellement une recette qui n'a pas (encore) de commande ce jour-là.
-  if (toutesRecettes.length === 0) {
-    const { data: recs } = await sb.from('recettes').select('id, nom, metier').eq('actif', true).order('nom');
-    toutesRecettes = recs || [];
+async function majProduction(recetteId, formatId, variantId, valeur) {
+  const date = document.getElementById('date-jour').value;
+  const nbPieces = parseInt(valeur, 10) || 0;
+  const cle = `${recetteId}|${formatId || ''}|${variantId || ''}`;
+  planJour[cle] = nbPieces;
+
+  await sb.from('production_jour').upsert({
+    date_prod: date, recette_id: recetteId,
+    format_id: formatId || null, variante_id: variantId || null,
+    nb_pieces: nbPieces
+  }, { onConflict: 'date_prod,recette_id,format_id,variante_id' });
+
+  renderTout();
+}
+
+function calculerRecette(recette) {
+  const formats = tousFormats.filter(f => f.recette_id === recette.id);
+  const variantes = toutesVariantes.filter(v => v.recette_id === recette.id);
+  let totalPate = 0, totalPieces = 0;
+  const extra = {};
+
+  if (formats.length > 0) {
+    formats.filter(f => !f.est_variante_speciale).forEach(f => {
+      const n = getNbPieces(recette.id, f.id, null);
+      totalPate += n * f.poids_g; totalPieces += n;
+    });
+    const fmtSpecial = formats.find(f => f.est_variante_speciale);
+    if (fmtSpecial) {
+      const n = getNbPieces(recette.id, fmtSpecial.id, null);
+      totalPate += n * fmtSpecial.poids_g; totalPieces += n;
+      extra.special = { format: fmtSpecial, qty: n };
+    }
+  } else if (variantes.length > 0) {
+    const nNature = getNbPieces(recette.id, null, null);
+    totalPate += nNature * (recette.poids_piece_g || 0);
+    totalPieces += nNature;
+    variantes.forEach(v => {
+      const nVar = getNbPieces(recette.id, null, v.id);
+      const poidsBaseParPiece = v.poids_piece_g / (1 + (v.ratio_ajout_pct || 0) / 100);
+      totalPate += nVar * poidsBaseParPiece;
+      totalPieces += nVar;
+      extra.variante = { v, qty: nVar, ajoutTotal: nVar * (v.poids_piece_g - poidsBaseParPiece) };
+    });
+  } else {
+    const n = getNbPieces(recette.id, null, null);
+    totalPate = n * (recette.poids_piece_g || 0);
+    totalPieces = n;
   }
 
-  // Fusionne : recettes ayant déjà une ligne (data) + recettes sans ligne du tout
-  const idsAvecLigne = new Set((data || []).map(d => d.recette_id));
-  const lignesCompletes = [...(data || [])];
-  // On n'affiche les recettes "vides" que si on veut les ajouter manuellement —
-  // pour rester simple, on les liste aussi mais avec 0/0.
-  toutesRecettes.forEach(r => {
-    if (!idsAvecLigne.has(r.id)) {
-      lignesCompletes.push({ recette_id: r.id, nom_recette: r.nom, metier: r.metier, qte_commandee: 0, nb_pieces_prevues: 0, ecart: 0 });
+  return { totalPate, totalPieces, formats, variantes, extra };
+}
+
+function renderCarteRecette(recette) {
+  const res = calculerRecette(recette);
+  const totalBase = (recetteIngredientsCache[recette.id] || []).reduce((s, i) => s + Number(i.quantite_base_g), 0);
+  const coef = totalBase > 0 ? res.totalPate / totalBase : 0;
+  const hasProd = res.totalPate > 0;
+  const nbBacs = recette.poids_bac_g > 0 && res.totalPate > 0 ? Math.ceil(res.totalPate / recette.poids_bac_g) : 0;
+  const selectionne = selectionImpression[recette.id] !== false;
+
+  let controlsHtml = '';
+  if (res.formats.length > 0) {
+    res.formats.filter(f => !f.est_variante_speciale).forEach(f => {
+      controlsHtml += `<div class="cg"><label>${f.label}</label><input type="number" min="0" value="${getNbPieces(recette.id, f.id, null) || ''}" onchange="majProduction('${recette.id}','${f.id}',null,this.value)"></div>`;
+    });
+    const fmtSpecial = res.formats.find(f => f.est_variante_speciale);
+    if (fmtSpecial) {
+      controlsHtml += `<div class="cg sportif-cg"><label>🏃 ${fmtSpecial.label}</label><input type="number" min="0" value="${getNbPieces(recette.id, fmtSpecial.id, null) || ''}" onchange="majProduction('${recette.id}','${fmtSpecial.id}',null,this.value)"></div>`;
+    }
+  } else if (res.variantes.length > 0) {
+    controlsHtml += `<div class="cg"><label>Nature</label><input type="number" min="0" value="${getNbPieces(recette.id, null, null) || ''}" onchange="majProduction('${recette.id}',null,null,this.value)"></div>`;
+    res.variantes.forEach(v => {
+      controlsHtml += `<div class="cg sportif-cg"><label>🍒 ${v.nom}</label><input type="number" min="0" value="${getNbPieces(recette.id, null, v.id) || ''}" onchange="majProduction('${recette.id}',null,'${v.id}',this.value)"></div>`;
+    });
+  } else {
+    controlsHtml = `<div class="cg"><label>Qté</label><input type="number" min="0" value="${getNbPieces(recette.id, null, null) || ''}" onchange="majProduction('${recette.id}',null,null,this.value)"></div>`;
+  }
+
+  const ingredients = recetteIngredientsCache[recette.id] || [];
+  let lignesHtml = ingredients.map(i => {
+    const qty = Math.round(Number(i.quantite_base_g) * coef);
+    const qtyHtml = hasProd ? `<strong>${fmt(qty)}</strong>` : `<span class="no-prod">—</span>`;
+    return `<tr><td class="td-name">${i.nom_affiche}</td><td class="td-base">${fmt(i.quantite_base_g)}</td><td class="td-jour">${qtyHtml}</td></tr>`;
+  }).join('');
+
+  if (res.extra.special) {
+    const mixQty = res.extra.special.qty * 200;
+    lignesHtml += `<tr class="row-sportif"><td class="td-name">🏃 Mélange sportif ×${res.extra.special.qty}</td><td class="td-base">200</td><td class="td-jour"><strong>${fmt(mixQty)}</strong></td></tr>`;
+  }
+  if (res.extra.variante) {
+    const baseParPiece = res.extra.variante.v.poids_piece_g / (1 + (res.extra.variante.v.ratio_ajout_pct || 0) / 100);
+    const ajoutParPiece = res.extra.variante.v.poids_piece_g - baseParPiece;
+    lignesHtml += `<tr class="row-cran"><td class="td-name">🍒 ${res.extra.variante.v.nom} ×${res.extra.variante.qty}</td><td class="td-base">${fmt(ajoutParPiece)}</td><td class="td-jour"><strong>${fmt(res.extra.variante.ajoutTotal)}</strong></td></tr>`;
+  }
+
+  lignesHtml += `<tr class="tr-total"><td class="td-name">TOTAL</td><td class="td-base">${fmt(totalBase)}</td><td class="td-jour">${hasProd ? `<strong>${fmt(res.totalPate)} g</strong>` : '<span class="no-prod">0 pièce</span>'}</td></tr>`;
+
+  return `
+    <div class="rcard ${hasProd ? '' : 'no-production'} ${selectionne ? '' : 'print-off'}" data-recette-id="${recette.id}">
+      <div class="rhead">
+        <span class="rname">${recette.nom}</span>
+        <div class="rcontrols">
+          ${controlsHtml}
+          <div class="print-cb-wrap no-print">
+            <input type="checkbox" id="cb-${recette.id}" ${selectionne ? 'checked' : ''} onchange="toggleSelection('${recette.id}', this.checked)">
+            <label for="cb-${recette.id}">Imprimer</label>
+          </div>
+        </div>
+      </div>
+      <div class="rmeta">
+        <span class="mi"><span class="mk">Coef </span><span class="mv">${coef.toFixed(3)}</span></span>
+        <span class="mi"><span class="mk">Pâte </span><span class="mv">${fmt(res.totalPate)} g</span></span>
+        <span class="mi"><span class="mk">Bacs </span><span class="mv ${nbBacs > 3 ? 'warn' : ''}">${nbBacs > 0 ? nbBacs + ' bac' + (nbBacs > 1 ? 's' : '') : '—'}</span></span>
+        <span class="mi"><span class="mk">Pièces </span><span class="mv">${res.totalPieces > 0 ? res.totalPieces : '—'}</span></span>
+      </div>
+      <table class="itable">
+        <thead><tr><th>Ingrédient</th><th>Base</th><th>Jour</th></tr></thead>
+        <tbody>${lignesHtml}</tbody>
+      </table>
+    </div>`;
+}
+
+function toggleSelection(recetteId, checked) {
+  selectionImpression[recetteId] = checked;
+  renderTout();
+}
+function toutSelectionner(val) {
+  toutesRecettes.forEach(r => selectionImpression[r.id] = val);
+  renderTout();
+}
+
+function renderTout() {
+  const zone = document.getElementById('zone-recettes');
+  if (toutesRecettes.length === 0) { zone.innerHTML = '<div class="vide">Aucune recette active.</div>'; return; }
+
+  const parMetier = { B: [], V: [], GV: [], P: [] };
+  toutesRecettes.forEach(r => { if (parMetier[r.metier]) parMetier[r.metier].push(r); });
+  const labelsMetier = { B: 'Boulangerie', V: 'Viennoiserie', GV: 'Gâteaux de voyage', P: 'Pâtisserie' };
+
+  let html = '';
+  let totalPateGlobal = 0, totalPiecesGlobal = 0;
+
+  ['B', 'V', 'GV', 'P'].forEach(metier => {
+    const recs = parMetier[metier];
+    if (recs.length === 0) return;
+    html += `<div class="recipe-section-title">${labelsMetier[metier]}</div>`;
+    for (let i = 0; i < recs.length; i += 2) {
+      html += '<div class="recipe-row">';
+      html += `<div class="recipe-col">${renderCarteRecette(recs[i])}</div>`;
+      if (recs[i + 1]) html += `<div class="recipe-col">${renderCarteRecette(recs[i + 1])}</div>`;
+      else html += `<div class="recipe-col recipe-col-empty"></div>`;
+      html += '</div>';
     }
   });
 
-  if (lignesCompletes.length === 0) {
-    corps.innerHTML = '<tr><td colspan="4" class="vide">Aucune recette active.</td></tr>';
-    return;
-  }
+  zone.innerHTML = html;
 
-  lignesCompletes.sort((a, b) => a.nom_recette.localeCompare(b.nom_recette));
+  toutesRecettes.forEach(r => {
+    const res = calculerRecette(r);
+    totalPateGlobal += res.totalPate;
+    totalPiecesGlobal += res.totalPieces;
+  });
 
-  corps.innerHTML = lignesCompletes.map(l => {
-    const classeEcart = l.ecart > 0 ? 'pos' : (l.ecart < 0 ? 'neg' : 'zero');
-    const signeEcart = l.ecart > 0 ? '+' : '';
-    return `
-      <tr>
-        <td class="nom-recette">${l.nom_recette}</td>
-        <td class="qte-commandee">${l.qte_commandee}</td>
-        <td>
-          <input type="number" min="0" class="input-qte" value="${l.nb_pieces_prevues}"
-                 data-recette-id="${l.recette_id}"
-                 onchange="majProduction('${l.recette_id}', this.value)">
-        </td>
-        <td class="ecart ${classeEcart}">${signeEcart}${l.ecart}</td>
-      </tr>`;
-  }).join('');
+  document.getElementById('qtotals').innerHTML = `
+    <div class="qtot"><div class="ql">Pâte totale</div><div class="qv">${(totalPateGlobal/1000).toFixed(1)}</div><div class="qu">kg</div></div>
+    <div class="qtot"><div class="ql">Pièces totales</div><div class="qv">${totalPiecesGlobal}</div><div class="qu">pces</div></div>
+  `;
+
+  const dateAffichee = new Date(document.getElementById('date-jour').value).toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' });
+  document.getElementById('print-header').innerHTML = `
+    <span class="ph-date">${dateAffichee}</span>
+    <div class="ph-totals">
+      <div class="ph-item"><span class="ph-label">Pâte</span><span class="ph-val">${(totalPateGlobal/1000).toFixed(1)} kg</span></div>
+      <div class="ph-item"><span class="ph-label">Pièces</span><span class="ph-val">${totalPiecesGlobal}</span></div>
+    </div>`;
+
+  renderLevains();
 }
 
-async function majProduction(recetteId, valeur) {
+async function renderLevains() {
   const date = document.getElementById('date-jour').value;
-  const nbPieces = parseInt(valeur, 10) || 0;
+  const { data, error } = await sb.rpc('get_besoins_levains', { p_date: date });
+  const grid = document.getElementById('levains-grid');
+  if (error || !data) { grid.innerHTML = ''; return; }
 
-  const { error } = await sb.from('production_jour').upsert({
-    date_prod: date,
-    recette_id: recetteId,
-    nb_pieces: nbPieces
-  }, { onConflict: 'date_prod,recette_id' });
-
-  if (error) { alert('Erreur d\'enregistrement : ' + error.message); return; }
-  await chargerSynthese();
+  const classes = { liquide: 'lh-liq', liquide_engrain: 'lh-eng', dur: 'lh-dur' };
+  grid.innerHTML = data.map(l => `
+    <div class="levain-card">
+      <div class="levain-head ${classes[l.type] || ''}">
+        <span>${l.nom}</span><span class="lh-total">${fmt(l.total_g)} g</span>
+      </div>
+      <div class="levain-rows">
+        <div class="levain-row lr-souche"><span class="lr-name">Souche (30%)</span><span class="lr-val">${fmt(l.souche_g)} g</span></div>
+        <div class="levain-row"><span class="lr-name">Farine</span><span class="lr-val">${fmt(l.total_farine_g)} g</span></div>
+        <div class="levain-row"><span class="lr-name">Eau</span><span class="lr-val">${fmt(l.total_eau_g)} g</span></div>
+        <div class="levain-row"><span class="lr-name">Hydratation</span><span class="lr-val">${l.hydratation_pct}%</span></div>
+      </div>
+    </div>
+  `).join('');
 }
 
-// Pré-remplit production_jour à partir des commandes du jour
-// (appelle get_demande_par_recette puis insère/met à jour production_jour)
 async function resynchroniserDepuisCommandes() {
   const date = document.getElementById('date-jour').value;
   const { data, error } = await sb.rpc('get_demande_par_recette', { p_date: date });
   if (error) { alert('Erreur : ' + error.message); return; }
-
-  if (!data || data.length === 0) {
-    alert('Aucune commande structurée trouvée pour ce jour.');
-    return;
-  }
+  if (!data || data.length === 0) { alert('Aucune commande structurée trouvée pour ce jour.'); return; }
 
   for (const ligne of data) {
     await sb.from('production_jour').upsert({
-      date_prod: date,
-      recette_id: ligne.recette_id,
-      nb_pieces: ligne.qte_commandee
-    }, { onConflict: 'date_prod,recette_id' });
+      date_prod: date, recette_id: ligne.recette_id, nb_pieces: ligne.qte_commandee
+    }, { onConflict: 'date_prod,recette_id,format_id,variante_id' });
   }
-
-  await chargerSynthese();
-  alert('Plan de production resynchronisé avec les commandes du jour.');
+  await chargerPlanJour();
+  renderTout();
+  alert('Plan resynchronisé avec les commandes du jour.');
 }
 
 async function chargerBesoins() {
   const date = document.getElementById('date-jour').value;
   const { data, error } = await sb.rpc('get_besoins_matieres', { p_date_debut: date, p_date_fin: date });
   const conteneur = document.getElementById('liste-besoins');
-
   if (error) { conteneur.innerHTML = `<div class="vide">Erreur : ${error.message}</div>`; return; }
-  if (!data || data.length === 0) { conteneur.innerHTML = '<div class="vide">Aucun besoin calculé — renseignez le plan du jour.</div>'; return; }
-
+  if (!data || data.length === 0) { conteneur.innerHTML = '<div class="vide">Aucun besoin calculé.</div>'; return; }
   data.sort((a, b) => a.nom_matiere.localeCompare(b.nom_matiere));
+  conteneur.innerHTML = `<table class="itable" style="font-size:13px;"><thead><tr><th>Matière</th><th></th><th>Quantité</th></tr></thead><tbody>` +
+    data.map(b => `<tr><td class="td-name">${b.nom_matiere}${b.bio ? ' 🌱' : ''}</td><td></td><td class="td-jour"><strong>${b.quantite_totale_kg} kg</strong></td></tr>`).join('') +
+    `</tbody></table>`;
+}
 
-  conteneur.innerHTML = data.map(b => `
-    <div class="besoin-row">
-      <span class="besoin-nom">${b.nom_matiere}${b.bio ? '<span class="besoin-bio">BIO</span>' : ''}</span>
-      <span class="besoin-qte">${b.quantite_totale_kg} kg</span>
-    </div>
-  `).join('');
+function exporterPDF() {
+  const zone = document.querySelector('main');
+  if (typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined') {
+    alert("Les librairies d'export PDF ne sont pas chargées (vérifiez la connexion internet)."); return;
+  }
+  html2canvas(zone, { scale: 2, backgroundColor: '#ffffff' }).then(canvas => {
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const imgWidth = 210 - 20;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 10, 10, imgWidth, imgHeight);
+    const date = document.getElementById('date-jour').value;
+    pdf.save(`production-${date}.pdf`);
+  }).catch(err => { console.error(err); alert('Erreur export PDF.'); });
+}
+
+async function chargerTout() {
+  await chargerPlanJour();
+  renderTout();
 }
 
 (async () => {
   profilCourant = await exigerConnexion();
   if (!profilCourant) return;
   document.getElementById('date-jour').value = dateAujourdhui();
-  await chargerSynthese();
+  await chargerReferentiels();
+  await chargerIngredients();
+  await chargerPlanJour();
+  renderTout();
 })();
 </script>
 </body>
