@@ -268,8 +268,6 @@ async function chargerListeRecettes() {
   `).join('');
 }
 
-let modeCalculActuel = 'coef'; // 'coef' ou 'marge'
-
 async function chargerFicheRecette(recetteId) {
   recetteSelectionneeId = recetteId;
   await chargerListeRecettes(); // pour mettre à jour le surlignage actif
@@ -298,41 +296,34 @@ async function chargerFicheRecette(recetteId) {
   panneau.innerHTML = `
     <h3>${recette.nom}</h3>
 
-    <div class="mode-toggle">
-      <button class="mode-btn ${modeCalculActuel === 'coef' ? 'active' : ''}" onclick="basculerMode('coef')">Coefficient ×</button>
-      <button class="mode-btn ${modeCalculActuel === 'marge' ? 'active' : ''}" onclick="basculerMode('marge')">Taux de marge %</button>
-    </div>
-
-    <div class="field-row" id="zone-coef" style="${modeCalculActuel !== 'coef' ? 'display:none' : ''}">
+    <div class="field-row">
       <div class="field"><label>Coefficient multiplicateur</label>
-        <input type="number" step="0.01" id="finance-coefficient" value="${finance.coefficient}">
+        <input type="number" step="0.01" id="finance-coefficient" value="${finance.coefficient}" oninput="recalculerEtEnregistrer(false)">
       </div>
-    </div>
-    <div class="field-row" id="zone-marge" style="${modeCalculActuel !== 'marge' ? 'display:none' : ''}">
       <div class="field"><label>Taux de marge (%)</label>
-        <input type="number" step="0.1" id="finance-marge" value="${finance.marge_pct}">
+        <input type="number" step="0.1" id="finance-marge" value="${finance.marge_pct}" oninput="recalculerEtEnregistrer(false)">
       </div>
     </div>
 
     <div class="field-row">
-      <div class="field"><label>TVA (%)</label><input type="number" step="0.1" id="finance-tva" value="${finance.tva_pct}"></div>
-      <div class="field"><label>Poids cru/pâte (g)</label><input type="number" step="1" id="finance-poids" value="${recette.poids_piece_g || ''}"></div>
+      <div class="field"><label>TVA (%)</label><input type="number" step="0.1" id="finance-tva" value="${finance.tva_pct}" oninput="recalculerEtEnregistrer(false)"></div>
+      <div class="field"><label>Poids cru/pâte (g)</label><input type="number" step="1" id="finance-poids" value="${recette.poids_piece_g || ''}" oninput="recalculerEtEnregistrer(false)"></div>
     </div>
     <div class="field-row">
-      <div class="field"><label>Poids cuit (g)</label><input type="number" step="1" id="finance-poids-cuit" value="${recette.poids_cuit_g || ''}" placeholder="si différent du cru"></div>
+      <div class="field"><label>Poids cuit (g)</label><input type="number" step="1" id="finance-poids-cuit" value="${recette.poids_cuit_g || ''}" placeholder="si différent du cru" oninput="recalculerEtEnregistrer(false)"></div>
       <div class="field"></div>
     </div>
 
     <div class="toggle-option">
       <label>Taux de perte (%)</label>
-      <input type="number" step="0.1" id="finance-perte" value="${finance.taux_perte_pct || 0}" style="width:80px; padding:6px 8px; border:1.5px solid var(--border-strong); border-radius:var(--r); font-family:var(--mono);">
+      <input type="number" step="0.1" id="finance-perte" value="${finance.taux_perte_pct || 0}" style="width:80px; padding:6px 8px; border:1.5px solid var(--border-strong); border-radius:var(--r); font-family:var(--mono);" oninput="recalculerEtEnregistrer(false)">
     </div>
     <div class="toggle-option">
       <label>Emballage (€ HT)</label>
-      <input type="number" step="0.01" id="finance-emballage" value="${finance.prix_emballage_ht || 0}" style="width:80px; padding:6px 8px; border:1.5px solid var(--border-strong); border-radius:var(--r); font-family:var(--mono);">
+      <input type="number" step="0.01" id="finance-emballage" value="${finance.prix_emballage_ht || 0}" style="width:80px; padding:6px 8px; border:1.5px solid var(--border-strong); border-radius:var(--r); font-family:var(--mono);" oninput="recalculerEtEnregistrer(false)">
     </div>
 
-    <button class="btn btn-primary" style="width:100%; margin-top:1.1rem;" onclick="recalculerEtEnregistrer()">Recalculer & enregistrer</button>
+    <button class="btn btn-primary" style="width:100%; margin-top:1.1rem;" onclick="recalculerEtEnregistrer(true)">Enregistrer</button>
 
     <div class="resultat-box" id="resultat-box"></div>
 
@@ -352,58 +343,58 @@ async function chargerFicheRecette(recetteId) {
     </div>
   `;
 
-  calculerResultat(coutTotalMP, finance);
-}
-
-function basculerMode(mode) {
-  modeCalculActuel = mode;
-  document.getElementById('zone-coef').style.display = mode === 'coef' ? '' : 'none';
-  document.getElementById('zone-marge').style.display = mode === 'marge' ? '' : 'none';
-  document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.textContent.includes(mode === 'coef' ? 'Coefficient' : 'marge')));
   recalculerEtEnregistrer(false);
 }
 
-function calculerResultat(coutTotalMP, financeActuelle) {
+function calculerResultat(coutTotalMP, poidsTotalIngredients, financeActuelle) {
   const perte = parseFloat(document.getElementById('finance-perte')?.value || 0);
   const emballage = parseFloat(document.getElementById('finance-emballage')?.value || 0);
-  const tva = parseFloat(document.getElementById('finance-tva')?.value || 0);
+  const tvaPct = parseFloat(document.getElementById('finance-tva')?.value || 0);
+  const tva = 1 + tvaPct / 100;
+  const coef = parseFloat(document.getElementById('finance-coefficient')?.value || financeActuelle.coefficient);
+  const margePct = parseFloat(document.getElementById('finance-marge')?.value || financeActuelle.marge_pct);
+  const poidsCru = parseFloat(document.getElementById('finance-poids')?.value || 0) || poidsTotalIngredients || 0;
+  const poidsCuit = parseFloat(document.getElementById('finance-poids-cuit')?.value || 0) || poidsCru || 0;
 
-  const coutAjustePerte = coutTotalMP / (1 - (perte / 100 || 0) > 0 ? (1 - perte / 100) : 1);
-  const coutMpHt = coutAjustePerte + emballage;
-
-  let prixVenteHt;
-  if (modeCalculActuel === 'coef') {
-    const coef = parseFloat(document.getElementById('finance-coefficient')?.value || financeActuelle.coefficient);
-    prixVenteHt = coutMpHt * coef;
-  } else {
-    const margePct = parseFloat(document.getElementById('finance-marge')?.value || financeActuelle.marge_pct);
-    prixVenteHt = margePct < 100 ? coutMpHt / (1 - margePct / 100) : coutMpHt;
+  // Coût ramené au poids cru saisi (si différent du poids total des
+  // ingrédients de la fiche — ex: une partie seulement est utilisée).
+  let coutBaseHT = coutTotalMP;
+  if (poidsTotalIngredients > 0 && poidsCru > 0) {
+    coutBaseHT = (coutTotalMP / poidsTotalIngredients) * poidsCru;
   }
 
-  const prixVenteTtc = prixVenteHt * (1 + tva / 100);
-  const margeReelle = prixVenteHt > 0 ? ((prixVenteHt - coutMpHt) / prixVenteHt) * 100 : 0;
+  // ⚠️ Formule fidèle à l'ancien outil : la perte AUGMENTE le coût
+  // (facteur multiplicatif 1 + perte%), elle ne le divise pas.
+  const facteurPerte = perte > 0 ? 1 + perte / 100 : 1;
+  const coutAvecPerteHT = coutBaseHT * facteurPerte;
 
-  // Prix au kilo : basé sur le poids CUIT s'il est renseigné (c'est le
-  // poids réellement vendu au client), sinon on retombe sur le poids cru
-  // avec un avertissement, car ce ne serait alors qu'une approximation.
-  const poidsCuit = parseFloat(document.getElementById('finance-poids-cuit')?.value || 0);
-  const poidsCru = parseFloat(document.getElementById('finance-poids')?.value || 0);
+  const prixMagCoefHT = (coutBaseHT * facteurPerte * coef) + emballage;
+  const prixMagMargeHT = margePct >= 100 ? 0 : (coutBaseHT * facteurPerte / (1 - margePct / 100)) + emballage;
+  const prixMagCoefTTC = prixMagCoefHT * tva;
+  const prixMagMargeTTC = prixMagMargeHT * tva;
+
+  // Prix final = moyenne des deux méthodes, comme l'ancien outil
+  const prixVenteTtc = (prixMagCoefTTC + prixMagMargeTTC) / 2;
+  const prixVenteHt = (prixMagCoefHT + prixMagMargeHT) / 2;
+
   const poidsRef = poidsCuit > 0 ? poidsCuit : poidsCru;
   const prixKiloTtc = poidsRef > 0 ? (prixVenteTtc / poidsRef) * 1000 : 0;
-  const avertissementPoids = poidsCuit === 0 && poidsCru > 0
+  const avertissementPoids = (!document.getElementById('finance-poids-cuit')?.value) && poidsCru > 0
     ? '<div class="resultat-ligne" style="color:var(--text-light);font-size:.75rem;">⚠ Poids cuit non renseigné — calcul basé sur le poids cru</div>'
     : '';
 
   document.getElementById('resultat-box').innerHTML = `
-    <div class="resultat-ligne"><span>Coût matière (avant perte)</span><span class="resultat-val">${coutTotalMP.toFixed(4)} €</span></div>
-    <div class="resultat-ligne"><span>Coût matière + perte + emballage</span><span class="resultat-val">${coutMpHt.toFixed(4)} €</span></div>
-    <div class="resultat-ligne"><span>Marge réelle</span><span class="resultat-val">${margeReelle.toFixed(1)} %</span></div>
-    <div class="resultat-ligne total"><span>Prix de vente TTC (pièce)</span><span class="resultat-val">${prixVenteTtc.toFixed(2)} €</span></div>
+    <div class="resultat-ligne"><span>Coût matière (poids fiche)</span><span class="resultat-val">${coutTotalMP.toFixed(4)} €</span></div>
+    <div class="resultat-ligne"><span>Coût ramené au poids cru</span><span class="resultat-val">${coutBaseHT.toFixed(4)} €</span></div>
+    <div class="resultat-ligne"><span>Coût + perte</span><span class="resultat-val">${coutAvecPerteHT.toFixed(4)} €</span></div>
+    <div class="resultat-ligne"><span>Méthode Coef — TTC</span><span class="resultat-val">${prixMagCoefTTC.toFixed(2)} €</span></div>
+    <div class="resultat-ligne"><span>Méthode Marge — TTC</span><span class="resultat-val">${prixMagMargeTTC.toFixed(2)} €</span></div>
+    <div class="resultat-ligne total"><span>Prix de vente TTC (moyenne)</span><span class="resultat-val">${prixVenteTtc.toFixed(2)} €</span></div>
     <div class="resultat-ligne total"><span>Prix de vente TTC (€/kg)</span><span class="resultat-val">${prixKiloTtc.toFixed(2)} €/kg</span></div>
     ${avertissementPoids}
   `;
 
-  return { coutMpHt, prixVenteHt, prixVenteTtc };
+  return { coutMpHt: coutAvecPerteHT + emballage, prixVenteHt, prixVenteTtc };
 }
 
 async function recalculerEtEnregistrer(enregistrer = true) {
@@ -415,6 +406,7 @@ async function recalculerEtEnregistrer(enregistrer = true) {
   const coutTotalMP = (ingredients || []).reduce((s, i) => {
     return s + coutLigneIngredient(i.nom_affiche, i.quantite_base_g, i.matieres_premieres?.prix_ht_kg);
   }, 0);
+  const poidsTotalIngredients = (ingredients || []).reduce((s, i) => s + (i.quantite_base_g || 0), 0);
 
   const coefficient = parseFloat(document.getElementById('finance-coefficient')?.value || 3.5);
   const margePct = parseFloat(document.getElementById('finance-marge')?.value || 70);
@@ -424,7 +416,7 @@ async function recalculerEtEnregistrer(enregistrer = true) {
   const tauxPerte = parseFloat(document.getElementById('finance-perte')?.value || 0);
   const emballage = parseFloat(document.getElementById('finance-emballage')?.value || 0);
 
-  const resultat = calculerResultat(coutTotalMP, { coefficient, marge_pct: margePct });
+  const resultat = calculerResultat(coutTotalMP, poidsTotalIngredients, { coefficient, marge_pct: margePct });
 
   if (enregistrer) {
     await sb.from('recettes').update({ poids_piece_g: poidsPiece, poids_cuit_g: poidsCuit || null }).eq('id', recetteSelectionneeId);
