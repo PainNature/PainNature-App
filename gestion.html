@@ -43,6 +43,7 @@ tr:last-child td{border-bottom:none;}
 .recette-nav-item{padding:11px 14px; border-bottom:1px solid var(--border); cursor:pointer; font-size:.88rem; font-weight:600;}
 .recette-nav-item:hover{background:var(--surface2);}
 .recette-nav-item.active{background:var(--wheat-light); color:var(--wheat); border-left:3px solid var(--wheat);}
+.recette-nav-item.desactivee{opacity:.55; font-style:italic;}
 
 .panneau-finance{padding:1.2rem;}
 .panneau-finance h3{color:var(--wheat); margin-bottom:1rem; font-size:1.05rem;}
@@ -109,6 +110,13 @@ tr:last-child td{border-bottom:none;}
 
   <!-- ===== RECETTES & GESTION ===== -->
   <div class="tab-panel" id="panel-recettes">
+    <div class="bar-actions" style="justify-content:space-between;">
+      <label style="display:flex; align-items:center; gap:6px; font-size:.8rem; color:var(--text-muted); cursor:pointer;">
+        <input type="checkbox" id="cb-voir-desactivees" onchange="chargerListeRecettes()">
+        Voir les recettes désactivées
+      </label>
+      <button class="btn btn-primary btn-nouvelle" style="width:auto;" onclick="ouvrirModaleNouvelleRecette()">+ Nouvelle recette</button>
+    </div>
     <div class="fiche-recette">
       <div class="card liste-recettes-nav" id="liste-recettes-nav">
         <div class="vide">Chargement…</div>
@@ -120,6 +128,29 @@ tr:last-child td{border-bottom:none;}
     </div>
   </div>
 </main>
+
+<!-- Modale nouvelle recette -->
+<div class="overlay" id="overlay-nouvelle-recette">
+  <div class="modale">
+    <h3>Nouvelle recette</h3>
+    <div class="msg-erreur-modale" id="erreur-nouvelle-recette"></div>
+    <div class="field"><label>Nom</label>
+      <input type="text" id="nr-nom" style="width:100%; padding:9px 11px; border:1.5px solid var(--border-strong); border-radius:var(--r); font-size:.9rem;">
+    </div>
+    <div class="field"><label>Métier</label>
+      <select id="nr-metier" style="width:100%; padding:9px 11px; border:1.5px solid var(--border-strong); border-radius:var(--r); background:#fff;">
+        <option value="B">Boulangerie</option>
+        <option value="P">Pâtisserie</option>
+        <option value="V">Viennoiserie</option>
+        <option value="GV">Gâteaux de voyage</option>
+      </select>
+    </div>
+    <div class="modale-actions">
+      <button class="btn btn-ghost" onclick="fermerModaleNouvelleRecette()">Annuler</button>
+      <button class="btn btn-primary" onclick="confirmerNouvelleRecette()">Créer</button>
+    </div>
+  </div>
+</div>
 
 <!-- Modale matière première -->
 <div class="overlay" id="overlay-mp">
@@ -277,16 +308,61 @@ async function confirmerMP() {
 
 // ---------------- RECETTES & FINANCE ----------------
 async function chargerListeRecettes() {
-  const { data, error } = await sb.from('recettes').select('id, nom, metier').order('nom');
+  const voirDesactivees = document.getElementById('cb-voir-desactivees')?.checked;
+  let requete = sb.from('recettes').select('id, nom, metier, actif').order('nom');
+  if (!voirDesactivees) requete = requete.eq('actif', true);
+
+  const { data, error } = await requete;
   const conteneur = document.getElementById('liste-recettes-nav');
   if (error) { conteneur.innerHTML = `<div class="vide">Erreur : ${error.message}</div>`; return; }
-  if (!data || data.length === 0) { conteneur.innerHTML = '<div class="vide">Aucune recette. Créez-en depuis l\'écran Production.</div>'; return; }
+  if (!data || data.length === 0) { conteneur.innerHTML = '<div class="vide">Aucune recette. Créez-en avec le bouton ci-dessus.</div>'; return; }
 
   conteneur.innerHTML = data.map(r => `
-    <div class="recette-nav-item ${r.id === recetteSelectionneeId ? 'active' : ''}" onclick="chargerFicheRecette('${r.id}')">
-      ${r.nom}
+    <div class="recette-nav-item ${r.id === recetteSelectionneeId ? 'active' : ''} ${!r.actif ? 'desactivee' : ''}" onclick="chargerFicheRecette('${r.id}')">
+      ${r.nom}${!r.actif ? ' <span style="font-size:.7rem; opacity:.6;">(désactivée)</span>' : ''}
     </div>
   `).join('');
+}
+
+function ouvrirModaleNouvelleRecette() {
+  document.getElementById('erreur-nouvelle-recette').classList.remove('visible');
+  document.getElementById('nr-nom').value = '';
+  document.getElementById('nr-metier').value = 'B';
+  document.getElementById('overlay-nouvelle-recette').classList.add('visible');
+}
+function fermerModaleNouvelleRecette() {
+  document.getElementById('overlay-nouvelle-recette').classList.remove('visible');
+}
+
+async function confirmerNouvelleRecette() {
+  const nom = document.getElementById('nr-nom').value.trim();
+  const metier = document.getElementById('nr-metier').value;
+  const erreur = document.getElementById('erreur-nouvelle-recette');
+
+  if (!nom) { erreur.textContent = 'Le nom est obligatoire.'; erreur.classList.add('visible'); return; }
+
+  const { data, error } = await sb.from('recettes').insert({ nom, metier }).select().single();
+  if (error) { erreur.textContent = error.message; erreur.classList.add('visible'); return; }
+
+  await sb.from('recette_finance').insert({ recette_id: data.id, coefficient: 3.5, marge_pct: 70, tva_pct: 10 });
+
+  fermerModaleNouvelleRecette();
+  await chargerListeRecettes();
+  await chargerFicheRecette(data.id);
+}
+
+async function desactiverRecette() {
+  if (!confirm('Désactiver cette recette ? Elle ne sera plus utilisable pour de nouvelles productions, mais son historique reste conservé.')) return;
+  await sb.from('recettes').update({ actif: false }).eq('id', recetteSelectionneeId);
+  await chargerListeRecettes();
+  document.getElementById('panneau-finance').innerHTML = '<div class="vide">Recette désactivée. Sélectionnez-en une autre.</div>';
+  recetteSelectionneeId = null;
+}
+
+async function reactiverRecette() {
+  await sb.from('recettes').update({ actif: true }).eq('id', recetteSelectionneeId);
+  await chargerListeRecettes();
+  await chargerFicheRecette(recetteSelectionneeId);
 }
 
 async function chargerFicheRecette(recetteId) {
@@ -398,6 +474,9 @@ async function chargerFicheRecette(recetteId) {
     </div>
 
     <button class="btn btn-primary" style="width:100%; margin-top:1.1rem;" onclick="recalculerEtEnregistrer(true)">Enregistrer toutes les modifications</button>
+    ${recette.actif
+      ? `<button class="btn btn-ghost" style="width:100%; margin-top:.6rem; border-color:var(--red); color:var(--red);" onclick="desactiverRecette()">Désactiver cette recette</button>`
+      : `<button class="btn btn-ghost" style="width:100%; margin-top:.6rem; border-color:var(--green); color:var(--green);" onclick="reactiverRecette()">Réactiver cette recette</button>`}
   `;
 
   recalculerEtEnregistrer(false);
