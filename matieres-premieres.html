@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Pain Nature — Matières premières</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#6b3a1f">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/shared.css">
+<style>
+.topbar{
+  background:var(--wheat); color:#fff; padding:0 1.2rem; height:54px;
+  display:flex; align-items:center; justify-content:space-between;
+  box-shadow:0 2px 8px rgba(0,0,0,.2); position:sticky; top:0; z-index:10;
+}
+.topbar .marque{font-weight:800; font-size:1rem; display:flex; align-items:center; gap:.6rem;}
+.topbar .retour{color:#fff; text-decoration:none; font-size:1.3rem; opacity:.85;}
+.topbar .deco{background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3); color:#fff; padding:6px 13px; border-radius:var(--r); font-size:.82rem; font-weight:600; cursor:pointer;}
+main{max-width:760px; margin:1.2rem auto 3rem; padding:0 1.2rem;}
+
+.note-info{font-size:.82rem; color:var(--text-light); margin-bottom:1rem; font-style:italic; background:var(--surface2); padding:.6rem .8rem; border-radius:var(--r);}
+
+.btn-nouvelle{width:100%; padding:13px; margin-bottom:1rem;}
+
+table{width:100%; border-collapse:collapse;}
+th{text-align:left; font-size:.7rem; text-transform:uppercase; letter-spacing:.04em; color:var(--text-light); padding:10px 12px; border-bottom:2px solid var(--border); font-family:var(--mono);}
+td{padding:9px 12px; border-bottom:1px solid var(--border); font-size:.88rem;}
+tr:last-child td{border-bottom:none;}
+.bio-tag{font-size:.68rem; background:var(--green-light); color:var(--green); padding:1px 7px; border-radius:9px; margin-left:5px;}
+.prix-badge{font-size:.7rem; padding:2px 9px; border-radius:10px; font-family:var(--mono); font-weight:700;}
+.prix-ok{background:var(--green-light); color:var(--green);}
+.prix-manquant{background:var(--red-light); color:var(--red);}
+
+.vide{text-align:center; padding:2rem; color:var(--text-light); font-size:.9rem;}
+
+.overlay{display:none; position:fixed; inset:0; background:rgba(20,12,6,.55); align-items:center; justify-content:center; z-index:50; padding:1.2rem;}
+.overlay.visible{display:flex;}
+.modale{background:var(--surface); border-radius:var(--r-lg); padding:1.6rem; width:100%; max-width:420px; box-shadow:0 20px 50px rgba(0,0,0,.3);}
+.modale h3{color:var(--wheat); margin-bottom:1.1rem; font-size:1.1rem;}
+.field{margin-bottom:1rem;}
+.field label{display:block; font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--text-light); margin-bottom:.4rem; font-family:var(--mono);}
+.field input{width:100%; padding:11px 12px; font-size:.95rem; border:2px solid var(--border-strong); border-radius:var(--r); background:var(--surface2); color:var(--text);}
+.field input:focus{outline:none; border-color:var(--wheat); background:#fff;}
+.field-checkbox{display:flex; align-items:center; gap:8px;}
+.field-checkbox input{width:18px; height:18px;}
+.modale-actions{display:flex; gap:10px; margin-top:1.4rem;}
+.modale-actions .btn{flex:1;}
+.msg-erreur-modale{display:none; background:var(--red-light); color:var(--red); padding:.6rem .8rem; border-radius:var(--r); font-size:.82rem; font-weight:600; margin-bottom:.9rem;}
+.msg-erreur-modale.visible{display:block;}
+.note-prix-gerant{font-size:.78rem; color:var(--text-light); margin-top:.3rem;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="marque"><a href="accueil.html" class="retour">←</a> 🌾 MATIÈRES PREMIÈRES</span>
+  <button class="deco" onclick="deconnexion()">Déconnexion</button>
+</div>
+
+<main>
+  <p class="note-info" id="note-role"></p>
+
+  <button class="btn btn-primary btn-nouvelle" onclick="ouvrirModaleAjout()">+ Ajouter une matière première</button>
+
+  <div class="card">
+    <table>
+      <thead><tr><th>Nom</th><th>Fournisseur</th><th>Statut</th></tr></thead>
+      <tbody id="corps-mp"><tr><td colspan="3" class="vide">Chargement…</td></tr></tbody>
+    </table>
+  </div>
+</main>
+
+<div class="overlay" id="overlay-ajout">
+  <div class="modale">
+    <h3>Nouvelle matière première</h3>
+    <div class="msg-erreur-modale" id="erreur-ajout"></div>
+    <form onsubmit="return false;">
+      <div class="field"><label>Nom</label><input type="text" id="add-nom" required placeholder="ex : Farine T80 Bio"></div>
+      <div class="field"><label>Fournisseur</label><input type="text" id="add-fournisseur" placeholder="ex : Coup de Vague"></div>
+      <div class="field field-checkbox"><input type="checkbox" id="add-bio"><label style="margin:0;">Matière biologique</label></div>
+      <p class="note-prix-gerant">💡 Le prix sera renseigné par le gérant depuis l'écran Marges.</p>
+    </form>
+    <div class="modale-actions">
+      <button class="btn btn-ghost" onclick="fermerModaleAjout()">Annuler</button>
+      <button class="btn btn-primary" id="btn-confirmer-ajout" onclick="confirmerAjout()">Ajouter</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/supabase-client.js"></script>
+<script>
+let profilCourant = null;
+
+async function chargerListe() {
+  const { data, error } = await sb.from('matieres_premieres')
+    .select('id, nom, fournisseur, bio, prix_ht_kg')
+    .order('nom');
+  const corps = document.getElementById('corps-mp');
+  if (error) { corps.innerHTML = `<tr><td colspan="3" class="vide">Erreur : ${error.message}</td></tr>`; return; }
+  if (!data || data.length === 0) { corps.innerHTML = '<tr><td colspan="3" class="vide">Aucune matière première.</td></tr>'; return; }
+
+  corps.innerHTML = data.map(mp => `
+    <tr>
+      <td>${mp.nom}${mp.bio ? '<span class="bio-tag">BIO</span>' : ''}</td>
+      <td>${mp.fournisseur || '—'}</td>
+      <td>
+        ${mp.prix_ht_kg > 0
+          ? `<span class="prix-badge prix-ok">${Number(mp.prix_ht_kg).toFixed(4)} €/kg</span>`
+          : `<span class="prix-badge prix-manquant">Prix à renseigner</span>`}
+      </td>
+    </tr>
+  `).join('');
+}
+
+function ouvrirModaleAjout() {
+  document.getElementById('erreur-ajout').classList.remove('visible');
+  document.getElementById('add-nom').value = '';
+  document.getElementById('add-fournisseur').value = '';
+  document.getElementById('add-bio').checked = false;
+  document.getElementById('overlay-ajout').classList.add('visible');
+}
+function fermerModaleAjout() {
+  document.getElementById('overlay-ajout').classList.remove('visible');
+}
+
+async function confirmerAjout() {
+  const nom = document.getElementById('add-nom').value.trim();
+  const fournisseur = document.getElementById('add-fournisseur').value.trim();
+  const bio = document.getElementById('add-bio').checked;
+  const erreur = document.getElementById('erreur-ajout');
+  const btn = document.getElementById('btn-confirmer-ajout');
+
+  if (!nom) {
+    erreur.textContent = 'Le nom est obligatoire.';
+    erreur.classList.add('visible');
+    return;
+  }
+
+  btn.disabled = true; btn.textContent = 'Ajout…';
+
+  const { error } = await sb.rpc('creer_matiere_premiere_sans_prix', {
+    p_nom: nom, p_fournisseur: fournisseur, p_bio: bio, p_metiers: [profilCourant.role === 'gerant' ? 'B' : 'B']
+  });
+
+  btn.disabled = false; btn.textContent = 'Ajouter';
+
+  if (error) { erreur.textContent = error.message; erreur.classList.add('visible'); return; }
+
+  fermerModaleAjout();
+  await chargerListe();
+}
+
+(async () => {
+  profilCourant = await exigerRole(['gerant','boulanger','patissier']);
+  if (!profilCourant) return;
+
+  document.getElementById('note-role').textContent = profilCourant.role === 'gerant'
+    ? "En tant que gérant, vous seul pouvez modifier les prix (depuis l'écran Marges)."
+    : "Vous pouvez consulter les prix et ajouter des matières premières. Seul le gérant peut modifier un prix existant.";
+
+  await chargerListe();
+})();
+</script>
+</body>
+</html>
