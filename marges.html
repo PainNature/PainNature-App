@@ -316,7 +316,11 @@ async function chargerFicheRecette(recetteId) {
 
     <div class="field-row">
       <div class="field"><label>TVA (%)</label><input type="number" step="0.1" id="finance-tva" value="${finance.tva_pct}"></div>
-      <div class="field"><label>Poids pièce (g)</label><input type="number" step="1" id="finance-poids" value="${recette.poids_piece_g || ''}"></div>
+      <div class="field"><label>Poids cru/pâte (g)</label><input type="number" step="1" id="finance-poids" value="${recette.poids_piece_g || ''}"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Poids cuit (g)</label><input type="number" step="1" id="finance-poids-cuit" value="${recette.poids_cuit_g || ''}" placeholder="si différent du cru"></div>
+      <div class="field"></div>
     </div>
 
     <div class="toggle-option">
@@ -379,11 +383,24 @@ function calculerResultat(coutTotalMP, financeActuelle) {
   const prixVenteTtc = prixVenteHt * (1 + tva / 100);
   const margeReelle = prixVenteHt > 0 ? ((prixVenteHt - coutMpHt) / prixVenteHt) * 100 : 0;
 
+  // Prix au kilo : basé sur le poids CUIT s'il est renseigné (c'est le
+  // poids réellement vendu au client), sinon on retombe sur le poids cru
+  // avec un avertissement, car ce ne serait alors qu'une approximation.
+  const poidsCuit = parseFloat(document.getElementById('finance-poids-cuit')?.value || 0);
+  const poidsCru = parseFloat(document.getElementById('finance-poids')?.value || 0);
+  const poidsRef = poidsCuit > 0 ? poidsCuit : poidsCru;
+  const prixKiloTtc = poidsRef > 0 ? (prixVenteTtc / poidsRef) * 1000 : 0;
+  const avertissementPoids = poidsCuit === 0 && poidsCru > 0
+    ? '<div class="resultat-ligne" style="color:var(--text-light);font-size:.75rem;">⚠ Poids cuit non renseigné — calcul basé sur le poids cru</div>'
+    : '';
+
   document.getElementById('resultat-box').innerHTML = `
     <div class="resultat-ligne"><span>Coût matière (avant perte)</span><span class="resultat-val">${coutTotalMP.toFixed(4)} €</span></div>
     <div class="resultat-ligne"><span>Coût matière + perte + emballage</span><span class="resultat-val">${coutMpHt.toFixed(4)} €</span></div>
     <div class="resultat-ligne"><span>Marge réelle</span><span class="resultat-val">${margeReelle.toFixed(1)} %</span></div>
-    <div class="resultat-ligne total"><span>Prix de vente TTC</span><span class="resultat-val">${prixVenteTtc.toFixed(2)} €</span></div>
+    <div class="resultat-ligne total"><span>Prix de vente TTC (pièce)</span><span class="resultat-val">${prixVenteTtc.toFixed(2)} €</span></div>
+    <div class="resultat-ligne total"><span>Prix de vente TTC (€/kg)</span><span class="resultat-val">${prixKiloTtc.toFixed(2)} €/kg</span></div>
+    ${avertissementPoids}
   `;
 
   return { coutMpHt, prixVenteHt, prixVenteTtc };
@@ -403,20 +420,20 @@ async function recalculerEtEnregistrer(enregistrer = true) {
   const margePct = parseFloat(document.getElementById('finance-marge')?.value || 70);
   const tvaPct = parseFloat(document.getElementById('finance-tva')?.value || 10);
   const poidsPiece = parseFloat(document.getElementById('finance-poids')?.value || 0);
+  const poidsCuit = parseFloat(document.getElementById('finance-poids-cuit')?.value || 0);
   const tauxPerte = parseFloat(document.getElementById('finance-perte')?.value || 0);
   const emballage = parseFloat(document.getElementById('finance-emballage')?.value || 0);
 
   const resultat = calculerResultat(coutTotalMP, { coefficient, marge_pct: margePct });
 
   if (enregistrer) {
+    await sb.from('recettes').update({ poids_piece_g: poidsPiece, poids_cuit_g: poidsCuit || null }).eq('id', recetteSelectionneeId);
     await sb.from('recette_finance').update({
       coefficient, marge_pct: margePct, tva_pct: tvaPct,
       taux_perte_pct: tauxPerte, prix_emballage_ht: emballage,
       cout_mp_ht: resultat.coutMpHt, prix_vente_ttc: resultat.prixVenteTtc,
       updated_at: new Date().toISOString()
     }).eq('recette_id', recetteSelectionneeId);
-
-    await sb.from('recettes').update({ poids_piece_g: poidsPiece }).eq('id', recetteSelectionneeId);
   }
 }
 
