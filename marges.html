@@ -152,11 +152,32 @@ let recetteSelectionneeId = null;
 let prixFarineT110 = 0;
 let prixFarineEngrain = 0;
 let prixEau = 0;
+let cacheCoutRecetteSource = {}; // recette_id -> coût total HT (évite de re-demander)
 
 // Miroir JS de la fonction SQL get_cout_levain() — évite un aller-retour
 // réseau par ligne. Règles fixes : levain dur/liquide -> Farine T110 Bio,
 // levain engrain -> Farine T110 Engrain Bio. Ratios : dur 2:1, liquide 1:1.
-function coutLigneIngredient(nomMatiere, quantiteG, prixHtKg) {
+//
+// Gère aussi les lignes "recette_source" (ex: "Pâte Odette (propre)" dans
+// Odette aux Graines) : le coût est alors résolu via la fonction serveur
+// get_cout_total_recette(), ramené au prorata de la quantité utilisée.
+async function coutLigneIngredient(ingredient) {
+  const { nom_affiche: nomMatiere, quantite_base_g: quantiteG, matieres_premieres, recette_source_id } = ingredient;
+  const prixHtKg = matieres_premieres?.prix_ht_kg;
+
+  if (recette_source_id) {
+    if (!(recette_source_id in cacheCoutRecetteSource)) {
+      const [{ data: coutTotal }, { data: ingredientsSource }] = await Promise.all([
+        sb.rpc('get_cout_total_recette', { p_recette_id: recette_source_id }),
+        sb.from('recette_ingredients').select('quantite_base_g').eq('recette_id', recette_source_id)
+      ]);
+      const baseSource = (ingredientsSource || []).reduce((s, i) => s + Number(i.quantite_base_g), 0);
+      cacheCoutRecetteSource[recette_source_id] = { coutTotal: coutTotal || 0, baseSource };
+    }
+    const { coutTotal, baseSource } = cacheCoutRecetteSource[recette_source_id];
+    return baseSource > 0 ? (quantiteG / baseSource) * coutTotal : 0;
+  }
+
   if (nomMatiere === 'Levain liquide') {
     const eauG = quantiteG * 0.5, farineG = quantiteG - eauG;
     return (farineG / 1000) * prixFarineT110 + (eauG / 1000) * prixEau;
@@ -275,7 +296,7 @@ async function chargerFicheRecette(recetteId) {
   const { data: recette, error: errR } = await sb.from('recettes').select('*').eq('id', recetteId).single();
   const { data: ingredients, error: errI } = await sb
     .from('recette_ingredients')
-    .select('id, quantite_base_g, nom_affiche, mp_id, matieres_premieres(prix_ht_kg, bio)')
+    .select('id, quantite_base_g, nom_affiche, mp_id, recette_source_id, matieres_premieres(prix_ht_kg, bio)')
     .eq('recette_id', recetteId);
   let { data: finance } = await sb.from('recette_finance').select('*').eq('recette_id', recetteId).maybeSingle();
 
@@ -289,9 +310,10 @@ async function chargerFicheRecette(recetteId) {
   const panneau = document.getElementById('panneau-finance');
   if (errR || errI) { panneau.innerHTML = `<div class="vide">Erreur de chargement.</div>`; return; }
 
-  const coutTotalMP = (ingredients || []).reduce((s, i) => {
-    return s + coutLigneIngredient(i.nom_affiche, i.quantite_base_g, i.matieres_premieres?.prix_ht_kg);
-  }, 0);
+  // Précalcule le coût de chaque ligne (async à cause des recette_source)
+  // avant de construire le HTML, puisqu'on ne peut pas await dans un .map().
+  const coutsParLigne = await Promise.all((ingredients || []).map(i => coutLigneIngredient(i)));
+  const coutTotalMP = coutsParLigne.reduce((s, c) => s + c, 0);
 
   panneau.innerHTML = `
     <h3>${recette.nom}</h3>
@@ -332,11 +354,11 @@ async function chargerFicheRecette(recetteId) {
       <table>
         <thead><tr><th>Ingrédient</th><th>Qté (g)</th><th>Coût HT</th></tr></thead>
         <tbody>
-          ${(ingredients || []).map(i => `
+          ${(ingredients || []).map((i, idx) => `
             <tr>
-              <td>${i.nom_affiche}${i.matieres_premieres?.bio ? '<span class="bio-tag">BIO</span>' : ''}</td>
+              <td>${i.nom_affiche}${i.matieres_premieres?.bio ? '<span class="bio-tag">BIO</span>' : ''}${i.recette_source_id ? '<span class="bio-tag" style="background:var(--blue-light);color:var(--blue);">SOUS-RECETTE</span>' : ''}</td>
               <td style="font-family:var(--mono);">${i.quantite_base_g}</td>
-              <td style="font-family:var(--mono);">${coutLigneIngredient(i.nom_affiche, i.quantite_base_g, i.matieres_premieres?.prix_ht_kg).toFixed(4)} €</td>
+              <td style="font-family:var(--mono);">${coutsParLigne[idx].toFixed(4)} €</td>
             </tr>`).join('') || '<tr><td colspan="3" class="vide">Aucun ingrédient.</td></tr>'}
         </tbody>
       </table>
@@ -400,12 +422,11 @@ function calculerResultat(coutTotalMP, poidsTotalIngredients, financeActuelle) {
 async function recalculerEtEnregistrer(enregistrer = true) {
   const { data: ingredients } = await sb
     .from('recette_ingredients')
-    .select('quantite_base_g, mp_id, nom_affiche, matieres_premieres(prix_ht_kg)')
+    .select('quantite_base_g, mp_id, nom_affiche, recette_source_id, matieres_premieres(prix_ht_kg)')
     .eq('recette_id', recetteSelectionneeId);
 
-  const coutTotalMP = (ingredients || []).reduce((s, i) => {
-    return s + coutLigneIngredient(i.nom_affiche, i.quantite_base_g, i.matieres_premieres?.prix_ht_kg);
-  }, 0);
+  const coutsParLigne = await Promise.all((ingredients || []).map(i => coutLigneIngredient(i)));
+  const coutTotalMP = coutsParLigne.reduce((s, c) => s + c, 0);
   const poidsTotalIngredients = (ingredients || []).reduce((s, i) => s + (i.quantite_base_g || 0), 0);
 
   const coefficient = parseFloat(document.getElementById('finance-coefficient')?.value || 3.5);
