@@ -113,6 +113,21 @@ main{max-width:920px; margin:1.2rem auto 3rem; padding:0 1.2rem;}
 .client-pro-item:last-child{border-bottom:none;}
 .client-pro-nom{font-weight:600; font-size:.9rem;}
 .lien-gestion{font-size:.82rem; color:var(--wheat); text-decoration:underline; cursor:pointer; background:none; border:none; font-family:inherit; padding:0; margin-top:.6rem;}
+@media print {
+  body * { visibility: hidden; }
+  #zone-impression-commandes, #zone-impression-commandes * { visibility: visible; }
+  #zone-impression-commandes {
+    position: absolute; top: 0; left: 0; width: 100%;
+    padding: 10mm; font-size: 11px;
+  }
+  .pi-titre { font-size: 16px; font-weight: 800; color: #000; border-bottom: 2px solid #000; padding-bottom: 4px; margin-bottom: 8px; }
+  .pi-groupe-titre { font-size: 11px; font-weight: 800; text-transform: uppercase; background: #ddd; padding: 4px 8px; margin-top: 10px; }
+  .pi-commande { padding: 6px 8px; border-bottom: 1px solid #ccc; page-break-inside: avoid; }
+  .pi-nom { font-weight: 700; font-size: 12px; }
+  .pi-lignes { margin: 3px 0 0 14px; font-size: 10.5px; }
+  .pi-statut { font-size: 9px; text-transform: uppercase; color: #555; font-weight: 700; }
+}
+#zone-impression-commandes { display: none; }
 </style>
 </head>
 <body>
@@ -138,6 +153,13 @@ main{max-width:920px; margin:1.2rem auto 3rem; padding:0 1.2rem;}
 
     <button class="btn btn-primary btn-nouvelle" onclick="ouvrirModaleCommande('particulier')">+ Nouvelle commande</button>
 
+    <div style="display:flex; gap:8px; margin-bottom:1rem; align-items:center; flex-wrap:wrap;">
+      <select id="filtre-lieu-impression-part" style="padding:9px 12px; border:1.5px solid var(--border-strong); border-radius:var(--r); font-size:.85rem; background:#fff;">
+        <option value="">Tous les points de retrait</option>
+      </select>
+      <button class="btn btn-ghost" onclick="imprimerCommandes('particulier')">🖨️ Imprimer</button>
+    </div>
+
     <div class="card">
       <div id="liste-commandes-particuliers"><div class="vide">Chargement…</div></div>
     </div>
@@ -152,6 +174,13 @@ main{max-width:920px; margin:1.2rem auto 3rem; padding:0 1.2rem;}
     </div>
 
     <button class="btn btn-primary btn-nouvelle" onclick="ouvrirModaleCommande('pro')">+ Nouvelle commande pro</button>
+
+    <div style="display:flex; gap:8px; margin-bottom:1rem; align-items:center; flex-wrap:wrap;">
+      <select id="filtre-lieu-impression-pro" style="padding:9px 12px; border:1.5px solid var(--border-strong); border-radius:var(--r); font-size:.85rem; background:#fff;">
+        <option value="">Tous les points de retrait</option>
+      </select>
+      <button class="btn btn-ghost" onclick="imprimerCommandes('pro')">🖨️ Imprimer</button>
+    </div>
 
     <div class="card">
       <div id="liste-commandes-pro"><div class="vide">Chargement…</div></div>
@@ -168,6 +197,8 @@ main{max-width:920px; margin:1.2rem auto 3rem; padding:0 1.2rem;}
     </div>
   </div>
 </main>
+
+<div id="zone-impression-commandes"></div>
 
 <!-- ===== MODALE NOUVELLE COMMANDE ===== -->
 <div class="overlay" id="overlay-commande">
@@ -409,7 +440,63 @@ async function chargerLieux() {
     lieuxRetrait = data;
     const select = document.getElementById('cmd-lieu');
     select.innerHTML = '<option value="">—</option>' + data.map(l => `<option value="${l.id}">${l.nom}</option>`).join('');
+
+    const optionsLieux = '<option value="">Tous les points de retrait</option>' + data.map(l => `<option value="${l.id}">${l.nom}</option>`).join('');
+    const selectImpPart = document.getElementById('filtre-lieu-impression-part');
+    const selectImpPro = document.getElementById('filtre-lieu-impression-pro');
+    if (selectImpPart) selectImpPart.innerHTML = optionsLieux;
+    if (selectImpPro) selectImpPro.innerHTML = optionsLieux;
   }
+}
+
+async function imprimerCommandes(type) {
+  const date = type === 'pro' ? document.getElementById('date-jour-pro').value : document.getElementById('date-jour').value;
+  const lieuFiltre = type === 'pro'
+    ? document.getElementById('filtre-lieu-impression-pro').value
+    : document.getElementById('filtre-lieu-impression-part').value;
+
+  let requete = sb.from('vue_commandes_jour').select('*').eq('date_retrait', date).eq('is_pro', type === 'pro');
+  const { data, error } = await requete;
+  if (error) { alert('Erreur : ' + error.message); return; }
+
+  let commandes = data || [];
+  if (lieuFiltre) {
+    const nomLieu = lieuxRetrait.find(l => l.id === lieuFiltre)?.nom;
+    commandes = commandes.filter(c => c.lieu_retrait === nomLieu);
+  }
+
+  if (commandes.length === 0) { alert('Aucune commande à imprimer pour ce filtre.'); return; }
+
+  const lignesParCommande = await chargerLignesPourCommandes(commandes.map(c => c.id));
+
+  // Groupe par lieu de retrait pour une lecture plus pratique en boutique
+  const parLieu = {};
+  commandes.forEach(c => {
+    const cle = c.lieu_retrait || 'Non précisé';
+    (parLieu[cle] = parLieu[cle] || []).push(c);
+  });
+
+  const dateAffichee = new Date(date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+  const titreFiltre = lieuFiltre ? ` — ${lieuxRetrait.find(l => l.id === lieuFiltre)?.nom}` : '';
+
+  let html = `<div class="pi-titre">Commandes ${type === 'pro' ? 'professionnelles' : 'particuliers'} — ${dateAffichee}${titreFiltre}</div>`;
+
+  Object.entries(parLieu).forEach(([lieu, liste]) => {
+    html += `<div class="pi-groupe-titre">${lieu}</div>`;
+    liste.forEach(c => {
+      const nomAffiche = type === 'pro' ? c.raison_sociale : `${c.prenom || ''} ${c.nom}`;
+      const lignes = lignesParCommande[c.id] || [];
+      html += `
+        <div class="pi-commande">
+          <div class="pi-nom">${nomAffiche} <span class="pi-statut">[${labelsStatut[c.statut] || c.statut}]</span></div>
+          ${lignes.length > 0 ? `<ul class="pi-lignes">${lignes.map(l => `<li>${l}</li>`).join('')}</ul>` : ''}
+          ${c.contenu ? `<div class="pi-lignes" style="font-style:italic;">${c.contenu}</div>` : ''}
+        </div>`;
+    });
+  });
+
+  document.getElementById('zone-impression-commandes').innerHTML = html;
+  window.print();
 }
 
 async function chargerClientsPro() {
@@ -427,6 +514,44 @@ async function chargerClientsPro() {
   }
 }
 
+async function chargerLignesPourCommandes(commandeIds) {
+  if (commandeIds.length === 0) return {};
+  const { data } = await sb
+    .from('commande_lignes')
+    .select('commande_id, quantite, quantite_g, recette_id, format_id, variante_id, recettes(nom), recette_formats(label, poids_cuit_g), recette_variantes(nom)')
+    .in('commande_id', commandeIds);
+
+  const parCommande = {};
+  (data || []).forEach(l => {
+    if (!parCommande[l.commande_id]) parCommande[l.commande_id] = [];
+    let libelle = l.recettes?.nom || '?';
+    if (l.recette_formats) {
+      const poids = l.recette_formats.poids_cuit_g ? Math.round(l.recette_formats.poids_cuit_g) + 'g' : l.recette_formats.label;
+      libelle += ` (${poids})`;
+    } else if (l.recette_variantes) {
+      libelle += ` (${l.recette_variantes.nom})`;
+    }
+    const qte = l.quantite ? `${l.quantite} pces` : `${l.quantite_g} g`;
+    parCommande[l.commande_id].push(`${qte} — ${libelle}`);
+  });
+  return parCommande;
+}
+
+function formatDetailCommande(c, lignesParCommande) {
+  const lignes = lignesParCommande[c.id] || [];
+  let html = '';
+  if (lignes.length > 0) {
+    html += `<ul style="margin:4px 0 0 0; padding-left:18px; font-size:.85rem;">${lignes.map(l => `<li>${l}</li>`).join('')}</ul>`;
+  }
+  if (c.contenu) {
+    html += `<div class="commande-contenu" style="${lignes.length > 0 ? 'margin-top:4px; font-style:italic;' : ''}">${c.contenu}</div>`;
+  }
+  if (lignes.length === 0 && !c.contenu) {
+    html = `<div class="commande-contenu" style="opacity:.5;">Aucun produit renseigné</div>`;
+  }
+  return html;
+}
+
 async function chargerCommandesJour() {
   const date = document.getElementById('date-jour').value;
   const { data, error } = await sb
@@ -440,6 +565,8 @@ async function chargerCommandesJour() {
   if (error) { conteneur.innerHTML = `<div class="vide">Erreur : ${error.message}</div>`; return; }
   if (!data || data.length === 0) { conteneur.innerHTML = '<div class="vide">Aucune commande pour ce jour.</div>'; return; }
 
+  const lignesParCommande = await chargerLignesPourCommandes(data.map(c => c.id));
+
   conteneur.innerHTML = data.map(c => `
     <div class="commande-card">
       <div>
@@ -449,7 +576,7 @@ async function chargerCommandesJour() {
           ${c.lieu_retrait ? `<span class="lieu-pill ${c.lieu_retrait === 'Marché' ? 'lieu-marche' : 'lieu-boutique'}">${c.lieu_retrait}</span>` : ''}
           <span class="statut-pill statut-${c.statut}">${labelsStatut[c.statut] || c.statut}</span>
         </div>
-        <div class="commande-contenu">${c.contenu || ''}</div>
+        ${formatDetailCommande(c, lignesParCommande)}
         <button class="btn-remise ${c.collectee ? 'remis' : ''}" onclick="basculerRemise('${c.id}', ${!c.collectee})">
           ${c.collectee ? '✓ Remise au client' : 'Marquer comme remise'}
         </button>
@@ -474,6 +601,8 @@ async function chargerCommandesJourPro() {
   if (error) { conteneur.innerHTML = `<div class="vide">Erreur : ${error.message}</div>`; return; }
   if (!data || data.length === 0) { conteneur.innerHTML = '<div class="vide">Aucune commande pro pour ce jour.</div>'; return; }
 
+  const lignesParCommande = await chargerLignesPourCommandes(data.map(c => c.id));
+
   conteneur.innerHTML = data.map(c => `
     <div class="commande-card">
       <div>
@@ -482,7 +611,7 @@ async function chargerCommandesJourPro() {
           ${c.lieu_retrait ? `<span class="lieu-pill lieu-boutique">${c.lieu_retrait}</span>` : ''}
           <span class="statut-pill statut-${c.statut}">${labelsStatut[c.statut] || c.statut}</span>
         </div>
-        <div class="commande-contenu">${c.contenu || ''}</div>
+        ${formatDetailCommande(c, lignesParCommande)}
         <button class="btn-remise ${c.collectee ? 'remis' : ''}" onclick="basculerRemise('${c.id}', ${!c.collectee})">
           ${c.collectee ? '✓ Remise au client' : 'Marquer comme remise'}
         </button>
