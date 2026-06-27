@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Pain Nature — Traçabilité</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#6b3a1f">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/shared.css">
+<style>
+.topbar{
+  background:var(--wheat); color:#fff; padding:0 1.2rem; height:54px;
+  display:flex; align-items:center; justify-content:space-between;
+  box-shadow:0 2px 8px rgba(0,0,0,.2); position:sticky; top:0; z-index:10;
+}
+.topbar .marque{font-weight:800; font-size:1rem; display:flex; align-items:center; gap:.6rem;}
+.topbar .retour{color:#fff; text-decoration:none; font-size:1.3rem; opacity:.85;}
+.topbar .deco{background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3); color:#fff; padding:6px 13px; border-radius:var(--r); font-size:.82rem; font-weight:600; cursor:pointer;}
+main{max-width:900px; margin:1.2rem auto 3rem; padding:0 1.2rem;}
+
+.tabs{display:flex; gap:6px; margin-bottom:1.1rem; flex-wrap:wrap;}
+.tab-btn{flex:1; min-width:130px; padding:10px; border:1.5px solid var(--border); background:var(--surface); border-radius:var(--r); font-weight:700; font-size:.8rem; cursor:pointer; color:var(--text-muted);}
+.tab-btn.active{background:var(--wheat); color:#fff; border-color:var(--wheat);}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+.btn-nouvelle{width:100%; padding:13px; margin-bottom:1rem;}
+
+table{width:100%; border-collapse:collapse;}
+th{text-align:left; font-size:.7rem; text-transform:uppercase; letter-spacing:.04em; color:var(--text-light); padding:9px 12px; border-bottom:2px solid var(--border); font-family:var(--mono);}
+td{padding:9px 12px; border-bottom:1px solid var(--border); font-size:.85rem;}
+tr:last-child td{border-bottom:none;}
+
+.releve-card{padding:12px 16px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;}
+.releve-card:last-child{border-bottom:none;}
+.releve-card.hors-seuil{background:var(--red-light);}
+.releve-enceinte{font-weight:700; font-size:.9rem;}
+.releve-meta{font-size:.78rem; color:var(--text-light); font-family:var(--mono); margin-top:2px;}
+.releve-temp{font-family:var(--mono); font-weight:800; font-size:1.1rem;}
+.releve-temp.alerte{color:var(--red);}
+.badge-alerte{display:inline-block; background:var(--red); color:#fff; font-size:.65rem; padding:2px 8px; border-radius:10px; font-weight:700; margin-left:6px;}
+
+.lot-card{padding:12px 16px; border-bottom:1px solid var(--border);}
+.lot-card:last-child{border-bottom:none;}
+.lot-titre{font-weight:700; font-size:.9rem;}
+.lot-meta{font-size:.78rem; color:var(--text-light); font-family:var(--mono); margin-top:2px;}
+.lot-badges{margin-top:6px; display:flex; gap:6px; flex-wrap:wrap;}
+.badge{font-size:.7rem; padding:2px 9px; border-radius:10px; font-weight:700;}
+.badge-conforme{background:var(--green-light); color:var(--green);}
+.badge-non-conforme{background:var(--red-light); color:var(--red);}
+.badge-bio{background:var(--green-light); color:var(--green);}
+.lot-nc{margin-top:6px; font-size:.82rem; color:var(--red); background:var(--red-light); padding:6px 10px; border-radius:var(--r);}
+.lot-photo-thumb{width:42px; height:42px; object-fit:cover; border-radius:var(--r); cursor:pointer; margin-top:6px; display:none;}
+
+.photo-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(100px,1fr)); gap:10px; padding:14px;}
+.photo-item{text-align:center;}
+.photo-item img{width:100%; aspect-ratio:1; object-fit:cover; border-radius:var(--r); cursor:pointer; border:1.5px solid var(--border); background:var(--surface2);}
+.photo-item .photo-label{font-size:.7rem; color:var(--text-light); margin-top:4px; font-weight:600;}
+
+.cumul-row{display:flex; justify-content:space-between; padding:10px 16px; border-bottom:1px solid var(--border);}
+.cumul-row:last-child{border-bottom:none;}
+.cumul-nom{font-weight:600; font-size:.88rem;}
+.cumul-val{font-family:var(--mono); font-weight:800; color:var(--green);}
+.periode-select{display:flex; gap:8px; align-items:center; margin-bottom:1rem; flex-wrap:wrap;}
+.periode-select input[type=date]{padding:8px 10px; border:1.5px solid var(--border-strong); border-radius:var(--r); font-family:var(--mono); font-size:.82rem;}
+.btn-periode{padding:8px 12px; border:1.5px solid var(--border-strong); border-radius:var(--r); background:#fff; font-size:.78rem; cursor:pointer; color:var(--text-muted);}
+
+.vide{text-align:center; padding:2rem; color:var(--text-light); font-size:.9rem;}
+
+.overlay{display:none; position:fixed; inset:0; background:rgba(20,12,6,.55); align-items:center; justify-content:center; z-index:50; padding:1.2rem; overflow-y:auto;}
+.overlay.visible{display:flex;}
+.modale{background:var(--surface); border-radius:var(--r-lg); padding:1.6rem; width:100%; max-width:460px; box-shadow:0 20px 50px rgba(0,0,0,.3); margin:auto;}
+.modale h3{color:var(--wheat); margin-bottom:1.1rem; font-size:1.1rem;}
+.field{margin-bottom:1rem;}
+.field label{display:block; font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--text-light); margin-bottom:.4rem; font-family:var(--mono);}
+.field input, .field select, .field textarea{width:100%; padding:10px 12px; font-size:.9rem; border:1.5px solid var(--border-strong); border-radius:var(--r); background:#fff;}
+.field textarea{resize:vertical; min-height:60px;}
+.row2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+.field-checkbox{display:flex; align-items:center; gap:8px;}
+.field-checkbox input{width:18px; height:18px;}
+.modale-actions{display:flex; gap:10px; margin-top:1.3rem;}
+.modale-actions .btn{flex:1;}
+.msg-erreur-modale{display:none; background:var(--red-light); color:var(--red); padding:.6rem .8rem; border-radius:var(--r); font-size:.82rem; font-weight:600; margin-bottom:.9rem;}
+.msg-erreur-modale.visible{display:block;}
+.msg-confirm{background:#faf0d0; color:#5a420a; padding:8px 10px; border-radius:var(--r); font-size:.82rem; margin-bottom:1rem;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="marque"><a href="accueil.html" class="retour">←</a> 🌿 TRAÇABILITÉ</span>
+  <button class="deco" onclick="deconnexion()">Déconnexion</button>
+</div>
+
+<main>
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="temperatures" onclick="changerTab('temperatures')">🌡️ Températures</button>
+    <button class="tab-btn" data-tab="reception" onclick="changerTab('reception')">📦 Réception</button>
+    <button class="tab-btn" data-tab="photos" onclick="changerTab('photos')">📸 Photos</button>
+    <button class="tab-btn" data-tab="cumul-bio" onclick="changerTab('cumul-bio')">🌱 Cumul bio</button>
+  </div>
+
+  <div class="tab-panel active" id="panel-temperatures">
+    <button class="btn btn-primary btn-nouvelle" onclick="ouvrirModaleReleve()">+ Nouveau relevé</button>
+    <div class="card">
+      <div id="liste-releves"><div class="vide">Chargement…</div></div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="panel-reception">
+    <button class="btn btn-primary btn-nouvelle" onclick="ouvrirModaleReception()">+ Nouvelle réception</button>
+    <div class="card">
+      <div id="liste-lots"><div class="vide">Chargement…</div></div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="panel-photos">
+    <button class="btn btn-primary btn-nouvelle" onclick="ouvrirModalePhoto()">+ Ajouter une photo</button>
+    <div class="card">
+      <div id="grille-photos" class="photo-grid"><div class="vide">Chargement…</div></div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="panel-cumul-bio">
+    <div class="periode-select">
+      <input type="date" id="cumul-date-debut">
+      <span>→</span>
+      <input type="date" id="cumul-date-fin">
+      <button class="btn-periode" onclick="definirPeriode('mois')">Ce mois</button>
+      <button class="btn-periode" onclick="definirPeriode('annee')">Cette année</button>
+      <button class="btn btn-primary" style="padding:8px 16px;" onclick="chargerCumulBio()">Calculer</button>
+      <button class="btn-periode" onclick="window.print()">🖨️ Imprimer</button>
+    </div>
+    <div class="card">
+      <div style="padding:10px 16px; font-weight:700; font-size:.85rem; background:var(--wheat-light); color:var(--wheat);">Cumul matières premières bio consommées</div>
+      <div id="liste-cumul-bio"><div class="vide">Choisissez une période et cliquez sur Calculer.</div></div>
+    </div>
+    <div class="card" style="margin-top:1rem;">
+      <div style="padding:10px 16px; font-weight:700; font-size:.85rem; background:var(--wheat-light); color:var(--wheat);">Lots bio réceptionnés sur la période</div>
+      <div id="liste-lots-bio-periode"><div class="vide">—</div></div>
+    </div>
+  </div>
+</main>
+
+<div class="overlay" id="overlay-releve">
+  <div class="modale">
+    <h3>Nouveau relevé</h3>
+    <div class="msg-erreur-modale" id="erreur-releve"></div>
+    <div class="field"><label>Enceinte</label><select id="rel-enceinte"></select></div>
+    <div class="field"><label>Opérateur (qui fait le relevé)</label><select id="rel-operateur"></select></div>
+    <div class="field"><label>Température lue (°C)</label><input type="number" step="0.1" id="rel-temp"></div>
+    <div class="field"><label>Commentaire (optionnel)</label><input type="text" id="rel-commentaire"></div>
+    <div class="modale-actions">
+      <button class="btn btn-ghost" onclick="fermerModaleReleve()">Annuler</button>
+      <button class="btn btn-primary" onclick="confirmerReleve()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay-reception">
+  <div class="modale">
+    <h3>Nouvelle réception</h3>
+    <div class="msg-erreur-modale" id="erreur-reception"></div>
+    <div class="msg-confirm">⚠️ Une réception enregistrée ne peut plus être modifiée ensuite. Vérifiez avant de valider.</div>
+    <div class="field"><label>Matière première</label><select id="rec-mp"></select></div>
+    <div class="row2">
+      <div class="field"><label>N° de lot</label><input type="text" id="rec-lot" required></div>
+      <div class="field"><label>Fournisseur</label><input type="text" id="rec-fournisseur" required></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Date de réception</label><input type="date" id="rec-date"></div>
+      <div class="field"><label>DLC (si applicable)</label><input type="date" id="rec-dlc"></div>
+    </div>
+    <div class="field"><label>N° certificat bio (si applicable)</label><input type="text" id="rec-certificat"></div>
+    <div class="row2">
+      <div class="field"><label>État emballage</label>
+        <select id="rec-emballage"><option value="correct">Correct</option><option value="abime">Abîmé</option></select>
+      </div>
+      <div class="field"><label>Température à réception (°C)</label><input type="number" step="0.1" id="rec-temperature"></div>
+    </div>
+    <div class="field field-checkbox"><input type="checkbox" id="rec-conforme" checked><label style="margin:0;">Livraison conforme</label></div>
+    <div class="field" id="zone-nc" style="display:none;"><label>Gestion de la non-conformité</label><textarea id="rec-nc" placeholder="Décrire le problème et l'action prise…"></textarea></div>
+    <div class="field"><label>Photo (optionnel)</label><input type="file" id="rec-photo" accept="image/*" capture="environment"></div>
+    <div class="field"><label>Commentaire</label><textarea id="rec-commentaire"></textarea></div>
+    <div class="modale-actions">
+      <button class="btn btn-ghost" onclick="fermerModaleReception()">Annuler</button>
+      <button class="btn btn-primary" id="btn-confirmer-reception" onclick="confirmerReception()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay-photo">
+  <div class="modale">
+    <h3>Photo d'une marchandise utilisée</h3>
+    <div class="msg-erreur-modale" id="erreur-photo"></div>
+    <div class="field"><label>Matière première</label><select id="ph-mp"></select></div>
+    <div class="field"><label>Date d'utilisation</label><input type="date" id="ph-date"></div>
+    <div class="field"><label>Photo</label><input type="file" id="ph-fichier" accept="image/*" capture="environment" required></div>
+    <div class="field"><label>Commentaire (optionnel)</label><input type="text" id="ph-commentaire"></div>
+    <div class="modale-actions">
+      <button class="btn btn-ghost" onclick="fermerModalePhoto()">Annuler</button>
+      <button class="btn btn-primary" id="btn-confirmer-photo" onclick="confirmerPhoto()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/supabase-client.js"></script>
+<script>
+let profilCourant = null;
+let toutesMatieresPremieres = [];
+let toutEquipe = [];
+
+function dateAujourdhui() { return new Date().toISOString().slice(0, 10); }
+
+function changerTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+  if (tab === 'temperatures') chargerReleves();
+  if (tab === 'reception') chargerLots();
+  if (tab === 'photos') chargerPhotos();
+}
+
+async function chargerReferentiels() {
+  const { data: mps } = await sb.from('matieres_premieres').select('id, nom, bio').order('nom');
+  toutesMatieresPremieres = mps || [];
+
+  const { data: equipe } = await sb.rpc('lister_equipe');
+  toutEquipe = equipe ? equipe.filter(e => e.actif) : [];
+
+  const optionsEquipe = toutEquipe.map(e => `<option value="${e.user_id}">${e.prenom || e.nom}</option>`).join('');
+  document.getElementById('rel-operateur').innerHTML = optionsEquipe;
+
+  const optionsMp = toutesMatieresPremieres.map(mp => `<option value="${mp.id}">${mp.nom}${mp.bio ? ' (BIO)' : ''}</option>`).join('');
+  document.getElementById('rec-mp').innerHTML = optionsMp;
+  document.getElementById('ph-mp').innerHTML = optionsMp;
+}
+
+async function chargerReleves() {
+  const { data, error } = await sb
+    .from('releves_temperature')
+    .select('*, enceintes_froides(nom, temperature_cible_c, tolerance_c), profils!releves_temperature_operateur_id_fkey(nom, prenom)')
+    .order('releve_le', { ascending: false })
+    .limit(50);
+
+  const conteneur = document.getElementById('liste-releves');
+  if (error) { conteneur.innerHTML = `<div class="vide">Erreur : ${error.message}</div>`; return; }
+  if (!data || data.length === 0) { conteneur.innerHTML = '<div class="vide">Aucun relevé enregistré.</div>'; return; }
+
+  conteneur.innerHTML = data.map(r => {
+    const dateAffichee = new Date(r.releve_le).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    const operateur = r.profils ? (r.profils.prenom || r.profils.nom) : '?';
+    return `
+      <div class="releve-card ${r.hors_seuil ? 'hors-seuil' : ''}">
+        <div>
+          <div class="releve-enceinte">${r.enceintes_froides?.nom || '?'}${r.hors_seuil ? '<span class="badge-alerte">HORS SEUIL</span>' : ''}</div>
+          <div class="releve-meta">${dateAffichee} — ${operateur}${r.commentaire ? ' — ' + r.commentaire : ''}</div>
+        </div>
+        <div class="releve-temp ${r.hors_seuil ? 'alerte' : ''}">${r.temperature_c}°C</div>
+      </div>`;
+  }).join('');
+}
+
+function ouvrirModaleReleve() {
+  document.getElementById('erreur-releve').classList.remove('visible');
+  document.getElementById('rel-temp').value = '';
+  document.getElementById('rel-commentaire').value = '';
+
+  sb.from('enceintes_froides').select('*').eq('actif', true).order('nom').then(({ data }) => {
+    document.getElementById('rel-enceinte').innerHTML = (data || []).map(e =>
+      `<option value="${e.id}">${e.nom} (cible ${e.temperature_cible_c}°C)</option>`
+    ).join('');
+  });
+
+  document.getElementById('overlay-releve').classList.add('visible');
+}
+function fermerModaleReleve() { document.getElementById('overlay-releve').classList.remove('visible'); }
+
+async function confirmerReleve() {
+  const enceinteId = document.getElementById('rel-enceinte').value;
+  const operateurId = document.getElementById('rel-operateur').value;
+  const temperature = parseFloat(document.getElementById('rel-temp').value);
+  const commentaire = document.getElementById('rel-commentaire').value.trim();
+  const erreur = document.getElementById('erreur-releve');
+
+  if (!enceinteId || !operateurId || isNaN(temperature)) {
+    erreur.textContent = 'Tous les champs (sauf commentaire) sont obligatoires.';
+    erreur.classList.add('visible');
+    return;
+  }
+
+  const { error } = await sb.from('releves_temperature').insert({
+    enceinte_id: enceinteId, operateur_id: operateurId, temperature_c: temperature, commentaire
+  });
+  if (error) { erreur.textContent = error.message; erreur.classList.add('visible'); return; }
+
+  fermerModaleReleve();
+  await chargerReleves();
+}
+
+async function chargerLots() {
+  const { data, error } = await sb
+    .from('tracabilite_lots')
+    .select('*, matieres_premieres(nom, bio)')
+    .order('created_at', { ascending: false })
+    .limit(50);
+
+  const conteneur = document.getElementById('liste-lots');
+  if (error) { conteneur.innerHTML = `<div class="vide">Erreur : ${error.message}</div>`; return; }
+  if (!data || data.length === 0) { conteneur.innerHTML = '<div class="vide">Aucune réception enregistrée.</div>'; return; }
+
+  conteneur.innerHTML = data.map(l => `
+    <div class="lot-card">
+      <div class="lot-titre">${l.matieres_premieres?.nom || '?'} — Lot ${l.n_lot}</div>
+      <div class="lot-meta">${l.fournisseur} — réceptionné le ${new Date(l.date_reception).toLocaleDateString('fr-FR')}${l.temperature_reception != null ? ' — ' + l.temperature_reception + '°C' : ''}</div>
+      <div class="lot-badges">
+        ${l.matieres_premieres?.bio ? '<span class="badge badge-bio">BIO' + (l.n_certificat_bio ? ' · ' + l.n_certificat_bio : '') + '</span>' : ''}
+        ${l.conforme === true ? '<span class="badge badge-conforme">Conforme</span>' : ''}
+        ${l.conforme === false ? '<span class="badge badge-non-conforme">Non conforme</span>' : ''}
+        ${l.etat_emballage ? `<span class="badge" style="background:var(--surface2);color:var(--text-muted);">Emballage : ${l.etat_emballage === 'correct' ? 'correct' : 'abîmé'}</span>` : ''}
+      </div>
+      ${l.gestion_non_conformite ? `<div class="lot-nc">⚠ ${l.gestion_non_conformite}</div>` : ''}
+      ${l.commentaire ? `<div class="lot-meta" style="margin-top:4px;">${l.commentaire}</div>` : ''}
+      ${l.photo_storage_path ? `<img class="lot-photo-thumb" src="" data-path="${l.photo_storage_path}" onclick="ouvrirPhotoReception('${l.photo_storage_path}')">` : ''}
+    </div>
+  `).join('');
+
+  data.filter(l => l.photo_storage_path).forEach(async l => {
+    const { data: signed } = await sb.storage.from('photos-reception').createSignedUrl(l.photo_storage_path, 3600);
+    if (signed) {
+      const img = document.querySelector(`img[data-path="${l.photo_storage_path}"]`);
+      if (img) { img.src = signed.signedUrl; img.style.display = 'block'; }
+    }
+  });
+}
+
+async function ouvrirPhotoReception(path) {
+  const { data, error } = await sb.storage.from('photos-reception').createSignedUrl(path, 60);
+  if (error) { alert('Erreur : ' + error.message); return; }
+  window.open(data.signedUrl, '_blank');
+}
+
+function ouvrirModaleReception() {
+  document.getElementById('erreur-reception').classList.remove('visible');
+  document.getElementById('rec-lot').value = '';
+  document.getElementById('rec-fournisseur').value = '';
+  document.getElementById('rec-date').value = dateAujourdhui();
+  document.getElementById('rec-dlc').value = '';
+  document.getElementById('rec-certificat').value = '';
+  document.getElementById('rec-temperature').value = '';
+  document.getElementById('rec-conforme').checked = true;
+  document.getElementById('rec-nc').value = '';
+  document.getElementById('zone-nc').style.display = 'none';
+  document.getElementById('rec-commentaire').value = '';
+  document.getElementById('rec-photo').value = '';
+  document.getElementById('overlay-reception').classList.add('visible');
+}
+function fermerModaleReception() { document.getElementById('overlay-reception').classList.remove('visible'); }
+
+document.addEventListener('change', (e) => {
+  if (e.target.id === 'rec-conforme') {
+    document.getElementById('zone-nc').style.display = e.target.checked ? 'none' : '';
+  }
+});
+
+async function confirmerReception() {
+  const mpId = document.getElementById('rec-mp').value;
+  const nLot = document.getElementById('rec-lot').value.trim();
+  const fournisseur = document.getElementById('rec-fournisseur').value.trim();
+  const dateReception = document.getElementById('rec-date').value;
+  const dlc = document.getElementById('rec-dlc').value || null;
+  const certificat = document.getElementById('rec-certificat').value.trim() || null;
+  const emballage = document.getElementById('rec-emballage').value;
+  const temperature = parseFloat(document.getElementById('rec-temperature').value) || null;
+  const conforme = document.getElementById('rec-conforme').checked;
+  const nc = document.getElementById('rec-nc').value.trim() || null;
+  const commentaire = document.getElementById('rec-commentaire').value.trim() || null;
+  const fichierPhoto = document.getElementById('rec-photo').files[0];
+  const erreur = document.getElementById('erreur-reception');
+  const btn = document.getElementById('btn-confirmer-reception');
+
+  if (!mpId || !nLot || !fournisseur || !dateReception) {
+    erreur.textContent = 'Matière, n° de lot, fournisseur et date sont obligatoires.';
+    erreur.classList.add('visible');
+    return;
+  }
+  if (!conforme && !nc) {
+    erreur.textContent = 'Merci de décrire la gestion de la non-conformité.';
+    erreur.classList.add('visible');
+    return;
+  }
+
+  btn.disabled = true; btn.textContent = 'Enregistrement…';
+
+  try {
+    let photoPath = null;
+    if (fichierPhoto) {
+      photoPath = `${mpId}/${Date.now()}-${fichierPhoto.name}`;
+      const { error: errUpload } = await sb.storage.from('photos-reception').upload(photoPath, fichierPhoto);
+      if (errUpload) throw errUpload;
+    }
+
+    const { error: errInsert } = await sb.from('tracabilite_lots').insert({
+      mp_id: mpId, n_lot: nLot, fournisseur, date_reception: dateReception,
+      date_dlc: dlc, n_certificat_bio: certificat, etat_emballage: emballage,
+      temperature_reception: temperature, conforme, gestion_non_conformite: nc,
+      photo_storage_path: photoPath, commentaire
+    });
+    if (errInsert) throw errInsert;
+
+    fermerModaleReception();
+    await chargerLots();
+  } catch (err) {
+    erreur.textContent = err.message || 'Erreur lors de l\'enregistrement.';
+    erreur.classList.add('visible');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Enregistrer';
+  }
+}
+
+async function chargerPhotos() {
+  const { data, error } = await sb
+    .from('photos_marchandises')
+    .select('*, matieres_premieres(nom)')
+    .order('created_at', { ascending: false })
+    .limit(60);
+
+  const conteneur = document.getElementById('grille-photos');
+  if (error) { conteneur.innerHTML = `<div class="vide">Erreur : ${error.message}</div>`; return; }
+  if (!data || data.length === 0) { conteneur.innerHTML = '<div class="vide">Aucune photo enregistrée.</div>'; return; }
+
+  conteneur.innerHTML = data.map(p => `
+    <div class="photo-item">
+      <img data-path="${p.storage_path}" onclick="ouvrirPhotoMarchandise('${p.storage_path}')" src="">
+      <div class="photo-label">${p.matieres_premieres?.nom || '?'}<br>${new Date(p.date_utilisation).toLocaleDateString('fr-FR')}</div>
+    </div>
+  `).join('');
+
+  data.forEach(async p => {
+    const { data: signed } = await sb.storage.from('photos-marchandises').createSignedUrl(p.storage_path, 3600);
+    if (signed) {
+      const img = document.querySelector(`img[data-path="${p.storage_path}"]`);
+      if (img) img.src = signed.signedUrl;
+    }
+  });
+}
+
+async function ouvrirPhotoMarchandise(path) {
+  const { data, error } = await sb.storage.from('photos-marchandises').createSignedUrl(path, 60);
+  if (error) { alert('Erreur : ' + error.message); return; }
+  window.open(data.signedUrl, '_blank');
+}
+
+function ouvrirModalePhoto() {
+  document.getElementById('erreur-photo').classList.remove('visible');
+  document.getElementById('ph-date').value = dateAujourdhui();
+  document.getElementById('ph-fichier').value = '';
+  document.getElementById('ph-commentaire').value = '';
+  document.getElementById('overlay-photo').classList.add('visible');
+}
+function fermerModalePhoto() { document.getElementById('overlay-photo').classList.remove('visible'); }
+
+async function confirmerPhoto() {
+  const mpId = document.getElementById('ph-mp').value;
+  const date = document.getElementById('ph-date').value;
+  const fichier = document.getElementById('ph-fichier').files[0];
+  const commentaire = document.getElementById('ph-commentaire').value.trim() || null;
+  const erreur = document.getElementById('erreur-photo');
+  const btn = document.getElementById('btn-confirmer-photo');
+
+  if (!mpId || !fichier) {
+    erreur.textContent = 'Matière première et photo sont obligatoires.';
+    erreur.classList.add('visible');
+    return;
+  }
+
+  btn.disabled = true; btn.textContent = 'Enregistrement…';
+
+  try {
+    const path = `${mpId}/${Date.now()}-${fichier.name}`;
+    const { error: errUpload } = await sb.storage.from('photos-marchandises').upload(path, fichier);
+    if (errUpload) throw errUpload;
+
+    const { error: errInsert } = await sb.from('photos_marchandises').insert({
+      mp_id: mpId, date_utilisation: date, storage_path: path, commentaire
+    });
+    if (errInsert) throw errInsert;
+
+    fermerModalePhoto();
+    await chargerPhotos();
+  } catch (err) {
+    erreur.textContent = err.message || 'Erreur lors de l\'enregistrement.';
+    erreur.classList.add('visible');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Enregistrer';
+  }
+}
+
+function definirPeriode(type) {
+  const maintenant = new Date();
+  let debut;
+  if (type === 'mois') debut = new Date(maintenant.getFullYear(), maintenant.getMonth(), 1);
+  else debut = new Date(maintenant.getFullYear(), 0, 1);
+  document.getElementById('cumul-date-debut').value = debut.toISOString().slice(0, 10);
+  document.getElementById('cumul-date-fin').value = dateAujourdhui();
+  chargerCumulBio();
+}
+
+async function chargerCumulBio() {
+  const debut = document.getElementById('cumul-date-debut').value;
+  const fin = document.getElementById('cumul-date-fin').value;
+  if (!debut || !fin) { alert('Choisissez une période complète.'); return; }
+
+  const { data, error } = await sb.rpc('get_cumul_bio_periode', { p_date_debut: debut, p_date_fin: fin });
+  const conteneur = document.getElementById('liste-cumul-bio');
+  if (error) { conteneur.innerHTML = `<div class="vide">Erreur : ${error.message}</div>`; return; }
+  if (!data || data.length === 0) { conteneur.innerHTML = '<div class="vide">Aucune matière bio utilisée sur cette période.</div>'; return; }
+
+  conteneur.innerHTML = data.map(c => `
+    <div class="cumul-row">
+      <span class="cumul-nom">${c.nom_matiere} <span style="color:var(--text-light); font-size:.78rem;">(${c.fournisseur || '—'})</span></span>
+      <span class="cumul-val">${c.quantite_totale_kg} kg</span>
+    </div>
+  `).join('');
+
+  const { data: lots, error: errLots } = await sb.rpc('get_lots_bio_periode', { p_date_debut: debut, p_date_fin: fin });
+  const conteneurLots = document.getElementById('liste-lots-bio-periode');
+  if (errLots) { conteneurLots.innerHTML = `<div class="vide">Erreur : ${errLots.message}</div>`; return; }
+  if (!lots || lots.length === 0) { conteneurLots.innerHTML = '<div class="vide">Aucun lot bio réceptionné sur cette période.</div>'; return; }
+
+  conteneurLots.innerHTML = `
+    <table>
+      <thead><tr><th>Matière</th><th>N° lot</th><th>Fournisseur</th><th>Date</th><th>Certificat bio</th></tr></thead>
+      <tbody>
+        ${lots.map(l => `
+          <tr>
+            <td>${l.mp_nom}</td>
+            <td style="font-family:var(--mono);">${l.n_lot}</td>
+            <td>${l.fournisseur}</td>
+            <td>${new Date(l.date_reception).toLocaleDateString('fr-FR')}</td>
+            <td>${l.n_certificat_bio || '—'}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>`;
+}
+
+(async () => {
+  profilCourant = await exigerRole(['gerant', 'boulanger', 'patissier']);
+  if (!profilCourant) return;
+  await chargerReferentiels();
+  await chargerReleves();
+  definirPeriode('mois');
+})();
+</script>
+</body>
+</html>
