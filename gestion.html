@@ -154,6 +154,15 @@ tr:last-child td{border-bottom:none;}
         <option value="GV">Gâteaux de voyage</option>
       </select>
     </div>
+    <div class="row2">
+      <div class="field"><label>Poids cru (g)</label>
+        <input type="number" step="1" id="nr-poids-cru" style="width:100%; padding:9px 11px; border:1.5px solid var(--border-strong); border-radius:var(--r); font-family:var(--mono);">
+      </div>
+      <div class="field"><label>Poids cuit (g)</label>
+        <input type="number" step="1" id="nr-poids-cuit" style="width:100%; padding:9px 11px; border:1.5px solid var(--border-strong); border-radius:var(--r); font-family:var(--mono);">
+      </div>
+    </div>
+    <p class="note-prix-gerant" style="margin-bottom:1rem;">💡 Tu pourras ajouter les ingrédients juste après la création.</p>
     <div class="modale-actions">
       <button class="btn btn-ghost" onclick="fermerModaleNouvelleRecette()">Annuler</button>
       <button class="btn btn-primary" onclick="confirmerNouvelleRecette()">Créer</button>
@@ -360,6 +369,8 @@ function ouvrirModaleNouvelleRecette() {
   document.getElementById('erreur-nouvelle-recette').classList.remove('visible');
   document.getElementById('nr-nom').value = '';
   document.getElementById('nr-metier').value = 'B';
+  document.getElementById('nr-poids-cru').value = '';
+  document.getElementById('nr-poids-cuit').value = '';
   document.getElementById('overlay-nouvelle-recette').classList.add('visible');
 }
 function fermerModaleNouvelleRecette() {
@@ -369,11 +380,15 @@ function fermerModaleNouvelleRecette() {
 async function confirmerNouvelleRecette() {
   const nom = document.getElementById('nr-nom').value.trim();
   const metier = document.getElementById('nr-metier').value;
+  const poidsCru = parseFloat(document.getElementById('nr-poids-cru').value) || null;
+  const poidsCuit = parseFloat(document.getElementById('nr-poids-cuit').value) || null;
   const erreur = document.getElementById('erreur-nouvelle-recette');
 
   if (!nom) { erreur.textContent = 'Le nom est obligatoire.'; erreur.classList.add('visible'); return; }
 
-  const { data, error } = await sb.from('recettes').insert({ nom, metier }).select().single();
+  const { data, error } = await sb.from('recettes').insert({
+    nom, metier, poids_piece_g: poidsCru, poids_cuit_g: poidsCuit
+  }).select().single();
   if (error) { erreur.textContent = error.message; erreur.classList.add('visible'); return; }
 
   await sb.from('recette_finance').insert({ recette_id: data.id, coefficient: 3.5, marge_pct: 70, tva_pct: 10 });
