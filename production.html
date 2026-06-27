@@ -113,17 +113,69 @@ main{max-width:1200px; margin:0 auto; padding:.75rem 1rem 3rem;}
   .rcard.print-off { display:none !important; }
   .rcard.no-production { display:none !important; }
   main { padding:0; max-width:none; }
+
   .print-header { display:flex !important; background:#111 !important; color:#fff !important; padding:3px 5mm; margin-bottom:4px; align-items:center; justify-content:space-between; gap:8px; }
   .ph-date { font-size:10px; font-weight:800; color:#fff !important; white-space:nowrap; }
   .ph-totals { display:flex; gap:0; flex:1; justify-content:flex-end; }
   .ph-item { display:flex; flex-direction:column; align-items:center; padding:0 8px; border-left:1px solid #444; }
   .ph-label { font-size:6px; text-transform:uppercase; color:#aaa !important; }
   .ph-val { font-size:10px; font-weight:800; color:#fff !important; font-family:monospace; }
+
+  /* Layout 2 colonnes via float — fidèle à l'outil original (compat Safari/iPad) */
   .recipe-row { display:block; width:100%; overflow:hidden; margin-bottom:1mm; page-break-inside:avoid; break-inside:avoid; }
   .recipe-row::after { content:""; display:table; clear:both; }
-  .recipe-col { float:left; width:48.5%; margin-right:3%; }
+  .recipe-col { float:left; width:48.5%; margin-right:3%; page-break-inside:avoid; break-inside:avoid; }
   .recipe-col:last-child { margin-right:0; }
-  .rcard { page-break-inside:avoid; break-inside:avoid; }
+  .rcard { page-break-inside:avoid !important; break-inside:avoid !important; display:block; width:100%; }
+
+  /* Titre de section (métier OU famille) : 1 page par catégorie.
+     Le tout premier titre ne doit pas créer de page blanche au début. */
+  .recipe-section-title {
+    clear:both; display:block; width:100%;
+    font-size:8px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:#000 !important;
+    border-bottom:1.5px solid #000; padding-bottom:2px; margin:1.5mm 0 1mm;
+    page-break-after:avoid; break-after:avoid;
+    page-break-before:always; break-before:page;
+  }
+  .recipe-section-title:first-of-type { page-break-before:avoid !important; break-before:avoid !important; }
+
+  /* En-tête de carte recette */
+  .rhead { background:#e0dbd4 !important; padding:3px 6px; border-bottom:1px solid #999; }
+  .rname { font-size:10px; font-weight:800; color:#000 !important; }
+  .cg label { font-size:7.5px; color:#444 !important; font-weight:700; }
+  .cg input[type=number] { font-size:9px; font-weight:800; color:#000 !important; background:transparent !important; border:1px solid rgba(0,0,0,.3); width:34px; padding:1px 2px; }
+
+  /* Méta-ligne */
+  .rmeta { padding:2px 6px; background:#f0ede8 !important; font-size:7.5px; border-bottom:1px solid #bbb; gap:.4rem; }
+  .mi .mk { color:#555 !important; font-weight:600; }
+  .mi .mv { color:#000 !important; font-weight:800; }
+
+  /* Tableau ingrédients */
+  .itable { font-size:9px; }
+  .itable th { padding:2px 5px; font-size:7.5px; border-bottom:1px solid #888; }
+  .itable th:first-child { background:#ccc !important; color:#000; }
+  .itable th:nth-child(2) { background:#ccc !important; color:#333; }
+  .itable th:nth-child(3) { background:#333 !important; color:#fff; }
+  .itable td { padding:2px 5px; border-bottom:1px solid #e0e0e0; }
+  .itable tr:nth-child(even) { background:#f5f5f5 !important; }
+  .itable .td-base { background:#eaeaea !important; font-size:8.5px; color:#444 !important; }
+  .itable .td-jour { font-size:10.5px; background:#fff !important; }
+  .itable .td-jour strong { font-weight:800; color:#000 !important; font-size:11.5px; }
+  .itable .tr-total td { border-top:1.5px solid #888; }
+  .itable .tr-total .td-name { background:#ddd !important; font-size:7.5px; }
+  .itable .tr-total .td-base, .itable .tr-total .td-jour { background:#ddd !important; }
+
+  /* Levains */
+  .levains-grid { gap:2mm; margin-bottom:3mm; page-break-after:always; break-after:page; }
+  .levain-card { break-inside:avoid; }
+  .levain-head { padding:2px 7px; font-size:9px; font-weight:800; }
+  .lh-liq, .lh-eng, .lh-dur { background:#ddd !important; color:#000 !important; border-bottom:1px solid #999; }
+  .lh-total { font-size:10px; font-weight:800; color:#000 !important; }
+  .levain-row { padding:2px 7px; font-size:9px; }
+  .lr-souche { border-bottom:1px solid #e0e0e0; }
+  .lr-souche .lr-val { font-size:10px; font-weight:800; color:#000 !important; }
+  .lr-val { font-size:9px; font-weight:700; color:#000 !important; }
+
   .print-cb-wrap { display:none !important; }
 }
 </style>
@@ -147,6 +199,7 @@ main{max-width:1200px; margin:0 auto; padding:.75rem 1rem 3rem;}
       <button class="btn-action" onclick="toutSelectionner(true)">☑ Tout sélectionner</button>
       <button class="btn-action" onclick="toutSelectionner(false)">☐ Tout désélectionner</button>
       <button class="btn-action" onclick="resynchroniserDepuisCommandes()">↻ Resynchroniser depuis commandes</button>
+      <button class="btn-action" onclick="window.print()">⎙ Imprimer</button>
       <button class="btn-action" style="margin-left:auto; background:var(--wheat); color:#fff; border-color:var(--wheat);" onclick="exporterPDF()">🖨️ Exporter en PDF</button>
     </div>
 
@@ -512,20 +565,72 @@ async function chargerBesoins() {
     `</tbody></table>`;
 }
 
-function exporterPDF() {
-  const zone = document.querySelector('main');
+async function exporterPDF() {
   if (typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined') {
     alert("Les librairies d'export PDF ne sont pas chargées (vérifiez la connexion internet)."); return;
   }
-  html2canvas(zone, { scale: 2, backgroundColor: '#ffffff' }).then(canvas => {
-    const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    const imgWidth = 210 - 20;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-    pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 10, 10, imgWidth, imgHeight);
-    const date = document.getElementById('date-jour').value;
-    pdf.save(`production-${date}.pdf`);
-  }).catch(err => { console.error(err); alert('Erreur export PDF.'); });
+
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF('p', 'mm', 'a4');
+  const pageW = 210, pageH = 297, margin = 10;
+  const contentW = pageW - margin * 2;
+
+  const date = document.getElementById('date-jour').value;
+  const dateAffichee = new Date(date).toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' });
+
+  let currentY = margin;
+  let estPremierElement = true;
+
+  function ajouterEnTetePage() {
+    pdf.setFillColor(107, 58, 31);
+    pdf.rect(margin, margin, contentW, 9, 'F');
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('Production — ' + dateAffichee, margin + 3, margin + 6);
+    currentY = margin + 13;
+  }
+
+  ajouterEnTetePage();
+
+  // Liste des éléments à capturer : grille des levains, puis chaque
+  // titre de section/famille (pour forcer un saut de page), puis
+  // chaque carte recette sélectionnée pour l'impression.
+  const elements = [
+    document.getElementById('levains-grid'),
+    ...document.querySelectorAll('#zone-recettes .recipe-section-title, #zone-recettes .rcard')
+  ].filter(Boolean).filter(el => !el.classList?.contains('print-off') && el.offsetHeight > 0);
+
+  for (let i = 0; i < elements.length; i++) {
+    const el = elements[i];
+    const estTitreSection = el.classList.contains('recipe-section-title');
+
+    // Saut de page forcé à chaque nouvelle section (métier OU famille)
+    if (estTitreSection && !estPremierElement) {
+      pdf.addPage();
+      ajouterEnTetePage();
+    }
+
+    try {
+      const canvas = await html2canvas(el, { scale: 2, backgroundColor: '#ffffff', logging: false });
+      const imgData = canvas.toDataURL('image/png');
+      const imgW = contentW;
+      const imgH = (canvas.height * imgW) / canvas.width;
+
+      if (currentY + imgH > pageH - margin) {
+        pdf.addPage();
+        ajouterEnTetePage();
+      }
+
+      pdf.addImage(imgData, 'PNG', margin, currentY, imgW, imgH);
+      currentY += imgH + 2;
+      estPremierElement = false;
+    } catch (err) {
+      console.warn('Erreur capture élément PDF :', err);
+    }
+  }
+
+  pdf.save(`production-${date}.pdf`);
 }
 
 async function chargerTout() {
