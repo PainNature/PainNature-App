@@ -203,8 +203,31 @@ main{max-width:920px; margin:1.2rem auto 3rem; padding:0 1.2rem;}
       </div>
 
       <div class="field">
-        <label>Contenu (texte libre)</label>
-        <textarea id="cmd-contenu" placeholder="ex : 2 pains tradition, 6 croissants…"></textarea>
+        <label>Produits (depuis le catalogue)</label>
+        <div id="lignes-produits-ajoutees" style="margin-bottom:8px;"></div>
+        <div style="display:grid; grid-template-columns:2fr 1fr 1fr auto; gap:6px; align-items:end;">
+          <div>
+            <select id="prod-recette" onchange="majOptionsFormatVariante()" style="width:100%; padding:9px 10px; border:1.5px solid var(--border-strong); border-radius:var(--r); font-size:.85rem; background:#fff;">
+              <option value="">Choisir un produit…</option>
+            </select>
+          </div>
+          <div>
+            <select id="prod-format-variante" style="width:100%; padding:9px 10px; border:1.5px solid var(--border-strong); border-radius:var(--r); font-size:.85rem; background:#fff; display:none;"></select>
+          </div>
+          <div style="display:flex; gap:4px;">
+            <input type="number" id="prod-quantite" min="1" placeholder="Qté" style="width:100%; padding:9px 8px; border:1.5px solid var(--border-strong); border-radius:var(--r); font-family:var(--mono);">
+            <select id="prod-unite" style="padding:9px 4px; border:1.5px solid var(--border-strong); border-radius:var(--r); font-size:.8rem; background:#fff;">
+              <option value="pieces">pces</option>
+              <option value="grammes">g</option>
+            </select>
+          </div>
+          <button type="button" class="btn btn-ghost" style="padding:9px 12px;" onclick="ajouterLigneProduit()">+</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Contenu additionnel (texte libre, optionnel)</label>
+        <textarea id="cmd-contenu" placeholder="ex : demande spéciale du client…"></textarea>
       </div>
 
       <div class="field">
@@ -246,8 +269,117 @@ main{max-width:920px; margin:1.2rem auto 3rem; padding:0 1.2rem;}
 let profilCourant = null;
 let lieuxRetrait = [];
 let clientsPro = [];
+let toutesRecettesCatalogue = [];
+let tousFormatsCatalogue = [];
+let toutesVariantesCatalogue = [];
+let lignesProduitsCourantes = []; // lignes en cours d'ajout pour la commande ouverte
 
 const labelsStatut = { todo: 'À préparer', pending: 'En attente', validated: 'Validée' };
+const labelsMetierCatalogue = { B: 'Boulangerie', P: 'Pâtisserie', V: 'Viennoiserie', GV: 'Gâteaux de voyage' };
+const labelsFamilleCatalogue = {
+  baguettes: 'Baguettes', bles_levain: 'Blés au levain',
+  autres_cereales_levain: 'Autres céréales au levain', pains_sucres: 'Pains sucrés'
+};
+
+async function chargerCatalogueProduits() {
+  const { data: recs } = await sb.from('recettes').select('id, nom, metier, famille, poids_piece_g').eq('actif', true);
+  toutesRecettesCatalogue = recs || [];
+  const { data: fmts } = await sb.from('recette_formats').select('*').order('ordre');
+  tousFormatsCatalogue = fmts || [];
+  const { data: vars } = await sb.from('recette_variantes').select('*').order('ordre');
+  toutesVariantesCatalogue = vars || [];
+
+  // Groupe par métier puis famille pour l'affichage <optgroup>
+  const groupes = {};
+  toutesRecettesCatalogue.forEach(r => {
+    const cle = r.metier === 'B' && r.famille
+      ? `${labelsMetierCatalogue[r.metier]} — ${labelsFamilleCatalogue[r.famille] || r.famille}`
+      : labelsMetierCatalogue[r.metier] || r.metier;
+    (groupes[cle] = groupes[cle] || []).push(r);
+  });
+
+  const select = document.getElementById('prod-recette');
+  select.innerHTML = '<option value="">Choisir un produit…</option>' +
+    Object.entries(groupes).map(([groupe, recettes]) => `
+      <optgroup label="${groupe}">
+        ${recettes.sort((a, b) => a.nom.localeCompare(b.nom)).map(r => `<option value="${r.id}">${r.nom}</option>`).join('')}
+      </optgroup>
+    `).join('');
+}
+
+function majOptionsFormatVariante() {
+  const recetteId = document.getElementById('prod-recette').value;
+  const selectFV = document.getElementById('prod-format-variante');
+
+  const formats = tousFormatsCatalogue.filter(f => f.recette_id === recetteId);
+  const variantes = toutesVariantesCatalogue.filter(v => v.recette_id === recetteId);
+
+  if (formats.length > 0) {
+    selectFV.innerHTML = formats.map(f => {
+      const labelAffiche = f.poids_cuit_g ? `${Math.round(f.poids_cuit_g)}g` : f.label;
+      return `<option value="format:${f.id}">${labelAffiche}</option>`;
+    }).join('');
+    selectFV.style.display = '';
+  } else if (variantes.length > 0) {
+    selectFV.innerHTML = `<option value="">Nature</option>` + variantes.map(v => `<option value="variante:${v.id}">${v.nom}</option>`).join('');
+    selectFV.style.display = '';
+  } else {
+    selectFV.innerHTML = '';
+    selectFV.style.display = 'none';
+  }
+}
+
+function ajouterLigneProduit() {
+  const recetteId = document.getElementById('prod-recette').value;
+  const fvValeur = document.getElementById('prod-format-variante').value;
+  const quantite = parseFloat(document.getElementById('prod-quantite').value);
+  const unite = document.getElementById('prod-unite').value;
+
+  if (!recetteId) { alert('Choisissez un produit.'); return; }
+  if (!quantite || quantite <= 0) { alert('Renseignez une quantité valide.'); return; }
+
+  const recette = toutesRecettesCatalogue.find(r => r.id === recetteId);
+  let formatId = null, varianteId = null, labelFV = '';
+
+  if (fvValeur.startsWith('format:')) {
+    formatId = fvValeur.replace('format:', '');
+    const f = tousFormatsCatalogue.find(f => f.id === formatId);
+    labelFV = ' — ' + (f?.poids_cuit_g ? `${Math.round(f.poids_cuit_g)}g` : f?.label);
+  } else if (fvValeur.startsWith('variante:')) {
+    varianteId = fvValeur.replace('variante:', '');
+    labelFV = ' — ' + toutesVariantesCatalogue.find(v => v.id === varianteId)?.nom;
+  }
+
+  lignesProduitsCourantes.push({
+    recette_id: recetteId, format_id: formatId, variante_id: varianteId,
+    quantite: unite === 'pieces' ? quantite : null,
+    quantite_g: unite === 'grammes' ? quantite : null,
+    libelle: `${recette.nom}${labelFV} — ${quantite}${unite === 'pieces' ? ' pces' : ' g'}`
+  });
+
+  document.getElementById('prod-recette').value = '';
+  document.getElementById('prod-format-variante').innerHTML = '';
+  document.getElementById('prod-format-variante').style.display = 'none';
+  document.getElementById('prod-quantite').value = '';
+
+  renderLignesProduitsAjoutees();
+}
+
+function supprimerLigneProduit(index) {
+  lignesProduitsCourantes.splice(index, 1);
+  renderLignesProduitsAjoutees();
+}
+
+function renderLignesProduitsAjoutees() {
+  const zone = document.getElementById('lignes-produits-ajoutees');
+  if (lignesProduitsCourantes.length === 0) { zone.innerHTML = ''; return; }
+  zone.innerHTML = lignesProduitsCourantes.map((l, i) => `
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 10px; background:var(--surface2); border-radius:var(--r); margin-bottom:4px; font-size:.85rem;">
+      <span>${l.libelle}</span>
+      <button type="button" class="btn-icon" onclick="supprimerLigneProduit(${i})" style="width:26px;height:26px;">✕</button>
+    </div>
+  `).join('');
+}
 
 function dateAujourdhui() {
   const d = new Date();
@@ -378,6 +510,9 @@ function ouvrirModaleCommande(type) {
   document.getElementById('champs-particulier').style.display = type === 'particulier' ? '' : 'none';
   document.getElementById('champs-pro').style.display = type === 'pro' ? '' : 'none';
   document.getElementById('titre-modale-commande').textContent = type === 'pro' ? 'Nouvelle commande pro' : 'Nouvelle commande';
+  lignesProduitsCourantes = [];
+  renderLignesProduitsAjoutees();
+  document.getElementById('prod-format-variante').style.display = 'none';
   document.getElementById('overlay-commande').classList.add('visible');
 }
 function fermerModaleCommande() {
@@ -423,14 +558,27 @@ async function confirmerCommande() {
       clientId = client.id;
     }
 
-    const { error: errCmd } = await sb.from('commandes').insert({
+    const { data: nouvelleCommande, error: errCmd } = await sb.from('commandes').insert({
       client_id: clientId,
       date_retrait: dateRetrait,
       contenu,
       statut,
       lieu_retrait_id: lieuId
-    });
+    }).select().single();
     if (errCmd) throw errCmd;
+
+    if (lignesProduitsCourantes.length > 0) {
+      const lignesAInserer = lignesProduitsCourantes.map(l => ({
+        commande_id: nouvelleCommande.id,
+        recette_id: l.recette_id,
+        format_id: l.format_id,
+        variante_id: l.variante_id,
+        quantite: l.quantite,
+        quantite_g: l.quantite_g
+      }));
+      const { error: errLignes } = await sb.from('commande_lignes').insert(lignesAInserer);
+      if (errLignes) throw errLignes;
+    }
 
     fermerModaleCommande();
     if (typeCommandeCourant === 'pro') await chargerCommandesJourPro();
@@ -534,6 +682,7 @@ async function supprimerClientPro(id) {
 
   await chargerLieux();
   await chargerClientsPro();
+  await chargerCatalogueProduits();
   await chargerCommandesJour();
 })();
 </script>
