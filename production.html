@@ -130,6 +130,7 @@ main{max-width:1200px; margin:0 auto; padding:.75rem 1rem 3rem;}
 
   /* Titre de section (métier OU famille) : 1 page par catégorie.
      Le tout premier titre ne doit pas créer de page blanche au début. */
+  .recipe-section-title.section-vide { display:none !important; }
   .recipe-section-title {
     clear:both; display:block; width:100%;
     font-size:8px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:#000 !important;
@@ -466,7 +467,11 @@ function renderTout() {
   ['B', 'V', 'GV', 'P'].forEach(metier => {
     const recs = parMetier[metier];
     if (recs.length === 0) return;
-    html += `<div class="recipe-section-title">${labelsMetier[metier]}</div>`;
+    // Une section est "vide" pour l'impression si aucune de ses recettes
+    // n'a de production aujourd'hui — utilisé seulement pour masquer le
+    // titre au PDF/impression, jamais à l'écran.
+    const sectionVide = recs.every(r => calculerRecette(r).totalPate === 0);
+    html += `<div class="recipe-section-title ${sectionVide ? 'section-vide' : ''}">${labelsMetier[metier]}</div>`;
 
     if (metier === 'B') {
       // Sous-groupement par famille pour la Boulangerie uniquement
@@ -478,19 +483,20 @@ function renderTout() {
       });
       ordreFamilles.forEach(fam => {
         if (parFamille[fam] && parFamille[fam].length > 0) {
-          html += `<div class="recipe-section-title" style="font-size:8px; opacity:.75; margin-top:.5rem; border-bottom-style:dashed;">↳ ${labelsFamille[fam]}</div>`;
+          const famVide = parFamille[fam].every(r => calculerRecette(r).totalPate === 0);
+          html += `<div class="recipe-section-title ${famVide ? 'section-vide' : ''}" style="font-size:8px; opacity:.75; margin-top:.5rem; border-bottom-style:dashed;">↳ ${labelsFamille[fam]}</div>`;
           html += renderGroupeRecettes(parFamille[fam]);
         }
       });
       if (sansFamille.length > 0) {
-        html += `<div class="recipe-section-title" style="font-size:8px; opacity:.75; margin-top:.5rem; border-bottom-style:dashed;">↳ Sans famille</div>`;
+        const sfVide = sansFamille.every(r => calculerRecette(r).totalPate === 0);
+        html += `<div class="recipe-section-title ${sfVide ? 'section-vide' : ''}" style="font-size:8px; opacity:.75; margin-top:.5rem; border-bottom-style:dashed;">↳ Sans famille</div>`;
         html += renderGroupeRecettes(sansFamille);
       }
     } else {
       html += renderGroupeRecettes(recs);
     }
   });
-
   zone.innerHTML = html;
 
   toutesRecettes.forEach(r => {
@@ -599,7 +605,7 @@ async function exporterPDF() {
   const elements = [
     document.getElementById('levains-grid'),
     ...document.querySelectorAll('#zone-recettes .recipe-section-title, #zone-recettes .rcard')
-  ].filter(Boolean).filter(el => !el.classList?.contains('print-off') && el.offsetHeight > 0);
+  ].filter(Boolean).filter(el => !el.classList?.contains('print-off') && !el.classList?.contains('section-vide') && el.offsetHeight > 0);
 
   for (let i = 0; i < elements.length; i++) {
     const el = elements[i];
