@@ -106,74 +106,74 @@ main{max-width:1200px; margin:0 auto; padding:.75rem 1rem 3rem;}
 .btn-action:hover{border-color:var(--wheat-mid); color:var(--wheat);}
 
 @media print {
-  @page { size:A4; margin:10mm; }
-  body { background:#fff !important; font-size:10px; }
+  @page { size:A4; margin:8mm; }
+  body { background:#fff !important; font-size:10px; color:#000; }
   * { -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
   .topbar, .qtotals, .no-print, #print-select-bar, .note-info { display:none !important; }
   .rcard.print-off { display:none !important; }
   .rcard.no-production { display:none !important; }
   main { padding:0; max-width:none; }
 
-  .print-header { display:flex !important; background:#111 !important; color:#fff !important; padding:3px 5mm; margin-bottom:4px; align-items:center; justify-content:space-between; gap:8px; }
-  .ph-date { font-size:10px; font-weight:800; color:#fff !important; white-space:nowrap; }
+  /* En-tête de page : plus de fond noir, juste un cadre fin */
+  .print-header { display:flex !important; background:#fff !important; color:#000 !important; border:1.2px solid #000; padding:3px 5mm; margin-bottom:4px; align-items:center; justify-content:space-between; gap:8px; }
+  .ph-date { font-size:11px; font-weight:800; color:#000 !important; white-space:nowrap; text-transform:uppercase; }
   .ph-totals { display:flex; gap:0; flex:1; justify-content:flex-end; }
-  .ph-item { display:flex; flex-direction:column; align-items:center; padding:0 8px; border-left:1px solid #444; }
-  .ph-label { font-size:6px; text-transform:uppercase; color:#aaa !important; }
-  .ph-val { font-size:10px; font-weight:800; color:#fff !important; font-family:monospace; }
+  .ph-item { display:flex; flex-direction:column; align-items:center; padding:0 8px; border-left:1px solid #000; }
+  .ph-label { font-size:6.5px; text-transform:uppercase; color:#000 !important; }
+  .ph-val { font-size:11px; font-weight:800; color:#000 !important; font-family:monospace; }
 
   /* Layout 2 colonnes via float — fidèle à l'outil original (compat Safari/iPad) */
   .recipe-row { display:block; width:100%; overflow:hidden; margin-bottom:1mm; page-break-inside:avoid; break-inside:avoid; }
   .recipe-row::after { content:""; display:table; clear:both; }
   .recipe-col { float:left; width:48.5%; margin-right:3%; page-break-inside:avoid; break-inside:avoid; }
   .recipe-col:last-child { margin-right:0; }
-  .rcard { page-break-inside:avoid !important; break-inside:avoid !important; display:block; width:100%; }
+  .rcard { page-break-inside:avoid !important; break-inside:avoid !important; display:block; width:100%; border:1px solid #000 !important; }
 
-  /* Titre de section (métier OU famille) : 1 page par catégorie.
-     Le tout premier titre ne doit pas créer de page blanche au début. */
+  /* Titres de section : pas de saut systématique ici — la pagination
+     est désormais pilotée explicitement par JS via des marqueurs de
+     saut de page dédiés (voir .page-break-avant), pour regrouper
+     Levains + Pains sucrés sur une page, puis 1 page par famille
+     de boulangerie (Baguettes / Blés au levain / Autres céréales). */
   .recipe-section-title.section-vide { display:none !important; }
   .recipe-section-title {
     clear:both; display:block; width:100%;
-    font-size:8px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:#000 !important;
+    font-size:8.5px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:#000 !important;
     border-bottom:1.5px solid #000; padding-bottom:2px; margin:1.5mm 0 1mm;
     page-break-after:avoid; break-after:avoid;
-    page-break-before:always; break-before:page;
   }
-  .recipe-section-title:first-of-type { page-break-before:avoid !important; break-before:avoid !important; }
+  .page-break-avant { page-break-before:always; break-before:page; }
 
-  /* En-tête de carte recette */
-  .rhead { background:#e0dbd4 !important; padding:3px 6px; border-bottom:1px solid #999; }
-  .rname { font-size:10px; font-weight:800; color:#000 !important; }
-  .cg label { font-size:7.5px; color:#444 !important; font-weight:700; }
-  .cg input[type=number] { font-size:9px; font-weight:800; color:#000 !important; background:transparent !important; border:1px solid rgba(0,0,0,.3); width:34px; padding:1px 2px; }
+  /* En-tête de carte recette : cadre noir, pas de fond gris */
+  .rhead { background:#fff !important; padding:3px 6px; border-bottom:1.2px solid #000; }
+  .rname { font-size:10.5px; font-weight:800; color:#000 !important; }
+  .cg label { font-size:7.5px; color:#000 !important; font-weight:700; }
+  .cg input[type=number] { font-size:9px; font-weight:800; color:#000 !important; background:transparent !important; border:1px solid #000; width:34px; padding:1px 2px; }
 
-  /* Méta-ligne */
-  .rmeta { padding:2px 6px; background:#f0ede8 !important; font-size:7.5px; border-bottom:1px solid #bbb; gap:.4rem; }
-  .mi .mk { color:#555 !important; font-weight:600; }
+  /* Méta-ligne : fond blanc */
+  .rmeta { padding:2px 6px; background:#fff !important; font-size:7.5px; border-bottom:1px solid #000; gap:.4rem; }
+  .mi .mk { color:#000 !important; font-weight:600; }
   .mi .mv { color:#000 !important; font-weight:800; }
 
-  /* Tableau ingrédients */
+  /* Tableau ingrédients : aucun fond coloré, juste des lignes noires fines */
   .itable { font-size:9px; }
-  .itable th { padding:2px 5px; font-size:7.5px; border-bottom:1px solid #888; }
-  .itable th:first-child { background:#ccc !important; color:#000; }
-  .itable th:nth-child(2) { background:#ccc !important; color:#333; }
-  .itable th:nth-child(3) { background:#333 !important; color:#fff; }
-  .itable td { padding:2px 5px; border-bottom:1px solid #e0e0e0; }
-  .itable tr:nth-child(even) { background:#f5f5f5 !important; }
-  .itable .td-base { background:#eaeaea !important; font-size:8.5px; color:#444 !important; }
+  .itable th { padding:2px 5px; font-size:7.5px; border-bottom:1.2px solid #000; background:#fff !important; color:#000 !important; font-weight:800; }
+  .itable th:nth-child(2) { text-align:right; }
+  .itable th:nth-child(3) { text-align:right; }
+  .itable td { padding:2px 5px; border-bottom:0.6px solid #ccc; background:#fff !important; }
+  .itable .td-base { text-align:right; font-size:8.5px; color:#000 !important; }
   .itable .td-jour { font-size:10.5px; background:#fff !important; }
   .itable .td-jour strong { font-weight:800; color:#000 !important; font-size:11.5px; }
-  .itable .tr-total td { border-top:1.5px solid #888; }
-  .itable .tr-total .td-name { background:#ddd !important; font-size:7.5px; }
-  .itable .tr-total .td-base, .itable .tr-total .td-jour { background:#ddd !important; }
+  .itable .tr-total td { border-top:1.2px solid #000; background:#fff !important; }
+  .itable .tr-total .td-name { font-size:8px; font-weight:800; }
 
-  /* Levains */
-  .levains-grid { gap:2mm; margin-bottom:3mm; page-break-after:always; break-after:page; }
-  .levain-card { break-inside:avoid; }
-  .levain-head { padding:2px 7px; font-size:9px; font-weight:800; }
-  .lh-liq, .lh-eng, .lh-dur { background:#ddd !important; color:#000 !important; border-bottom:1px solid #999; }
+  /* Levains : cadre noir, pas de fond gris/coloré */
+  .levains-grid { gap:2mm; margin-bottom:3mm; }
+  .levain-card { break-inside:avoid; border:1.2px solid #000 !important; }
+  .levain-head { padding:2px 7px; font-size:9.5px; font-weight:800; background:#fff !important; color:#000 !important; border-bottom:1.2px solid #000; }
+  .lh-liq, .lh-eng, .lh-dur { background:#fff !important; color:#000 !important; }
   .lh-total { font-size:10px; font-weight:800; color:#000 !important; }
   .levain-row { padding:2px 7px; font-size:9px; }
-  .lr-souche { border-bottom:1px solid #e0e0e0; }
+  .lr-souche { border-bottom:0.6px solid #ccc; }
   .lr-souche .lr-val { font-size:10px; font-weight:800; color:#000 !important; }
   .lr-val { font-size:9px; font-weight:700; color:#000 !important; }
 
@@ -447,7 +447,15 @@ function renderTout() {
     baguettes: 'Baguettes', bles_levain: 'Blés au levain',
     autres_cereales_levain: 'Autres céréales au levain', pains_sucres: 'Pains sucrés'
   };
-  const ordreFamilles = ['baguettes', 'bles_levain', 'autres_cereales_levain', 'pains_sucres'];
+  // Ordre demandé pour l'impression quotidienne (Boulangerie en priorité) :
+  // Page 1 = Levains (déjà avant dans le HTML) + Pains sucrés
+  // Page 2 = Baguettes
+  // Page 3 = Blés au levain
+  // Page 4 = Autres céréales au levain
+  const ordreFamilles = ['pains_sucres', 'baguettes', 'bles_levain', 'autres_cereales_levain'];
+  // Familles qui doivent démarrer une NOUVELLE page (pains_sucres reste
+  // sur la même page que les levains, donc pas de saut avant elle).
+  const famillesAvecSautPage = new Set(['baguettes', 'bles_levain', 'autres_cereales_levain']);
 
   function renderGroupeRecettes(recs) {
     let h = '';
@@ -467,14 +475,14 @@ function renderTout() {
   ['B', 'V', 'GV', 'P'].forEach(metier => {
     const recs = parMetier[metier];
     if (recs.length === 0) return;
-    // Une section est "vide" pour l'impression si aucune de ses recettes
-    // n'a de production aujourd'hui — utilisé seulement pour masquer le
-    // titre au PDF/impression, jamais à l'écran.
     const sectionVide = recs.every(r => calculerRecette(r).totalPate === 0);
-    html += `<div class="recipe-section-title ${sectionVide ? 'section-vide' : ''}">${labelsMetier[metier]}</div>`;
+    // Saut de page avant Viennoiserie/Gâteaux de voyage/Pâtisserie (qui
+    // n'ont pas de sous-familles) ; pas avant Boulangerie elle-même,
+    // car ses sous-familles gèrent déjà leurs propres sauts.
+    const classeSection = metier !== 'B' ? 'page-break-avant' : '';
+    html += `<div class="recipe-section-title ${sectionVide ? 'section-vide' : ''} ${classeSection}">${labelsMetier[metier]}</div>`;
 
     if (metier === 'B') {
-      // Sous-groupement par famille pour la Boulangerie uniquement
       const parFamille = {};
       const sansFamille = [];
       recs.forEach(r => {
@@ -484,13 +492,14 @@ function renderTout() {
       ordreFamilles.forEach(fam => {
         if (parFamille[fam] && parFamille[fam].length > 0) {
           const famVide = parFamille[fam].every(r => calculerRecette(r).totalPate === 0);
-          html += `<div class="recipe-section-title ${famVide ? 'section-vide' : ''}" style="font-size:8px; opacity:.75; margin-top:.5rem; border-bottom-style:dashed;">↳ ${labelsFamille[fam]}</div>`;
+          const classeSaut = famillesAvecSautPage.has(fam) ? 'page-break-avant' : '';
+          html += `<div class="recipe-section-title ${famVide ? 'section-vide' : ''} ${classeSaut}" style="font-size:8px; opacity:.75; margin-top:.5rem; border-bottom-style:dashed;">↳ ${labelsFamille[fam]}</div>`;
           html += renderGroupeRecettes(parFamille[fam]);
         }
       });
       if (sansFamille.length > 0) {
         const sfVide = sansFamille.every(r => calculerRecette(r).totalPate === 0);
-        html += `<div class="recipe-section-title ${sfVide ? 'section-vide' : ''}" style="font-size:8px; opacity:.75; margin-top:.5rem; border-bottom-style:dashed;">↳ Sans famille</div>`;
+        html += `<div class="recipe-section-title ${sfVide ? 'section-vide' : ''} page-break-avant" style="font-size:8px; opacity:.75; margin-top:.5rem; border-bottom-style:dashed;">↳ Sans famille</div>`;
         html += renderGroupeRecettes(sansFamille);
       }
     } else {
@@ -609,10 +618,13 @@ async function exporterPDF() {
 
   for (let i = 0; i < elements.length; i++) {
     const el = elements[i];
-    const estTitreSection = el.classList.contains('recipe-section-title');
+    const doitSauterPage = el.classList.contains('page-break-avant');
 
-    // Saut de page forcé à chaque nouvelle section (métier OU famille)
-    if (estTitreSection && !estPremierElement) {
+    // Saut de page UNIQUEMENT là où le marqueur page-break-avant a été
+    // posé (Baguettes / Blés au levain / Autres céréales / Viennoiserie
+    // etc.) — pas avant chaque titre, pour garder Levains + Pains sucrés
+    // groupés sur la première page comme demandé.
+    if (doitSauterPage && !estPremierElement) {
       pdf.addPage();
       ajouterEnTetePage();
     }
