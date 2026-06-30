@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Pain Nature — Historique Production</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#6b3a1f">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/shared.css">
+<style>
+.topbar{
+  background:var(--wheat); color:#fff; padding:0 1.2rem; height:54px;
+  display:flex; align-items:center; justify-content:space-between;
+  box-shadow:0 2px 8px rgba(0,0,0,.2); position:sticky; top:0; z-index:10;
+}
+.topbar .marque{font-weight:800; font-size:1rem; display:flex; align-items:center; gap:.6rem;}
+.topbar .retour{color:#fff; text-decoration:none; font-size:1.3rem; opacity:.85;}
+.topbar .deco{background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3); color:#fff; padding:6px 13px; border-radius:var(--r); font-size:.82rem; font-weight:600; cursor:pointer;}
+main{max-width:1000px; margin:1.2rem auto 3rem; padding:0 1.2rem;}
+
+.periode-bar{display:flex; gap:8px; align-items:center; margin-bottom:1rem; flex-wrap:wrap;}
+.periode-bar input[type=date]{padding:9px 11px; border:1.5px solid var(--border-strong); border-radius:var(--r); font-family:var(--mono); font-size:.85rem;}
+.btn-rapide{padding:9px 13px; border:1.5px solid var(--border-strong); border-radius:var(--r); background:#fff; font-size:.8rem; cursor:pointer; color:var(--text-muted); font-weight:600;}
+.btn-rapide.active{background:var(--wheat); color:#fff; border-color:var(--wheat);}
+
+.tabs{display:flex; gap:6px; margin-bottom:1.1rem;}
+.tab-btn{flex:1; padding:10px; border:1.5px solid var(--border); background:var(--surface); border-radius:var(--r); font-weight:700; font-size:.8rem; cursor:pointer; color:var(--text-muted);}
+.tab-btn.active{background:var(--wheat); color:#fff; border-color:var(--wheat);}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+.synthese-cards{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px; margin-bottom:1.2rem;}
+.synthese-card{background:var(--surface); border:1.5px solid var(--border); border-radius:var(--r-lg); padding:.9rem 1rem; text-align:center;}
+.synthese-card .sl{font-family:var(--mono); font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; color:var(--text-light); font-weight:700;}
+.synthese-card .sv{font-family:var(--mono); font-size:1.3rem; font-weight:800; color:var(--wheat); margin-top:2px;}
+
+table{width:100%; border-collapse:collapse;}
+th{text-align:left; font-size:.7rem; text-transform:uppercase; letter-spacing:.04em; color:var(--text-light); padding:9px 12px; border-bottom:2px solid var(--border); font-family:var(--mono);}
+td{padding:9px 12px; border-bottom:1px solid var(--border); font-size:.85rem;}
+tr:last-child td{border-bottom:none;}
+.num{text-align:right; font-family:var(--mono); font-weight:700;}
+.metier-badge{font-size:.68rem; padding:2px 8px; border-radius:10px; background:var(--wheat-light); color:var(--wheat); font-weight:700;}
+
+.vide{text-align:center; padding:2rem; color:var(--text-light); font-size:.9rem;}
+.btn-export{padding:8px 14px; border:1.5px solid var(--border-strong); border-radius:var(--r); background:#fff; font-size:.8rem; cursor:pointer; color:var(--text-muted); font-weight:600;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="marque"><a href="production.html" class="retour">←</a> 📊 HISTORIQUE PRODUCTION</span>
+  <button class="deco" onclick="deconnexion()">Déconnexion</button>
+</div>
+
+<main>
+  <div class="periode-bar">
+    <input type="date" id="date-debut">
+    <span>→</span>
+    <input type="date" id="date-fin">
+    <button class="btn-rapide" onclick="definirPeriodeRapide('30j')">30 derniers jours</button>
+    <button class="btn-rapide" onclick="definirPeriodeRapide('mois')">Ce mois</button>
+    <button class="btn-rapide" onclick="definirPeriodeRapide('annee')">Cette année</button>
+    <button class="btn-rapide" onclick="definirPeriodeRapide('12mois')">12 derniers mois</button>
+    <button class="btn btn-primary" style="padding:9px 16px;" onclick="chargerHistorique()">Calculer</button>
+  </div>
+
+  <select id="filtre-metier-hist" onchange="chargerHistorique()" style="width:100%; padding:9px 11px; margin-bottom:1rem; border:1.5px solid var(--border-strong); border-radius:var(--r); background:#fff; font-weight:600;">
+    <option value="">Tous les métiers</option>
+    <option value="B">Boulangerie</option>
+    <option value="P">Pâtisserie</option>
+    <option value="V">Viennoiserie</option>
+    <option value="GV">Gâteaux de voyage</option>
+  </select>
+
+  <div class="synthese-cards" id="synthese-cards"></div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="par-jour" onclick="changerTab('par-jour')">Par jour</button>
+    <button class="tab-btn" data-tab="par-recette" onclick="changerTab('par-recette')">Par recette</button>
+  </div>
+
+  <div class="tab-panel active" id="panel-par-jour">
+    <div class="card">
+      <table>
+        <thead><tr><th>Date</th><th>Métier</th><th class="num">Pâte (kg)</th><th class="num">Pièces</th></tr></thead>
+        <tbody id="corps-par-jour"><tr><td colspan="4" class="vide">Choisissez une période et cliquez sur Calculer.</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="panel-par-recette">
+    <div style="text-align:right; margin-bottom:.6rem;">
+      <button class="btn-export" onclick="window.print()">🖨️ Imprimer / Export</button>
+    </div>
+    <div class="card">
+      <table>
+        <thead><tr><th>Recette</th><th>Métier</th><th class="num">Pâte (kg)</th><th class="num">Pièces</th><th class="num">Jours</th></tr></thead>
+        <tbody id="corps-par-recette"><tr><td colspan="5" class="vide">Choisissez une période et cliquez sur Calculer.</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/supabase-client.js"></script>
+<script>
+let profilCourant = null;
+const labelsMetier = { B: 'Boulangerie', P: 'Pâtisserie', V: 'Viennoiserie', GV: 'Gâteaux de voyage' };
+
+function dateAujourdhui() { return new Date().toISOString().slice(0, 10); }
+
+function changerTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+}
+
+function definirPeriodeRapide(type) {
+  const maintenant = new Date();
+  let debut;
+  if (type === '30j') { debut = new Date(maintenant); debut.setDate(debut.getDate() - 30); }
+  else if (type === 'mois') debut = new Date(maintenant.getFullYear(), maintenant.getMonth(), 1);
+  else if (type === 'annee') debut = new Date(maintenant.getFullYear(), 0, 1);
+  else if (type === '12mois') { debut = new Date(maintenant); debut.setFullYear(debut.getFullYear() - 1); }
+
+  document.querySelectorAll('.btn-rapide').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+
+  document.getElementById('date-debut').value = debut.toISOString().slice(0, 10);
+  document.getElementById('date-fin').value = dateAujourdhui();
+  chargerHistorique();
+}
+
+async function chargerHistorique() {
+  const debut = document.getElementById('date-debut').value;
+  const fin = document.getElementById('date-fin').value;
+  const metier = document.getElementById('filtre-metier-hist').value || null;
+
+  if (!debut || !fin) { alert('Choisissez une période complète.'); return; }
+
+  const { data: parJour, error: errJour } = await sb.rpc('get_historique_par_jour_metier', { p_date_debut: debut, p_date_fin: fin });
+  const { data: parRecette, error: errRecette } = await sb.rpc('get_historique_par_recette', { p_date_debut: debut, p_date_fin: fin, p_metier: metier });
+
+  if (errJour || errRecette) {
+    alert('Erreur : ' + (errJour?.message || errRecette?.message));
+    return;
+  }
+
+  const parJourFiltre = metier ? (parJour || []).filter(j => j.metier === metier) : (parJour || []);
+
+  // ---- Synthèse globale ----
+  const totalPateKg = parJourFiltre.reduce((s, j) => s + Number(j.total_pate_g), 0) / 1000;
+  const totalPieces = parJourFiltre.reduce((s, j) => s + Number(j.total_pieces), 0);
+  const joursDistincts = new Set(parJourFiltre.map(j => j.date_prod)).size;
+
+  document.getElementById('synthese-cards').innerHTML = `
+    <div class="synthese-card"><div class="sl">Pâte totale</div><div class="sv">${totalPateKg.toFixed(1)} kg</div></div>
+    <div class="synthese-card"><div class="sl">Pièces totales</div><div class="sv">${totalPieces}</div></div>
+    <div class="synthese-card"><div class="sl">Jours de production</div><div class="sv">${joursDistincts}</div></div>
+  `;
+
+  // ---- Tableau par jour ----
+  const corpsJour = document.getElementById('corps-par-jour');
+  if (parJourFiltre.length === 0) {
+    corpsJour.innerHTML = '<tr><td colspan="4" class="vide">Aucune production sur cette période.</td></tr>';
+  } else {
+    corpsJour.innerHTML = parJourFiltre.map(j => `
+      <tr>
+        <td>${new Date(j.date_prod).toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })}</td>
+        <td><span class="metier-badge">${labelsMetier[j.metier] || j.metier}</span></td>
+        <td class="num">${(Number(j.total_pate_g) / 1000).toFixed(2)}</td>
+        <td class="num">${j.total_pieces}</td>
+      </tr>
+    `).join('');
+  }
+
+  // ---- Tableau par recette ----
+  const corpsRecette = document.getElementById('corps-par-recette');
+  if (!parRecette || parRecette.length === 0) {
+    corpsRecette.innerHTML = '<tr><td colspan="5" class="vide">Aucune production sur cette période.</td></tr>';
+  } else {
+    corpsRecette.innerHTML = parRecette.map(r => `
+      <tr>
+        <td>${r.nom_recette}</td>
+        <td><span class="metier-badge">${labelsMetier[r.metier] || r.metier}</span></td>
+        <td class="num">${(Number(r.total_pate_g) / 1000).toFixed(2)}</td>
+        <td class="num">${r.total_pieces}</td>
+        <td class="num">${r.nb_jours_production}</td>
+      </tr>
+    `).join('');
+  }
+}
+
+(async () => {
+  profilCourant = await exigerRole(['gerant', 'boulanger', 'patissier']);
+  if (!profilCourant) return;
+
+  const d = new Date();
+  const debut = new Date(d.getFullYear(), d.getMonth(), 1);
+  document.getElementById('date-debut').value = debut.toISOString().slice(0, 10);
+  document.getElementById('date-fin').value = dateAujourdhui();
+  await chargerHistorique();
+})();
+</script>
+</body>
+</html>
