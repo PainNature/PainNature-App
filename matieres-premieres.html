@@ -63,17 +63,22 @@ tr:last-child td{border-bottom:none;}
 
   <button class="btn btn-primary btn-nouvelle" onclick="ouvrirModaleAjout()">+ Ajouter une matière première</button>
 
-  <select id="filtre-metier" onchange="chargerListe()" style="width:100%; padding:8px 10px; margin-bottom:8px; border:1.5px solid var(--border-strong); border-radius:var(--r); font-size:.85rem; background:#fff; font-weight:600;">
-    <option value="">Tous les métiers</option>
-    <option value="B">Boulangerie</option>
-    <option value="P">Pâtisserie</option>
-    <option value="V">Viennoiserie</option>
-    <option value="GV">Gâteaux de voyage</option>
-  </select>
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
+    <select id="filtre-categorie" onchange="chargerListe()" style="padding:8px 10px; border:1.5px solid var(--border-strong); border-radius:var(--r); font-size:.85rem; background:#fff; font-weight:600;">
+      <option value="">Toutes les catégories</option>
+    </select>
+    <select id="filtre-metier" onchange="chargerListe()" style="padding:8px 10px; border:1.5px solid var(--border-strong); border-radius:var(--r); font-size:.85rem; background:#fff; font-weight:600;">
+      <option value="">Tous les métiers</option>
+      <option value="B">Boulangerie</option>
+      <option value="P">Pâtisserie</option>
+      <option value="V">Viennoiserie</option>
+      <option value="GV">Gâteaux de voyage</option>
+    </select>
+  </div>
 
   <div class="card">
     <table>
-      <thead><tr><th>Nom</th><th>Fournisseur</th><th>Métiers</th><th>Statut</th></tr></thead>
+      <thead><tr><th>Nom</th><th>Catégorie</th><th>Métiers</th><th>Statut</th></tr></thead>
       <tbody id="corps-mp"><tr><td colspan="4" class="vide">Chargement…</td></tr></tbody>
     </table>
   </div>
@@ -81,11 +86,15 @@ tr:last-child td{border-bottom:none;}
 
 <div class="overlay" id="overlay-ajout">
   <div class="modale">
-    <h3>Nouvelle matière première</h3>
+    <h3 id="titre-modale-mp">Nouvelle matière première</h3>
     <div class="msg-erreur-modale" id="erreur-ajout"></div>
     <form onsubmit="return false;">
+      <input type="hidden" id="add-id">
       <div class="field"><label>Nom</label><input type="text" id="add-nom" required placeholder="ex : Farine T80 Bio"></div>
       <div class="field"><label>Fournisseur</label><input type="text" id="add-fournisseur" placeholder="ex : Coup de Vague"></div>
+      <div class="field"><label>Catégorie</label>
+        <select id="add-categorie" style="width:100%; padding:10px 12px; border:1.5px solid var(--border-strong); border-radius:var(--r); background:#fff;"></select>
+      </div>
       <div class="field field-checkbox"><input type="checkbox" id="add-bio"><label style="margin:0;">Matière biologique</label></div>
       <div class="field">
         <label>Métiers concernés</label>
@@ -111,12 +120,27 @@ tr:last-child td{border-bottom:none;}
 let profilCourant = null;
 
 const labelsMetier = { B: 'Boulangerie', P: 'Pâtisserie', V: 'Viennoiserie', GV: 'Gâteaux de voyage' };
+const labelsCategorie = {
+  farines: 'Farines', levains_ferments: 'Levains & ferments',
+  sel_sucres_epices: 'Sel, sucres et épices', matieres_grasses: 'Matières grasses',
+  liquides_oeufs: 'Liquides et œufs', graines_fruits_secs: 'Graines et fruits secs',
+  fruits_legumes: 'Fruits & légumes', chocolat_cacao: 'Chocolat & cacao',
+  emballage_consommables: 'Emballage & consommables', autres_preparations: 'Autres / Préparations'
+};
+
+function remplirSelectsCategorie() {
+  const optionsHtml = Object.entries(labelsCategorie).map(([val, lbl]) => `<option value="${val}">${lbl}</option>`).join('');
+  document.getElementById('filtre-categorie').innerHTML = '<option value="">Toutes les catégories</option>' + optionsHtml;
+  document.getElementById('add-categorie').innerHTML = '<option value="">—</option>' + optionsHtml;
+}
 
 async function chargerListe() {
   const metierFiltre = document.getElementById('filtre-metier')?.value;
+  const categorieFiltre = document.getElementById('filtre-categorie')?.value;
 
-  let requete = sb.from('matieres_premieres').select('id, nom, fournisseur, bio, prix_ht_kg, metiers').order('nom');
+  let requete = sb.from('matieres_premieres').select('id, nom, fournisseur, bio, prix_ht_kg, metiers, categorie').order('categorie').order('nom');
   if (metierFiltre) requete = requete.contains('metiers', [metierFiltre]);
+  if (categorieFiltre) requete = requete.eq('categorie', categorieFiltre);
 
   const { data, error } = await requete;
   const corps = document.getElementById('corps-mp');
@@ -124,9 +148,9 @@ async function chargerListe() {
   if (!data || data.length === 0) { corps.innerHTML = '<tr><td colspan="4" class="vide">Aucune matière première pour ce filtre.</td></tr>'; return; }
 
   corps.innerHTML = data.map(mp => `
-    <tr>
+    <tr style="cursor:pointer;" onclick='ouvrirModaleEdition(${JSON.stringify(mp).replace(/'/g, "&apos;")})'>
       <td>${mp.nom}${mp.bio ? '<span class="bio-tag">BIO</span>' : ''}</td>
-      <td>${mp.fournisseur || '—'}</td>
+      <td style="font-size:.78rem; color:var(--text-light);">${labelsCategorie[mp.categorie] || '—'}</td>
       <td style="font-size:.78rem; color:var(--text-light);">${(mp.metiers || []).map(m => labelsMetier[m] || m).join(', ') || '—'}</td>
       <td>
         ${mp.prix_ht_kg > 0
@@ -137,24 +161,44 @@ async function chargerListe() {
   `).join('');
 }
 
+function remplirFormulaire(mp) {
+  document.getElementById('add-id').value = mp?.id || '';
+  document.getElementById('add-nom').value = mp?.nom || '';
+  document.getElementById('add-fournisseur').value = mp?.fournisseur || '';
+  document.getElementById('add-categorie').value = mp?.categorie || '';
+  document.getElementById('add-bio').checked = mp?.bio || false;
+  const metiers = mp?.metiers || [];
+  document.getElementById('add-metier-b').checked = metiers.includes('B');
+  document.getElementById('add-metier-p').checked = metiers.includes('P');
+  document.getElementById('add-metier-v').checked = metiers.includes('V');
+  document.getElementById('add-metier-gv').checked = metiers.includes('GV');
+}
+
 function ouvrirModaleAjout() {
   document.getElementById('erreur-ajout').classList.remove('visible');
-  document.getElementById('add-nom').value = '';
-  document.getElementById('add-fournisseur').value = '';
-  document.getElementById('add-bio').checked = false;
-  document.getElementById('add-metier-b').checked = false;
-  document.getElementById('add-metier-p').checked = false;
-  document.getElementById('add-metier-v').checked = false;
-  document.getElementById('add-metier-gv').checked = false;
+  document.getElementById('titre-modale-mp').textContent = 'Nouvelle matière première';
+  document.getElementById('btn-confirmer-ajout').textContent = 'Ajouter';
+  remplirFormulaire(null);
   document.getElementById('overlay-ajout').classList.add('visible');
 }
+
+function ouvrirModaleEdition(mp) {
+  document.getElementById('erreur-ajout').classList.remove('visible');
+  document.getElementById('titre-modale-mp').textContent = 'Modifier la matière première';
+  document.getElementById('btn-confirmer-ajout').textContent = 'Enregistrer';
+  remplirFormulaire(mp);
+  document.getElementById('overlay-ajout').classList.add('visible');
+}
+
 function fermerModaleAjout() {
   document.getElementById('overlay-ajout').classList.remove('visible');
 }
 
 async function confirmerAjout() {
+  const id = document.getElementById('add-id').value;
   const nom = document.getElementById('add-nom').value.trim();
   const fournisseur = document.getElementById('add-fournisseur').value.trim();
+  const categorie = document.getElementById('add-categorie').value || null;
   const bio = document.getElementById('add-bio').checked;
   const erreur = document.getElementById('erreur-ajout');
   const btn = document.getElementById('btn-confirmer-ajout');
@@ -171,14 +215,29 @@ async function confirmerAjout() {
     return;
   }
 
-  btn.disabled = true; btn.textContent = 'Ajout…';
+  btn.disabled = true; btn.textContent = id ? 'Enregistrement…' : 'Ajout…';
 
-  const { error } = await sb.rpc('creer_matiere_premiere_sans_prix', {
-    p_nom: nom, p_fournisseur: fournisseur, p_bio: bio, p_metiers: metiers
-  });
+  let error;
+  if (id) {
+    // Modification d'une matière existante : catégorie, métiers, bio,
+    // fournisseur sont modifiables par l'équipe métier — le PRIX reste
+    // protégé séparément (RLS empêche son écriture hors gérant).
+    ({ error } = await sb.from('matieres_premieres').update({
+      nom, fournisseur, categorie, bio, metiers
+    }).eq('id', id));
+  } else {
+    ({ error } = await sb.rpc('creer_matiere_premiere_sans_prix', {
+      p_nom: nom, p_fournisseur: fournisseur, p_bio: bio, p_metiers: metiers
+    }));
+    // La catégorie n'est pas gérée par cette fonction RPC (créée avant
+    // l'introduction des catégories) : on la complète juste après si besoin.
+    if (!error && categorie) {
+      const { data: nouvelle } = await sb.from('matieres_premieres').select('id').eq('nom', nom).order('created_at', { ascending: false }).limit(1).maybeSingle();
+      if (nouvelle) await sb.from('matieres_premieres').update({ categorie }).eq('id', nouvelle.id);
+    }
+  }
 
-  btn.disabled = false; btn.textContent = 'Ajouter';
-
+  btn.disabled = false; btn.textContent = id ? 'Enregistrer' : 'Ajouter';
 
   if (error) { erreur.textContent = error.message; erreur.classList.add('visible'); return; }
 
@@ -191,9 +250,10 @@ async function confirmerAjout() {
   if (!profilCourant) return;
 
   document.getElementById('note-role').textContent = profilCourant.role === 'gerant'
-    ? "En tant que gérant, vous seul pouvez modifier les prix (depuis l'écran Marges)."
-    : "Vous pouvez consulter les prix et ajouter des matières premières. Seul le gérant peut modifier un prix existant.";
+    ? "En tant que gérant, vous seul pouvez modifier les prix (depuis l'écran Gestion). Cliquez sur une ligne pour modifier catégorie, métiers ou bio."
+    : "Vous pouvez consulter les prix, ajouter des matières et modifier catégorie/métiers/bio. Seul le gérant peut modifier un prix existant.";
 
+  remplirSelectsCategorie();
   await chargerListe();
 })();
 </script>
