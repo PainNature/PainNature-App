@@ -1,0 +1,71 @@
+/* ============================================================
+   STYLES PARTAGÉS — PAIN NATURE
+   Palette extraite du logo officiel : vert sauge foncé + brun doré.
+   ============================================================ */
+
+:root{
+  --bg:#f3f1ec; --surface:#fff; --surface2:#f6f4ef;
+  --border:#dcd8cc; --border-strong:#bcb6a4;
+  --text:#1a1a1a; --text-muted:#444; --text-light:#666;
+  /* Brun doré (épis du logo) — couleur d'accent principale */
+  --wheat:#a8763f; --wheat-light:#f3e8d8; --wheat-mid:#c08f54;
+  /* Vert sauge (fond du logo) — couleur secondaire */
+  --sauge:#546054; --sauge-light:#e3e7e1; --sauge-mid:#6e7d6e;
+  --green:#1a5c38; --green-light:#e0f0e8;
+  --blue:#163d6a; --blue-light:#deeaf7;
+  --red:#7a1a1a; --red-light:#fce8e8;
+  --vien:#4a1a5c; --vien-light:#f0e0f8; --vien-mid:#7a3a9c;
+  --font:'Inter',system-ui,sans-serif;
+  --mono:'DM Mono',monospace;
+  --r:6px; --r-lg:10px;
+  --shadow:0 4px 16px rgba(60,50,30,.10);
+}
+
+*{box-sizing:border-box;margin:0;padding:0;}
+html{height:100%;}
+body{
+  font-family:var(--font);
+  background:var(--bg);
+  color:var(--text);
+  font-size:15px;
+  line-height:1.5;
+  min-height:100%;
+  -webkit-tap-highlight-color:transparent;
+}
+
+button, input, select, textarea{font-family:inherit;}
+
+/* Évite le double-tap zoom gênant sur iPad/iPhone pour une app tactile */
+* { touch-action: manipulation; }
+
+.btn{
+  padding:11px 18px;border:none;cursor:pointer;color:#fff;border-radius:var(--r);
+  font-weight:600;font-size:14px;transition:filter .15s, transform .05s;
+}
+.btn:active{transform:scale(.98);}
+.btn:disabled{opacity:.5;cursor:not-allowed;}
+.btn-primary{background:var(--wheat);}
+.btn-primary:hover:not(:disabled){filter:brightness(1.08);}
+.btn-ghost{background:transparent;color:var(--wheat);border:1.5px solid var(--border-strong);}
+
+.card{
+  background:var(--surface);
+  border:1.5px solid var(--border);
+  border-radius:var(--r-lg);
+  box-shadow:var(--shadow);
+}
+
+.visually-hidden{
+  position:absolute;width:1px;height:1px;overflow:hidden;
+  clip:rect(0,0,0,0);white-space:nowrap;
+}
+
+/* Focus clavier visible — accessibilité, ne jamais retirer */
+:focus-visible{
+  outline:3px solid var(--wheat-mid);
+  outline-offset:2px;
+}
+
+@media (prefers-reduced-motion: reduce){
+  *{animation-duration:.01ms !important;transition-duration:.01ms !important;}
+}
