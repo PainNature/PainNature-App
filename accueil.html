@@ -33,6 +33,7 @@ main{max-width:640px; margin:2rem auto; padding:0 1.2rem;}
   box-shadow:var(--shadow); transition:transform .1s;
 }
 .menu-item:active{transform:scale(.97);}
+.menu-item.pleine-largeur{grid-column:1 / -1;}
 .menu-item .emoji{font-size:1.8rem; display:block; margin-bottom:.5rem;}
 .menu-item .label{font-weight:700; font-size:.88rem;}
 .bienvenue .role-badge{
@@ -80,18 +81,24 @@ main{max-width:640px; margin:2rem auto; padding:0 1.2rem;}
   document.getElementById('badge-role').textContent = labelsRole[profil.role] || profil.role;
 
   const items = [
-    { href: 'production.html', emoji: '🥖', label: 'Production', roles: ['gerant','boulanger','patissier','vendeur','apprenti'] },
-    { href: 'commandes.html', emoji: '📋', label: 'Commandes', roles: ['gerant','boulanger','patissier','vendeur','apprenti'] },
-    { href: 'tracabilite.html', emoji: '🌿', label: 'Traçabilité', roles: ['gerant','boulanger','patissier'] },
+    // Ligne 1 : Commandes seule (pleine largeur)
+    { href: 'commandes.html', emoji: '📋', label: 'Commandes', roles: ['gerant','boulanger','patissier','vendeur','apprenti'], pleine: true },
+    // Ligne 2 : Matières premières + Production
     { href: 'matieres-premieres.html', emoji: '🌾', label: 'Matières premières', roles: ['gerant','boulanger','patissier'] },
-    { href: 'gestion.html', emoji: '📖', label: 'Gestion', roles: ['gerant'] },
+    { href: 'production.html', emoji: '🥖', label: 'Production', roles: ['gerant','boulanger','patissier','vendeur','apprenti'] },
+    // Ligne 3 : Gestion seule (pleine largeur)
+    { href: 'gestion.html', emoji: '📖', label: 'Gestion', roles: ['gerant'], pleine: true },
+    // Ligne 4 : Traçabilité + Historique
+    { href: 'tracabilite.html', emoji: '🌿', label: 'Traçabilité', roles: ['gerant','boulanger','patissier'] },
+    { href: 'historique-production.html', emoji: '📊', label: 'Historique', roles: ['gerant','boulanger','patissier'] },
+    // Reste du menu (équipe), à la suite
     { href: 'equipe.html', emoji: '👥', label: 'Équipe', roles: ['gerant'] },
   ];
 
   const grille = document.getElementById('menu-grille');
   grille.innerHTML = items
     .filter(i => i.roles.includes(profil.role))
-    .map(i => `<a class="menu-item" href="${i.href}"><span class="emoji">${i.emoji}</span><span class="label">${i.label}</span></a>`)
+    .map(i => `<a class="menu-item ${i.pleine ? 'pleine-largeur' : ''}" href="${i.href}"><span class="emoji">${i.emoji}</span><span class="label">${i.label}</span></a>`)
     .join('');
 })();
 </script>
