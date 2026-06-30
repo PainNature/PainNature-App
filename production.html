@@ -371,9 +371,8 @@ function renderCarteRecette(recette) {
   const res = calculerRecette(recette);
   const totalBase = (recetteIngredientsCache[recette.id] || []).reduce((s, i) => s + Number(i.quantite_base_g), 0);
   const coefBrut = totalBase > 0 ? res.totalPate / totalBase : 0;
-  // Arrondi au 0.5 supérieur le plus proche (ex: 3.2→3.5, 3.6→4.0)
-  // pour ne jamais se retrouver en sous-production.
-  const coef = Math.ceil(coefBrut * 2) / 2;
+  // Arrondi au 0.1 supérieur le plus proche (ex: 3.21→3.3, 3.65→3.7)
+  const coef = Math.ceil(coefBrut * 10) / 10;
   const hasProd = res.totalPate > 0;
   const nbBacs = recette.poids_bac_g > 0 && res.totalPate > 0 ? Math.ceil(res.totalPate / recette.poids_bac_g) : 0;
   const selectionne = selectionImpression[recette.id] !== false;
