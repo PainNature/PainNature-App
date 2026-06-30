@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Pain Nature — Connexion</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#6b3a1f">
+<meta name="theme-color" content="#a8763f">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -15,7 +15,7 @@
 body{
   display:flex; align-items:center; justify-content:center;
   min-height:100vh; padding:1.5rem;
-  background:linear-gradient(160deg, var(--wheat) 0%, #4a2814 100%);
+  background:linear-gradient(160deg, var(--wheat-mid) 0%, var(--sauge) 100%);
 }
 .login-box{
   width:100%; max-width:380px;
@@ -27,12 +27,8 @@ body{
 .logo{
   text-align:center; margin-bottom:1.75rem;
 }
-.logo .mark{font-size:2.4rem; line-height:1;}
-.logo h1{
-  font-size:1.15rem; font-weight:800; color:var(--wheat);
-  margin-top:.5rem; letter-spacing:.01em;
-}
-.logo p{font-size:.78rem; color:var(--text-light); margin-top:2px; font-family:var(--mono);}
+.logo .logo-img{width:130px; height:130px; border-radius:50%; box-shadow:0 6px 18px rgba(0,0,0,.18);}
+.logo p{font-size:.78rem; color:var(--text-light); margin-top:10px; font-family:var(--mono);}
 
 .field{margin-bottom:1.1rem;}
 .field label{
@@ -98,8 +94,7 @@ body{
 
 <div class="login-box">
   <div class="logo">
-    <div class="mark">🌾</div>
-    <h1>PAIN NATURE</h1>
+    <img src="icons/logo.png" alt="Pain Nature" class="logo-img">
     <p>Espace équipe</p>
   </div>
 
