@@ -31,6 +31,18 @@ body{font-size:13px;}
 main{max-width:1200px; margin:0 auto; padding:.75rem 1rem 3rem;}
 
 .qtotals{display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:7px; margin-bottom:.75rem;}
+
+.filtre-metier-bar{display:flex; gap:6px; margin-bottom:.75rem; flex-wrap:wrap;}
+.filtre-metier-btn{
+  flex:1; min-width:110px; padding:9px 10px; border:1.5px solid var(--border-strong);
+  border-radius:var(--r-lg); background:var(--surface); font-size:11px; font-weight:700;
+  color:var(--text-muted); cursor:pointer; text-align:center;
+}
+.filtre-metier-btn.active{background:var(--wheat); color:#fff; border-color:var(--wheat);}
+.filtre-metier-btn .count{
+  display:inline-block; margin-left:4px; font-family:var(--mono); font-size:9.5px;
+  opacity:.8;
+}
 .qtot{background:var(--surface); border:2px solid var(--border); border-radius:var(--r-lg); padding:.5rem .6rem; text-align:center;}
 .qtot .ql{font-family:var(--mono); font-size:9px; letter-spacing:.07em; text-transform:uppercase; color:#555; font-weight:700;}
 .qtot .qv{font-family:var(--mono); font-size:18px; font-weight:800; color:var(--wheat);}
@@ -195,6 +207,8 @@ main{max-width:1200px; margin:0 auto; padding:.75rem 1rem 3rem;}
 <main>
   <div class="qtotals" id="qtotals"></div>
 
+  <div class="filtre-metier-bar no-print" id="filtre-metier-bar"></div>
+
   <div id="vue-plan">
     <div id="print-select-bar" class="no-print">
       <button class="btn-action" onclick="toutSelectionner(true)">☑ Tout sélectionner</button>
@@ -231,6 +245,7 @@ let tousFormats = [];
 let toutesVariantes = [];
 let planJour = {};
 let selectionImpression = {};
+let metierFiltre = null; // null = tous les métiers affichés
 let recetteIngredientsCache = {};
 
 function fmt(n){ return Math.round(n).toLocaleString('fr-FR'); }
@@ -436,12 +451,42 @@ function toutSelectionner(val) {
   renderTout();
 }
 
+const labelsMetierFiltre = { B: 'Boulangerie', V: 'Viennoiserie', GV: 'Gâteaux de voyage', P: 'Pâtisserie' };
+
+function renderFiltreMetier() {
+  const conteneur = document.getElementById('filtre-metier-bar');
+  if (!conteneur) return;
+
+  const compteParMetier = {};
+  toutesRecettes.forEach(r => { compteParMetier[r.metier] = (compteParMetier[r.metier] || 0) + 1; });
+  const metiersPresents = Object.keys(compteParMetier).filter(m => labelsMetierFiltre[m]);
+
+  if (metiersPresents.length <= 1) { conteneur.innerHTML = ''; return; }
+
+  let html = `<button class="filtre-metier-btn ${metierFiltre === null ? 'active' : ''}" onclick="basculerFiltreMetier(null)">Tous</button>`;
+  metiersPresents.forEach(m => {
+    html += `<button class="filtre-metier-btn ${metierFiltre === m ? 'active' : ''}" onclick="basculerFiltreMetier('${m}')">${labelsMetierFiltre[m]}<span class="count">${compteParMetier[m]}</span></button>`;
+  });
+  conteneur.innerHTML = html;
+}
+
+function basculerFiltreMetier(metier) {
+  metierFiltre = metier;
+  renderTout();
+}
+
 function renderTout() {
   const zone = document.getElementById('zone-recettes');
   if (toutesRecettes.length === 0) { zone.innerHTML = '<div class="vide">Aucune recette active.</div>'; return; }
 
+  renderFiltreMetier();
+
   const parMetier = { B: [], V: [], GV: [], P: [] };
   toutesRecettes.forEach(r => { if (parMetier[r.metier]) parMetier[r.metier].push(r); });
+  // Si un métier est sélectionné, on n'affiche QUE celui-là (économie
+  // d'écran et de manipulation quand on n'a besoin que d'un seul métier
+  // à l'instant — ex: le boulanger qui n'a pas à voir Pâtisserie/Viennoiserie).
+  const metiersAffiches = metierFiltre ? [metierFiltre] : ['B', 'V', 'GV', 'P'];
   const labelsMetier = { B: 'Boulangerie', V: 'Viennoiserie', GV: 'Gâteaux de voyage', P: 'Pâtisserie' };
   const labelsFamille = {
     baguettes: 'Baguettes', bles_levain: 'Blés au levain',
@@ -472,7 +517,7 @@ function renderTout() {
   let html = '';
   let totalPateGlobal = 0, totalPiecesGlobal = 0;
 
-  ['B', 'V', 'GV', 'P'].forEach(metier => {
+  metiersAffiches.forEach(metier => {
     const recs = parMetier[metier];
     if (recs.length === 0) return;
     const sectionVide = recs.every(r => calculerRecette(r).totalPate === 0);
