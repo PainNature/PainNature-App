@@ -181,7 +181,16 @@ tr:last-child td{border-bottom:none;}
     </div>
     <div class="field field-checkbox"><input type="checkbox" id="rec-conforme" checked><label style="margin:0;">Livraison conforme</label></div>
     <div class="field" id="zone-nc" style="display:none;"><label>Gestion de la non-conformité</label><textarea id="rec-nc" placeholder="Décrire le problème et l'action prise…"></textarea></div>
-    <div class="field"><label>Photo (optionnel)</label><input type="file" id="rec-photo" accept="image/*" capture="environment"></div>
+    <div class="field">
+      <label>Photo (optionnel)</label>
+      <div style="display:flex; gap:8px;">
+        <button type="button" class="btn btn-ghost" style="flex:1; padding:10px;" onclick="document.getElementById('rec-photo-camera').click()">📷 Prendre une photo</button>
+        <button type="button" class="btn btn-ghost" style="flex:1; padding:10px;" onclick="document.getElementById('rec-photo-galerie').click()">🖼️ Galerie</button>
+      </div>
+      <input type="file" id="rec-photo-camera" accept="image/*" capture="environment" style="display:none;" onchange="majApercuPhoto('rec-photo-camera', 'rec-photo-galerie', 'rec-photo-apercu')">
+      <input type="file" id="rec-photo-galerie" accept="image/*" style="display:none;" onchange="majApercuPhoto('rec-photo-galerie', 'rec-photo-camera', 'rec-photo-apercu')">
+      <div id="rec-photo-apercu" style="margin-top:8px; font-size:.8rem; color:var(--text-light);"></div>
+    </div>
     <div class="field"><label>Commentaire</label><textarea id="rec-commentaire"></textarea></div>
     <div class="modale-actions">
       <button class="btn btn-ghost" onclick="fermerModaleReception()">Annuler</button>
@@ -196,7 +205,16 @@ tr:last-child td{border-bottom:none;}
     <div class="msg-erreur-modale" id="erreur-photo"></div>
     <div class="field"><label>Matière première</label><select id="ph-mp"></select></div>
     <div class="field"><label>Date d'utilisation</label><input type="date" id="ph-date"></div>
-    <div class="field"><label>Photo</label><input type="file" id="ph-fichier" accept="image/*" capture="environment" required></div>
+    <div class="field">
+      <label>Photo</label>
+      <div style="display:flex; gap:8px;">
+        <button type="button" class="btn btn-ghost" style="flex:1; padding:10px;" onclick="document.getElementById('ph-photo-camera').click()">📷 Prendre une photo</button>
+        <button type="button" class="btn btn-ghost" style="flex:1; padding:10px;" onclick="document.getElementById('ph-photo-galerie').click()">🖼️ Galerie</button>
+      </div>
+      <input type="file" id="ph-photo-camera" accept="image/*" capture="environment" style="display:none;" onchange="majApercuPhoto('ph-photo-camera', 'ph-photo-galerie', 'ph-photo-apercu')">
+      <input type="file" id="ph-photo-galerie" accept="image/*" style="display:none;" onchange="majApercuPhoto('ph-photo-galerie', 'ph-photo-camera', 'ph-photo-apercu')">
+      <div id="ph-photo-apercu" style="margin-top:8px; font-size:.8rem; color:var(--text-light);"></div>
+    </div>
     <div class="field"><label>Commentaire (optionnel)</label><input type="text" id="ph-commentaire"></div>
     <div class="modale-actions">
       <button class="btn btn-ghost" onclick="fermerModalePhoto()">Annuler</button>
@@ -213,6 +231,28 @@ let toutesMatieresPremieres = [];
 let toutEquipe = [];
 
 function dateAujourdhui() { return new Date().toISOString().slice(0, 10); }
+
+// Synchronise les deux inputs caméra/galerie pour un même champ logique :
+// quand l'un est rempli, on vide l'autre (un seul fichier actif à la fois),
+// et on affiche un petit récapitulatif visuel du fichier choisi.
+function majApercuPhoto(idChoisi, idAutre, idApercu) {
+  const inputChoisi = document.getElementById(idChoisi);
+  const inputAutre = document.getElementById(idAutre);
+  const apercu = document.getElementById(idApercu);
+  const fichier = inputChoisi.files[0];
+
+  if (fichier) {
+    inputAutre.value = '';
+    apercu.textContent = `✓ Photo sélectionnée : ${fichier.name}`;
+    apercu.style.color = 'var(--green)';
+  } else {
+    apercu.textContent = '';
+  }
+}
+
+function getFichierPhoto(idCamera, idGalerie) {
+  return document.getElementById(idCamera).files[0] || document.getElementById(idGalerie).files[0];
+}
 
 function changerTab(tab) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
@@ -375,7 +415,9 @@ function ouvrirModaleReception() {
   document.getElementById('rec-nc').value = '';
   document.getElementById('zone-nc').style.display = 'none';
   document.getElementById('rec-commentaire').value = '';
-  document.getElementById('rec-photo').value = '';
+  document.getElementById('rec-photo-camera').value = '';
+  document.getElementById('rec-photo-galerie').value = '';
+  document.getElementById('rec-photo-apercu').textContent = '';
   document.getElementById('overlay-reception').classList.add('visible');
 }
 function fermerModaleReception() { document.getElementById('overlay-reception').classList.remove('visible'); }
@@ -398,7 +440,7 @@ async function confirmerReception() {
   const conforme = document.getElementById('rec-conforme').checked;
   const nc = document.getElementById('rec-nc').value.trim() || null;
   const commentaire = document.getElementById('rec-commentaire').value.trim() || null;
-  const fichierPhoto = document.getElementById('rec-photo').files[0];
+  const fichierPhoto = getFichierPhoto('rec-photo-camera', 'rec-photo-galerie');
   const erreur = document.getElementById('erreur-reception');
   const btn = document.getElementById('btn-confirmer-reception');
 
@@ -477,7 +519,9 @@ async function ouvrirPhotoMarchandise(path) {
 function ouvrirModalePhoto() {
   document.getElementById('erreur-photo').classList.remove('visible');
   document.getElementById('ph-date').value = dateAujourdhui();
-  document.getElementById('ph-fichier').value = '';
+  document.getElementById('ph-photo-camera').value = '';
+  document.getElementById('ph-photo-galerie').value = '';
+  document.getElementById('ph-photo-apercu').textContent = '';
   document.getElementById('ph-commentaire').value = '';
   document.getElementById('overlay-photo').classList.add('visible');
 }
@@ -486,7 +530,7 @@ function fermerModalePhoto() { document.getElementById('overlay-photo').classLis
 async function confirmerPhoto() {
   const mpId = document.getElementById('ph-mp').value;
   const date = document.getElementById('ph-date').value;
-  const fichier = document.getElementById('ph-fichier').files[0];
+  const fichier = getFichierPhoto('ph-photo-camera', 'ph-photo-galerie');
   const commentaire = document.getElementById('ph-commentaire').value.trim() || null;
   const erreur = document.getElementById('erreur-photo');
   const btn = document.getElementById('btn-confirmer-photo');
