@@ -260,23 +260,40 @@ function changerTab(tab) {
 }
 
 // ---------------- MATIÈRES PREMIÈRES ----------------
+const labelsCategorieMp = {
+  farines: 'Farines', levains_ferments: 'Levains & ferments',
+  sel_sucres_epices: 'Sel, sucres et épices', matieres_grasses: 'Matières grasses',
+  liquides_oeufs: 'Liquides et œufs', graines_fruits_secs: 'Graines et fruits secs',
+  fruits_legumes: 'Fruits & légumes', chocolat_cacao: 'Chocolat & cacao',
+  emballage_consommables: 'Emballage & consommables', autres_preparations: 'Autres / Préparations'
+};
+
 async function chargerMP() {
-  const { data, error } = await sb.from('matieres_premieres').select('*').order('nom');
+  const { data, error } = await sb.from('matieres_premieres').select('*').order('categorie').order('nom');
   const corps = document.getElementById('corps-mp');
   if (error) { corps.innerHTML = `<tr><td colspan="4" class="vide">Erreur : ${error.message}</td></tr>`; return; }
   if (!data || data.length === 0) { corps.innerHTML = '<tr><td colspan="4" class="vide">Aucune matière première.</td></tr>'; return; }
 
-  corps.innerHTML = data.map(mp => `
-    <tr>
-      <td>${mp.nom}${mp.bio ? '<span class="bio-tag">BIO</span>' : ''}</td>
-      <td>${mp.fournisseur || '—'}</td>
-      <td>
-        <input type="number" step="0.0001" class="input-mini" value="${mp.prix_ht_kg}"
-               onchange="majPrixMP('${mp.id}', this.value)">
-      </td>
-      <td><button class="btn-icon" onclick="supprimerMP('${mp.id}')">🗑️</button></td>
-    </tr>
-  `).join('');
+  let html = '';
+  let categorieCourante = undefined;
+  data.forEach(mp => {
+    if (mp.categorie !== categorieCourante) {
+      categorieCourante = mp.categorie;
+      const label = labelsCategorieMp[categorieCourante] || 'Sans catégorie';
+      html += `<tr><td colspan="4" style="background:var(--surface2); font-size:.7rem; font-weight:800; text-transform:uppercase; letter-spacing:.04em; color:var(--text-light); font-family:var(--mono);">${label}</td></tr>`;
+    }
+    html += `
+      <tr>
+        <td>${mp.nom}${mp.bio ? '<span class="bio-tag">BIO</span>' : ''}</td>
+        <td>${mp.fournisseur || '—'}</td>
+        <td>
+          <input type="number" step="0.0001" class="input-mini" value="${mp.prix_ht_kg}"
+                 onchange="majPrixMP('${mp.id}', this.value)">
+        </td>
+        <td><button class="btn-icon" onclick="supprimerMP('${mp.id}')">🗑️</button></td>
+      </tr>`;
+  });
+  corps.innerHTML = html;
 }
 
 async function majPrixMP(id, valeur) {
@@ -656,12 +673,25 @@ async function supprimerIngredient(ligneId) {
 
 let toutesMatieresPourAjout = [];
 
+function genererOptionsMpParCategorie(matieres) {
+  const groupes = {};
+  matieres.forEach(mp => {
+    const cle = labelsCategorieMp[mp.categorie] || 'Sans catégorie';
+    (groupes[cle] = groupes[cle] || []).push(mp);
+  });
+  return Object.entries(groupes).map(([cat, mps]) => `
+    <optgroup label="${cat}">
+      ${mps.map(mp => `<option value="${mp.id}">${mp.nom}</option>`).join('')}
+    </optgroup>
+  `).join('');
+}
+
 async function ouvrirModaleAjoutIngredient() {
   if (toutesMatieresPourAjout.length === 0) {
-    const { data } = await sb.from('matieres_premieres').select('id, nom').order('nom');
+    const { data } = await sb.from('matieres_premieres').select('id, nom, categorie').order('categorie').order('nom');
     toutesMatieresPourAjout = data || [];
   }
-  const optionsHtml = toutesMatieresPourAjout.map(mp => `<option value="${mp.id}">${mp.nom}</option>`).join('');
+  const optionsHtml = genererOptionsMpParCategorie(toutesMatieresPourAjout);
   const html = `
     <div class="modale" style="position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:200; max-width:380px;" id="modale-ajout-ingredient">
       <h3>Ajouter un ingrédient</h3>
