@@ -223,8 +223,29 @@ function changerTab(tab) {
   if (tab === 'photos') chargerPhotos();
 }
 
+const labelsCategorieMp = {
+  farines: 'Farines', levains_ferments: 'Levains & ferments',
+  sel_sucres_epices: 'Sel, sucres et épices', matieres_grasses: 'Matières grasses',
+  liquides_oeufs: 'Liquides et œufs', graines_fruits_secs: 'Graines et fruits secs',
+  fruits_legumes: 'Fruits & légumes', chocolat_cacao: 'Chocolat & cacao',
+  emballage_consommables: 'Emballage & consommables', autres_preparations: 'Autres / Préparations'
+};
+
+function genererOptionsMpParCategorie(matieres) {
+  const groupes = {};
+  matieres.forEach(mp => {
+    const cle = labelsCategorieMp[mp.categorie] || 'Sans catégorie';
+    (groupes[cle] = groupes[cle] || []).push(mp);
+  });
+  return Object.entries(groupes).map(([cat, mps]) => `
+    <optgroup label="${cat}">
+      ${mps.map(mp => `<option value="${mp.id}">${mp.nom}${mp.bio ? ' (BIO)' : ''}</option>`).join('')}
+    </optgroup>
+  `).join('');
+}
+
 async function chargerReferentiels() {
-  const { data: mps } = await sb.from('matieres_premieres').select('id, nom, bio').order('nom');
+  const { data: mps } = await sb.from('matieres_premieres').select('id, nom, bio, categorie').order('categorie').order('nom');
   toutesMatieresPremieres = mps || [];
 
   const { data: equipe } = await sb.rpc('lister_equipe');
@@ -233,7 +254,7 @@ async function chargerReferentiels() {
   const optionsEquipe = toutEquipe.map(e => `<option value="${e.user_id}">${e.prenom || e.nom}</option>`).join('');
   document.getElementById('rel-operateur').innerHTML = optionsEquipe;
 
-  const optionsMp = toutesMatieresPremieres.map(mp => `<option value="${mp.id}">${mp.nom}${mp.bio ? ' (BIO)' : ''}</option>`).join('');
+  const optionsMp = genererOptionsMpParCategorie(toutesMatieresPremieres);
   document.getElementById('rec-mp').innerHTML = optionsMp;
   document.getElementById('ph-mp').innerHTML = optionsMp;
 }
