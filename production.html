@@ -587,16 +587,10 @@ async function renderLevains() {
   const classes = { liquide: 'lh-liq', liquide_engrain: 'lh-eng', dur: 'lh-dur' };
 
   grid.innerHTML = data.map(l => {
-    const isDur = l.type === 'dur';
-    const rows = isDur ? `
+    const rows = `
       <div class="levain-row lr-souche"><span class="lr-name">Souche</span><span class="lr-val">${fmt(l.souche_g)} g</span></div>
       <div class="levain-row"><span class="lr-name">Farine rafraîchi</span><span class="lr-val">${fmt(l.total_farine_g)} g</span></div>
       <div class="levain-row"><span class="lr-name">Eau rafraîchi</span><span class="lr-val">${fmt(l.total_eau_g)} g</span></div>
-    ` : `
-      <div class="levain-row lr-souche"><span class="lr-name">Souche (${Math.round(l.souche_g / l.total_g * 100)}%)</span><span class="lr-val">${fmt(l.souche_g)} g</span></div>
-      <div class="levain-row"><span class="lr-name">Farine</span><span class="lr-val">${fmt(l.total_farine_g)} g</span></div>
-      <div class="levain-row"><span class="lr-name">Eau</span><span class="lr-val">${fmt(l.total_eau_g)} g</span></div>
-      <div class="levain-row"><span class="lr-name">Hydratation</span><span class="lr-val">${l.hydratation_pct}%</span></div>
     `;
     return `
       <div class="levain-card">
