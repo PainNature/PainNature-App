@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Pain Nature — Transmissions</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#a8763f">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/shared.css">
+<style>
+.topbar{
+  background:var(--wheat); color:#fff; padding:0 1.2rem; height:54px;
+  display:flex; align-items:center; justify-content:space-between;
+  box-shadow:0 2px 8px rgba(0,0,0,.2); position:sticky; top:0; z-index:10;
+}
+.topbar .marque{font-weight:800; font-size:1rem; display:flex; align-items:center; gap:.6rem;}
+.topbar .retour{color:#fff; text-decoration:none; font-size:1.3rem; opacity:.85;}
+.topbar .deco{background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3); color:#fff; padding:6px 13px; border-radius:var(--r); font-size:.82rem; font-weight:600; cursor:pointer;}
+main{max-width:800px; margin:1.2rem auto 3rem; padding:0 1.2rem;}
+
+.btn-nouvelle{width:100%; padding:13px; margin-bottom:1rem;}
+
+.filtres{display:flex; gap:6px; margin-bottom:1rem; flex-wrap:wrap;}
+.filtre-btn{flex:1; min-width:100px; padding:9px; border:1.5px solid var(--border-strong); border-radius:var(--r); background:var(--surface); font-size:.78rem; font-weight:700; color:var(--text-muted); cursor:pointer;}
+.filtre-btn.active{background:var(--wheat); color:#fff; border-color:var(--wheat);}
+
+.note-card{
+  background:var(--surface); border-radius:var(--r-lg); margin-bottom:10px;
+  border-left:6px solid var(--border-strong); box-shadow:var(--shadow);
+  padding:12px 16px;
+}
+.note-card.etat-nonlu{border-left-color:var(--red);}
+.note-card.etat-lu{border-left-color:#c98a1b;}
+.note-card.etat-traite{border-left-color:var(--green); opacity:.75;}
+.note-card.etat-retard{border-left-color:var(--red); background:var(--red-light);}
+
+.note-head{display:flex; justify-content:space-between; align-items:flex-start; gap:8px; flex-wrap:wrap;}
+.note-de-a{font-size:.8rem; color:var(--text-light); font-family:var(--mono);}
+.note-de-a strong{color:var(--text); font-weight:700;}
+.note-date{font-size:.72rem; color:var(--text-light); font-family:var(--mono);}
+.note-texte{margin:8px 0; font-size:.92rem; white-space:pre-wrap;}
+.note-echeance{
+  display:inline-block; font-size:.72rem; font-weight:700; padding:2px 10px;
+  border-radius:10px; background:var(--wheat-light); color:var(--wheat);
+  font-family:var(--mono); margin-bottom:6px;
+}
+.note-echeance.retard{background:var(--red); color:#fff;}
+.note-actions{display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; align-items:center;}
+.btn-lu, .btn-traite{
+  padding:7px 14px; border-radius:var(--r); font-size:.78rem; font-weight:700;
+  cursor:pointer; border:1.5px solid var(--border-strong); background:#fff; color:var(--text-muted);
+}
+.btn-lu.fait{background:#e3e7e1; border-color:#546054; color:#546054; cursor:default;}
+.btn-traite.fait{background:var(--green-light); border-color:var(--green); color:var(--green); cursor:default;}
+.btn-suppr{margin-left:auto; background:none; border:none; cursor:pointer; font-size:1rem; opacity:.5;}
+
+.vide{text-align:center; padding:2rem; color:var(--text-light); font-size:.9rem;}
+
+.overlay{display:none; position:fixed; inset:0; background:rgba(20,12,6,.55); align-items:center; justify-content:center; z-index:50; padding:1.2rem; overflow-y:auto;}
+.overlay.visible{display:flex;}
+.modale{background:var(--surface); border-radius:var(--r-lg); padding:1.6rem; width:100%; max-width:460px; box-shadow:0 20px 50px rgba(0,0,0,.3); margin:auto;}
+.modale h3{color:var(--wheat); margin-bottom:1.1rem; font-size:1.1rem;}
+.field{margin-bottom:1rem;}
+.field label{display:block; font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--text-light); margin-bottom:.4rem; font-family:var(--mono);}
+.field input, .field select, .field textarea{width:100%; padding:10px 12px; font-size:.9rem; border:1.5px solid var(--border-strong); border-radius:var(--r); background:#fff;}
+.field textarea{resize:vertical; min-height:90px;}
+.modale-actions{display:flex; gap:10px; margin-top:1.3rem;}
+.modale-actions .btn{flex:1;}
+.msg-erreur-modale{display:none; background:var(--red-light); color:var(--red); padding:.6rem .8rem; border-radius:var(--r); font-size:.82rem; font-weight:600; margin-bottom:.9rem;}
+.msg-erreur-modale.visible{display:block;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="marque"><a href="accueil.html" class="retour">←</a> 📝 TRANSMISSIONS</span>
+  <button class="deco" onclick="deconnexion()">Déconnexion</button>
+</div>
+
+<main>
+  <button class="btn btn-primary btn-nouvelle" onclick="ouvrirModaleNote()">+ Nouvelle transmission</button>
+
+  <div class="filtres">
+    <button class="filtre-btn active" data-filtre="actives" onclick="changerFiltre('actives')">À traiter</button>
+    <button class="filtre-btn" data-filtre="pour-moi" onclick="changerFiltre('pour-moi')">Pour moi</button>
+    <button class="filtre-btn" data-filtre="traitees" onclick="changerFiltre('traitees')">Traitées</button>
+    <button class="filtre-btn" data-filtre="toutes" onclick="changerFiltre('toutes')">Toutes</button>
+  </div>
+
+  <div id="liste-notes"><div class="vide">Chargement…</div></div>
+</main>
+
+<div class="overlay" id="overlay-note">
+  <div class="modale">
+    <h3>Nouvelle transmission</h3>
+    <div class="msg-erreur-modale" id="erreur-note"></div>
+    <div class="field"><label>De la part de</label><select id="nt-auteur"></select></div>
+    <div class="field"><label>Adressée à</label>
+      <select id="nt-destinataire"><option value="">Toute l'équipe</option></select>
+    </div>
+    <div class="field"><label>Message</label><textarea id="nt-texte" placeholder="Écrire la transmission…"></textarea></div>
+    <div class="field"><label>Échéance (si c'est une tâche à faire, optionnel)</label><input type="date" id="nt-echeance"></div>
+    <div class="modale-actions">
+      <button class="btn btn-ghost" onclick="fermerModaleNote()">Annuler</button>
+      <button class="btn btn-primary" onclick="confirmerNote()">Envoyer</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/supabase-client.js"></script>
+<script>
+let profilCourant = null;
+let toutEquipe = [];
+let filtreCourant = 'actives';
+
+function dateAujourdhui() { return new Date().toISOString().slice(0, 10); }
+
+function changerFiltre(f) {
+  filtreCourant = f;
+  document.querySelectorAll('.filtre-btn').forEach(b => b.classList.toggle('active', b.dataset.filtre === f));
+  chargerNotes();
+}
+
+async function chargerEquipe() {
+  const { data } = await sb.rpc('lister_equipe');
+  toutEquipe = (data || []).filter(e => e.actif);
+  const options = toutEquipe.map(e => `<option value="${e.user_id}">${e.prenom || e.nom}</option>`).join('');
+  document.getElementById('nt-auteur').innerHTML = options;
+  document.getElementById('nt-destinataire').innerHTML = '<option value="">Toute l\'équipe</option>' + options;
+  if (profilCourant) document.getElementById('nt-auteur').value = profilCourant.id;
+}
+
+function nomDe(userId) {
+  if (!userId) return "Toute l'équipe";
+  const p = toutEquipe.find(e => e.user_id === userId);
+  return p ? (p.prenom || p.nom) : '?';
+}
+
+function etatNote(n) {
+  if (n.traite) return 'traite';
+  if (n.date_echeance && n.date_echeance < dateAujourdhui()) return 'retard';
+  if (n.lu) return 'lu';
+  return 'nonlu';
+}
+
+async function chargerNotes() {
+  let requete = sb.from('transmissions').select('*').order('created_at', { ascending: false }).limit(100);
+
+  if (filtreCourant === 'actives') requete = requete.eq('traite', false);
+  if (filtreCourant === 'traitees') requete = requete.eq('traite', true);
+  if (filtreCourant === 'pour-moi') requete = requete.eq('traite', false).or(`destinataire_id.eq.${profilCourant.id},destinataire_id.is.null`);
+
+  const { data, error } = await requete;
+  const conteneur = document.getElementById('liste-notes');
+  if (error) { conteneur.innerHTML = `<div class="vide">Erreur : ${error.message}</div>`; return; }
+  if (!data || data.length === 0) { conteneur.innerHTML = '<div class="vide">Aucune transmission.</div>'; return; }
+
+  conteneur.innerHTML = data.map(n => {
+    const etat = etatNote(n);
+    const dateCreation = new Date(n.created_at).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    const echeanceRetard = n.date_echeance && n.date_echeance < dateAujourdhui() && !n.traite;
+    return `
+      <div class="note-card etat-${etat}">
+        <div class="note-head">
+          <span class="note-de-a">De <strong>${nomDe(n.auteur_id)}</strong> → <strong>${nomDe(n.destinataire_id)}</strong></span>
+          <span class="note-date">${dateCreation}</span>
+        </div>
+        ${n.date_echeance ? `<div class="note-echeance ${echeanceRetard ? 'retard' : ''}">📅 À faire pour le ${new Date(n.date_echeance).toLocaleDateString('fr-FR')}</div>` : ''}
+        <div class="note-texte">${n.texte}</div>
+        <div class="note-actions">
+          <button class="btn-lu ${n.lu ? 'fait' : ''}" onclick="${n.lu ? '' : `marquerLu('${n.id}')`}">${n.lu ? '✓ Lu par ' + nomDe(n.lu_par) : 'Marquer comme lu'}</button>
+          <button class="btn-traite ${n.traite ? 'fait' : ''}" onclick="${n.traite ? '' : `marquerTraite('${n.id}')`}">${n.traite ? '✓ Traité par ' + nomDe(n.traite_par) : 'Traité'}</button>
+          ${(n.auteur_id === profilCourant.id || profilCourant.role === 'gerant') ? `<button class="btn-suppr" title="Supprimer" onclick="supprimerNote('${n.id}')">🗑️</button>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+async function marquerLu(id) {
+  const { error } = await sb.from('transmissions').update({
+    lu: true, lu_le: new Date().toISOString(), lu_par: profilCourant.id
+  }).eq('id', id);
+  if (error) { alert('Erreur : ' + error.message); return; }
+  await chargerNotes();
+}
+
+async function marquerTraite(id) {
+  const { error } = await sb.from('transmissions').update({
+    traite: true, traite_le: new Date().toISOString(), traite_par: profilCourant.id,
+    lu: true, lu_le: new Date().toISOString()
+  }).eq('id', id);
+  if (error) { alert('Erreur : ' + error.message); return; }
+  await chargerNotes();
+}
+
+async function supprimerNote(id) {
+  if (!confirm('Supprimer cette transmission ?')) return;
+  const { error } = await sb.from('transmissions').delete().eq('id', id);
+  if (error) { alert('Erreur : ' + error.message); return; }
+  await chargerNotes();
+}
+
+function ouvrirModaleNote() {
+  document.getElementById('erreur-note').classList.remove('visible');
+  document.getElementById('nt-texte').value = '';
+  document.getElementById('nt-echeance').value = '';
+  document.getElementById('nt-destinataire').value = '';
+  if (profilCourant) document.getElementById('nt-auteur').value = profilCourant.id;
+  document.getElementById('overlay-note').classList.add('visible');
+}
+function fermerModaleNote() { document.getElementById('overlay-note').classList.remove('visible'); }
+
+async function confirmerNote() {
+  const auteurId = document.getElementById('nt-auteur').value;
+  const destinataireId = document.getElementById('nt-destinataire').value || null;
+  const texte = document.getElementById('nt-texte').value.trim();
+  const echeance = document.getElementById('nt-echeance').value || null;
+  const erreur = document.getElementById('erreur-note');
+
+  if (!texte) { erreur.textContent = 'Le message est obligatoire.'; erreur.classList.add('visible'); return; }
+
+  const { error } = await sb.from('transmissions').insert({
+    auteur_id: auteurId, destinataire_id: destinataireId, texte, date_echeance: echeance
+  });
+  if (error) { erreur.textContent = error.message; erreur.classList.add('visible'); return; }
+
+  fermerModaleNote();
+  await chargerNotes();
+}
+
+(async () => {
+  profilCourant = await exigerConnexion();
+  if (!profilCourant) return;
+  await chargerEquipe();
+  await chargerNotes();
+})();
+</script>
+</body>
+</html>
