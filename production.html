@@ -640,9 +640,12 @@ async function resynchroniserDepuisCommandes() {
   if (!data || data.length === 0) { alert('Aucune commande structurée trouvée pour ce jour.'); return; }
 
   for (const ligne of data) {
-    await sb.from('production_jour').upsert({
-      date_prod: date, recette_id: ligne.recette_id, nb_pieces: ligne.qte_commandee
-    }, { onConflict: 'date_prod,recette_id,format_id,variante_id' });
+    const { error: errUpsert } = await sb.rpc('upsert_production_jour', {
+      p_date: date, p_recette_id: ligne.recette_id,
+      p_format_id: null, p_variante_id: null,
+      p_nb_pieces: ligne.qte_commandee
+    });
+    if (errUpsert) console.error('Erreur resynchro pour', ligne.nom_recette, ':', errUpsert.message);
   }
   await chargerPlanJour();
   renderTout();
