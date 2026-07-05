@@ -219,7 +219,7 @@ main{max-width:1200px; margin:0 auto; padding:.75rem 1rem 3rem;}
     <div id="print-select-bar" class="no-print">
       <button class="btn-action" onclick="toutSelectionner(true)">☑ Tout sélectionner</button>
       <button class="btn-action" onclick="toutSelectionner(false)">☐ Tout désélectionner</button>
-      <button class="btn-action" onclick="resynchroniserDepuisCommandes()">↻ Resynchroniser depuis commandes</button>
+      <button class="btn-action" id="btn-resynchroniser" onclick="resynchroniserDepuisCommandes()">↻ Resynchroniser depuis commandes</button>
       <button class="btn-action" onclick="window.print()">⎙ Imprimer</button>
       <button class="btn-action" style="margin-left:auto; background:var(--wheat); color:#fff; border-color:var(--wheat);" onclick="exporterPDF()">🖨️ Exporter en PDF</button>
     </div>
@@ -246,6 +246,7 @@ main{max-width:1200px; margin:0 auto; padding:.75rem 1rem 3rem;}
 <script src="js/supabase-client.js"></script>
 <script>
 let profilCourant = null;
+let lectureSeule = false;
 let toutesRecettes = [];
 let tousFormats = [];
 let toutesVariantes = [];
@@ -298,6 +299,7 @@ function getNbPieces(recetteId, formatId, variantId) {
 }
 
 async function majProduction(recetteId, formatId, variantId, valeur) {
+  if (lectureSeule) return; // Vendeur/apprenti : lecture seule, aucune écriture autorisée
   const date = document.getElementById('date-jour').value;
   const nbPieces = parseInt(valeur, 10) || 0;
   const cle = `${recetteId}|${formatId || ''}|${variantId || ''}`;
@@ -384,21 +386,22 @@ function renderCarteRecette(recette) {
   const selectionne = selectionImpression[recette.id] !== false;
 
   let controlsHtml = '';
+  const dis = lectureSeule ? 'disabled' : '';
   if (res.formats.length > 0) {
     res.formats.filter(f => !f.est_variante_speciale).forEach(f => {
-      controlsHtml += `<div class="cg"><label>${f.label}</label><input type="number" min="0" value="${getNbPieces(recette.id, f.id, null) || ''}" onchange="majProduction('${recette.id}','${f.id}',null,this.value)"></div>`;
+      controlsHtml += `<div class="cg"><label>${f.label}</label><input type="number" min="0" ${dis} value="${getNbPieces(recette.id, f.id, null) || ''}" onchange="majProduction('${recette.id}','${f.id}',null,this.value)"></div>`;
     });
     const fmtSpecial = res.formats.find(f => f.est_variante_speciale);
     if (fmtSpecial) {
-      controlsHtml += `<div class="cg sportif-cg"><label>🏃 ${fmtSpecial.label}</label><input type="number" min="0" value="${getNbPieces(recette.id, fmtSpecial.id, null) || ''}" onchange="majProduction('${recette.id}','${fmtSpecial.id}',null,this.value)"></div>`;
+      controlsHtml += `<div class="cg sportif-cg"><label>🏃 ${fmtSpecial.label}</label><input type="number" min="0" ${dis} value="${getNbPieces(recette.id, fmtSpecial.id, null) || ''}" onchange="majProduction('${recette.id}','${fmtSpecial.id}',null,this.value)"></div>`;
     }
   } else if (res.variantes.length > 0) {
-    controlsHtml += `<div class="cg"><label>Nature</label><input type="number" min="0" value="${getNbPieces(recette.id, null, null) || ''}" onchange="majProduction('${recette.id}',null,null,this.value)"></div>`;
+    controlsHtml += `<div class="cg"><label>Nature</label><input type="number" min="0" ${dis} value="${getNbPieces(recette.id, null, null) || ''}" onchange="majProduction('${recette.id}',null,null,this.value)"></div>`;
     res.variantes.forEach(v => {
-      controlsHtml += `<div class="cg sportif-cg"><label>🍒 ${v.nom}</label><input type="number" min="0" value="${getNbPieces(recette.id, null, v.id) || ''}" onchange="majProduction('${recette.id}',null,'${v.id}',this.value)"></div>`;
+      controlsHtml += `<div class="cg sportif-cg"><label>🍒 ${v.nom}</label><input type="number" min="0" ${dis} value="${getNbPieces(recette.id, null, v.id) || ''}" onchange="majProduction('${recette.id}',null,'${v.id}',this.value)"></div>`;
     });
   } else {
-    controlsHtml = `<div class="cg"><label>Qté</label><input type="number" min="0" value="${getNbPieces(recette.id, null, null) || ''}" onchange="majProduction('${recette.id}',null,null,this.value)"></div>`;
+    controlsHtml = `<div class="cg"><label>Qté</label><input type="number" min="0" ${dis} value="${getNbPieces(recette.id, null, null) || ''}" onchange="majProduction('${recette.id}',null,null,this.value)"></div>`;
   }
 
   const ingredients = recetteIngredientsCache[recette.id] || [];
@@ -743,6 +746,11 @@ async function chargerTout() {
 (async () => {
   profilCourant = await exigerConnexion();
   if (!profilCourant) return;
+  lectureSeule = ['vendeur', 'apprenti'].includes(profilCourant.role);
+  if (lectureSeule) {
+    const btnResync = document.getElementById('btn-resynchroniser');
+    if (btnResync) btnResync.style.display = 'none';
+  }
   document.getElementById('date-jour').value = dateAujourdhui();
   await chargerReferentiels();
   await chargerIngredients();
