@@ -235,24 +235,24 @@ main{max-width:920px; margin:1.2rem auto 3rem; padding:0 1.2rem;}
 
       <div class="field">
         <label>Produits (depuis le catalogue)</label>
-        <div id="lignes-produits-ajoutees" style="margin-bottom:8px;"></div>
-        <div style="display:grid; grid-template-columns:2fr 1fr 1fr auto; gap:6px; align-items:end;">
-          <div>
+        <div id="lignes-produits-ajoutees" style="margin-bottom:10px;"></div>
+        <div style="background:var(--surface2); border:1.5px dashed var(--border-strong); border-radius:var(--r); padding:10px;">
+          <div style="margin-bottom:8px;">
             <select id="prod-recette" onchange="majOptionsFormatVariante()" style="width:100%; padding:9px 10px; border:1.5px solid var(--border-strong); border-radius:var(--r); font-size:.85rem; background:#fff;">
               <option value="">Choisir un produit…</option>
             </select>
           </div>
-          <div>
+          <div style="margin-bottom:8px;">
             <select id="prod-format-variante" style="width:100%; padding:9px 10px; border:1.5px solid var(--border-strong); border-radius:var(--r); font-size:.85rem; background:#fff; display:none;"></select>
           </div>
-          <div style="display:flex; gap:4px;">
-            <input type="number" id="prod-quantite" min="1" placeholder="Qté" style="width:100%; padding:9px 8px; border:1.5px solid var(--border-strong); border-radius:var(--r); font-family:var(--mono);">
-            <select id="prod-unite" style="padding:9px 4px; border:1.5px solid var(--border-strong); border-radius:var(--r); font-size:.8rem; background:#fff;">
+          <div style="display:flex; gap:6px; margin-bottom:8px;">
+            <input type="number" id="prod-quantite" min="1" placeholder="Quantité" style="flex:2; padding:9px 8px; border:1.5px solid var(--border-strong); border-radius:var(--r); font-family:var(--mono);">
+            <select id="prod-unite" style="flex:1; padding:9px 4px; border:1.5px solid var(--border-strong); border-radius:var(--r); font-size:.8rem; background:#fff;">
               <option value="pieces">pces</option>
               <option value="grammes">g</option>
             </select>
           </div>
-          <button type="button" class="btn btn-ghost" style="padding:9px 12px;" onclick="ajouterLigneProduit()">+</button>
+          <button type="button" class="btn btn-primary" style="width:100%; padding:10px;" onclick="ajouterLigneProduit()">+ Ajouter ce produit à la commande</button>
         </div>
       </div>
 
@@ -369,23 +369,17 @@ function ajouterLigneProduit() {
   if (!recetteId) { alert('Choisissez un produit.'); return; }
   if (!quantite || quantite <= 0) { alert('Renseignez une quantité valide.'); return; }
 
-  const recette = toutesRecettesCatalogue.find(r => r.id === recetteId);
-  let formatId = null, varianteId = null, labelFV = '';
+  let formatId = null, varianteId = null;
+  if (fvValeur.startsWith('format:')) formatId = fvValeur.replace('format:', '');
+  else if (fvValeur.startsWith('variante:')) varianteId = fvValeur.replace('variante:', '');
 
-  if (fvValeur.startsWith('format:')) {
-    formatId = fvValeur.replace('format:', '');
-    const f = tousFormatsCatalogue.find(f => f.id === formatId);
-    labelFV = ' — ' + (f?.poids_cuit_g ? `${Math.round(f.poids_cuit_g)}g` : f?.label);
-  } else if (fvValeur.startsWith('variante:')) {
-    varianteId = fvValeur.replace('variante:', '');
-    labelFV = ' — ' + toutesVariantesCatalogue.find(v => v.id === varianteId)?.nom;
-  }
+  const qtePieces = unite === 'pieces' ? quantite : null;
+  const qteG = unite === 'grammes' ? quantite : null;
 
   lignesProduitsCourantes.push({
     recette_id: recetteId, format_id: formatId, variante_id: varianteId,
-    quantite: unite === 'pieces' ? quantite : null,
-    quantite_g: unite === 'grammes' ? quantite : null,
-    libelle: `${recette.nom}${labelFV} — ${quantite}${unite === 'pieces' ? ' pces' : ' g'}`
+    quantite: qtePieces, quantite_g: qteG,
+    libelle: construireLibelleLigne(recetteId, formatId, varianteId, qtePieces, qteG)
   });
 
   document.getElementById('prod-recette').value = '';
@@ -582,6 +576,7 @@ async function chargerCommandesJour() {
         </button>
       </div>
       <div class="commande-actions">
+        <button class="btn-icon" title="Modifier" onclick="ouvrirModaleEditionCommande('${c.id}')">✏️</button>
         <button class="btn-icon" title="Supprimer" onclick="supprimerCommande('${c.id}')">🗑️</button>
       </div>
     </div>
@@ -623,6 +618,7 @@ async function chargerCommandesJourPro() {
         </div>
       </div>
       <div class="commande-actions">
+        <button class="btn-icon" title="Modifier" onclick="ouvrirModaleEditionCommande('${c.id}')">✏️</button>
         <button class="btn-icon" title="Supprimer" onclick="supprimerCommande('${c.id}')">🗑️</button>
       </div>
     </div>
@@ -630,15 +626,77 @@ async function chargerCommandesJourPro() {
 }
 
 let typeCommandeCourant = 'particulier';
+let commandeEnEditionId = null;
+let commandeEnEditionClientId = null;
+
+function construireLibelleLigne(recetteId, formatId, varianteId, quantite, quantiteG) {
+  const recette = toutesRecettesCatalogue.find(r => r.id === recetteId);
+  let labelFV = '';
+  if (formatId) {
+    const f = tousFormatsCatalogue.find(f => f.id === formatId);
+    labelFV = ' — ' + (f?.poids_cuit_g ? `${Math.round(f.poids_cuit_g)}g` : f?.label);
+  } else if (varianteId) {
+    labelFV = ' — ' + (toutesVariantesCatalogue.find(v => v.id === varianteId)?.nom || '');
+  }
+  const qte = quantite ? `${quantite} pces` : `${quantiteG} g`;
+  return `${recette?.nom || '?'}${labelFV} — ${qte}`;
+}
+
+async function ouvrirModaleEditionCommande(commandeId) {
+  const { data: cmd, error } = await sb
+    .from('commandes')
+    .select('*, clients(*)')
+    .eq('id', commandeId)
+    .single();
+  if (error) { alert('Erreur : ' + error.message); return; }
+
+  const estPro = cmd.clients?.is_pro || false;
+  typeCommandeCourant = estPro ? 'pro' : 'particulier';
+  commandeEnEditionId = commandeId;
+  commandeEnEditionClientId = cmd.client_id;
+
+  document.getElementById('erreur-commande').classList.remove('visible');
+  document.getElementById('champs-particulier').style.display = estPro ? 'none' : '';
+  document.getElementById('champs-pro').style.display = estPro ? '' : 'none';
+  document.getElementById('titre-modale-commande').textContent = 'Modifier la commande';
+
+  if (estPro) {
+    document.getElementById('cmd-client-pro').value = cmd.client_id;
+  } else {
+    document.getElementById('cmd-nom').value = cmd.clients?.nom || '';
+    document.getElementById('cmd-prenom').value = cmd.clients?.prenom || '';
+    document.getElementById('cmd-tel').value = cmd.clients?.telephone || '';
+  }
+
+  document.getElementById('cmd-date').value = cmd.date_retrait;
+  document.getElementById('cmd-lieu').value = cmd.lieu_retrait_id || '';
+  document.getElementById('cmd-contenu').value = cmd.contenu || '';
+  document.getElementById('cmd-statut').value = cmd.statut;
+
+  const { data: lignesRaw } = await sb.from('commande_lignes').select('*').eq('commande_id', commandeId);
+  lignesProduitsCourantes = (lignesRaw || []).map(l => ({
+    recette_id: l.recette_id, format_id: l.format_id, variante_id: l.variante_id,
+    quantite: l.quantite, quantite_g: l.quantite_g,
+    libelle: construireLibelleLigne(l.recette_id, l.format_id, l.variante_id, l.quantite, l.quantite_g)
+  }));
+  renderLignesProduitsAjoutees();
+
+  document.getElementById('prod-format-variante').style.display = 'none';
+  document.getElementById('btn-confirmer-commande').textContent = 'Enregistrer les modifications';
+  document.getElementById('overlay-commande').classList.add('visible');
+}
 
 function ouvrirModaleCommande(type) {
   typeCommandeCourant = type;
+  commandeEnEditionId = null;
+  commandeEnEditionClientId = null;
   document.getElementById('erreur-commande').classList.remove('visible');
   document.getElementById('form-commande').reset();
   document.getElementById('cmd-date').value = document.getElementById('date-jour').value || dateAujourdhui();
   document.getElementById('champs-particulier').style.display = type === 'particulier' ? '' : 'none';
   document.getElementById('champs-pro').style.display = type === 'pro' ? '' : 'none';
   document.getElementById('titre-modale-commande').textContent = type === 'pro' ? 'Nouvelle commande pro' : 'Nouvelle commande';
+  document.getElementById('btn-confirmer-commande').textContent = 'Enregistrer';
   lignesProduitsCourantes = [];
   renderLignesProduitsAjoutees();
   document.getElementById('prod-format-variante').style.display = 'none';
@@ -646,6 +704,8 @@ function ouvrirModaleCommande(type) {
 }
 function fermerModaleCommande() {
   document.getElementById('overlay-commande').classList.remove('visible');
+  commandeEnEditionId = null;
+  commandeEnEditionClientId = null;
 }
 
 async function confirmerCommande() {
@@ -664,7 +724,7 @@ async function confirmerCommande() {
     return;
   }
 
-  btn.disabled = true; btn.textContent = 'Enregistrement…';
+  btn.disabled = true; btn.textContent = commandeEnEditionId ? 'Enregistrement…' : 'Enregistrement…';
 
   try {
     let clientId;
@@ -678,27 +738,49 @@ async function confirmerCommande() {
       const tel = document.getElementById('cmd-tel').value.trim();
       if (!nom) throw new Error('Le nom du client est obligatoire.');
 
-      const { data: client, error: errClient } = await sb
-        .from('clients')
-        .insert({ nom, prenom, telephone: tel, is_pro: false })
-        .select()
-        .single();
-      if (errClient) throw errClient;
-      clientId = client.id;
+      if (commandeEnEditionId && commandeEnEditionClientId) {
+        // Modification : on met à jour la fiche client existante plutôt
+        // que d'en créer une nouvelle à chaque édition.
+        const { error: errMajClient } = await sb.from('clients')
+          .update({ nom, prenom, telephone: tel })
+          .eq('id', commandeEnEditionClientId);
+        if (errMajClient) throw errMajClient;
+        clientId = commandeEnEditionClientId;
+      } else {
+        const { data: client, error: errClient } = await sb
+          .from('clients')
+          .insert({ nom, prenom, telephone: tel, is_pro: false })
+          .select()
+          .single();
+        if (errClient) throw errClient;
+        clientId = client.id;
+      }
     }
 
-    const { data: nouvelleCommande, error: errCmd } = await sb.from('commandes').insert({
-      client_id: clientId,
-      date_retrait: dateRetrait,
-      contenu,
-      statut,
-      lieu_retrait_id: lieuId
-    }).select().single();
-    if (errCmd) throw errCmd;
+    let commandeId;
+
+    if (commandeEnEditionId) {
+      const { error: errMaj } = await sb.from('commandes').update({
+        client_id: clientId, date_retrait: dateRetrait, contenu, statut, lieu_retrait_id: lieuId
+      }).eq('id', commandeEnEditionId);
+      if (errMaj) throw errMaj;
+      commandeId = commandeEnEditionId;
+
+      // Remplace entièrement les lignes produits par la liste actuelle
+      // (plus simple et plus sûr qu'un diff ligne par ligne).
+      const { error: errSuppr } = await sb.from('commande_lignes').delete().eq('commande_id', commandeId);
+      if (errSuppr) throw errSuppr;
+    } else {
+      const { data: nouvelleCommande, error: errCmd } = await sb.from('commandes').insert({
+        client_id: clientId, date_retrait: dateRetrait, contenu, statut, lieu_retrait_id: lieuId
+      }).select().single();
+      if (errCmd) throw errCmd;
+      commandeId = nouvelleCommande.id;
+    }
 
     if (lignesProduitsCourantes.length > 0) {
       const lignesAInserer = lignesProduitsCourantes.map(l => ({
-        commande_id: nouvelleCommande.id,
+        commande_id: commandeId,
         recette_id: l.recette_id,
         format_id: l.format_id,
         variante_id: l.variante_id,
