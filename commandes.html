@@ -29,6 +29,17 @@ main{max-width:920px; margin:1.2rem auto 3rem; padding:0 1.2rem;}
 }
 .tab-btn.active{background:var(--wheat); color:#fff; border-color:var(--wheat);}
 .tab-panel{display:none;}
+
+.synthese-cards{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px; margin-bottom:1.2rem;}
+.synthese-card{background:var(--surface); border:1.5px solid var(--border); border-radius:var(--r-lg); padding:.9rem 1rem; text-align:center; box-shadow:var(--shadow);}
+.synthese-card .sc-label{font-family:var(--mono); font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; color:var(--text-light); font-weight:700;}
+.synthese-card .sc-valeur{font-family:var(--mono); font-size:1.5rem; font-weight:800; color:var(--wheat); margin-top:2px;}
+.synthese-card .sc-sous{font-size:.72rem; color:var(--text-light); margin-top:2px;}
+.synth-client-row{display:flex; justify-content:space-between; align-items:center; padding:9px 16px; border-bottom:1px solid var(--border); font-size:.85rem; cursor:pointer;}
+.synth-client-row:last-child{border-bottom:none;}
+.synth-client-row:hover{background:var(--surface2);}
+.synth-client-nom{font-weight:600;}
+.synth-client-meta{font-size:.75rem; color:var(--text-light); font-family:var(--mono);}
 .tab-panel.active{display:block;}
 
 .bar-jour{
@@ -140,12 +151,50 @@ main{max-width:920px; margin:1.2rem auto 3rem; padding:0 1.2rem;}
 
 <main>
   <div class="tabs">
-    <button class="tab-btn active" data-tab="particuliers" onclick="changerTab('particuliers')">Particuliers</button>
+    <button class="tab-btn active" data-tab="synthese" onclick="changerTab('synthese')">📊 Synthèse</button>
+    <button class="tab-btn" data-tab="particuliers" onclick="changerTab('particuliers')">Particuliers</button>
     <button class="tab-btn" data-tab="pro" onclick="changerTab('pro')">Professionnels</button>
   </div>
 
+  <!-- ===== ONGLET SYNTHÈSE ===== -->
+  <div class="tab-panel active" id="panel-synthese">
+    <div class="bar-jour">
+      <button class="nav-jour" onclick="changerJourSynthese(-1)">‹</button>
+      <input type="date" id="date-jour-synthese" onchange="chargerSynthese()">
+      <button class="nav-jour" onclick="changerJourSynthese(1)">›</button>
+    </div>
+
+    <div class="synthese-cards">
+      <div class="synthese-card">
+        <div class="sc-label">Particuliers</div>
+        <div class="sc-valeur" id="synth-nb-particuliers">—</div>
+        <div class="sc-sous" id="synth-collecte-particuliers"></div>
+      </div>
+      <div class="synthese-card">
+        <div class="sc-label">Professionnels</div>
+        <div class="sc-valeur" id="synth-nb-pro">—</div>
+        <div class="sc-sous" id="synth-collecte-pro"></div>
+      </div>
+      <div class="synthese-card">
+        <div class="sc-label">Total produits</div>
+        <div class="sc-valeur" id="synth-total-pieces">—</div>
+        <div class="sc-sous">pièces commandées</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:1rem;">
+      <div style="padding:10px 16px; font-weight:700; font-size:.85rem; background:var(--wheat-light); color:var(--wheat);">Clients particuliers du jour</div>
+      <div id="synth-liste-particuliers"><div class="vide">Chargement…</div></div>
+    </div>
+
+    <div class="card">
+      <div style="padding:10px 16px; font-weight:700; font-size:.85rem; background:var(--wheat-light); color:var(--wheat);">Clients professionnels du jour</div>
+      <div id="synth-liste-pro"><div class="vide">Chargement…</div></div>
+    </div>
+  </div>
+
   <!-- ===== ONGLET PARTICULIERS ===== -->
-  <div class="tab-panel active" id="panel-particuliers">
+  <div class="tab-panel" id="panel-particuliers">
     <div class="bar-jour">
       <button class="nav-jour" onclick="changerJour(-1)">‹</button>
       <input type="date" id="date-jour" onchange="chargerCommandesJour()">
@@ -423,6 +472,77 @@ function changerTab(tab) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.getElementById('panel-' + tab).classList.add('active');
   if (tab === 'pro') chargerCommandesJourPro();
+  if (tab === 'particuliers') chargerCommandesJour();
+  if (tab === 'synthese') chargerSynthese();
+}
+
+function changerJourSynthese(delta) {
+  const input = document.getElementById('date-jour-synthese');
+  const d = new Date(input.value);
+  d.setDate(d.getDate() + delta);
+  input.value = d.toISOString().slice(0, 10);
+  chargerSynthese();
+}
+
+async function chargerSynthese() {
+  const date = document.getElementById('date-jour-synthese').value;
+
+  const { data: commandesJour, error } = await sb
+    .from('vue_commandes_jour')
+    .select('*')
+    .eq('date_retrait', date);
+
+  if (error) {
+    document.getElementById('synth-liste-particuliers').innerHTML = `<div class="vide">Erreur : ${error.message}</div>`;
+    return;
+  }
+
+  const particuliers = (commandesJour || []).filter(c => !c.is_pro);
+  const pros = (commandesJour || []).filter(c => c.is_pro);
+
+  const lignesParCommande = await chargerLignesPourCommandes((commandesJour || []).map(c => c.id));
+  let totalPieces = 0;
+  Object.values(lignesParCommande).forEach(lignes => {
+    lignes.forEach(l => {
+      const match = l.match(/^([\d.,]+)\s*pces/);
+      if (match) totalPieces += parseFloat(match[1].replace(',', '.'));
+    });
+  });
+
+  const nbCollecteParticuliers = particuliers.filter(c => c.collectee).length;
+  const nbCollectePro = pros.filter(c => c.collectee).length;
+
+  document.getElementById('synth-nb-particuliers').textContent = particuliers.length;
+  document.getElementById('synth-collecte-particuliers').textContent = `${nbCollecteParticuliers} remise${nbCollecteParticuliers > 1 ? 's' : ''}`;
+  document.getElementById('synth-nb-pro').textContent = pros.length;
+  document.getElementById('synth-collecte-pro').textContent = `${nbCollectePro} remise${nbCollectePro > 1 ? 's' : ''}`;
+  document.getElementById('synth-total-pieces').textContent = totalPieces > 0 ? Math.round(totalPieces) : '—';
+
+  const conteneurPart = document.getElementById('synth-liste-particuliers');
+  conteneurPart.innerHTML = particuliers.length === 0
+    ? '<div class="vide">Aucune commande particulier ce jour.</div>'
+    : particuliers.map(c => `
+        <div class="synth-client-row" onclick="ouvrirModaleEditionCommande('${c.id}')">
+          <div>
+            <div class="synth-client-nom">${c.prenom || ''} ${c.nom}</div>
+            <div class="synth-client-meta">${c.lieu_retrait || '—'} · ${labelsStatut[c.statut] || c.statut}</div>
+          </div>
+          <span class="statut-pill statut-${c.statut}" style="margin:0;">${c.collectee ? '✓ Remis' : 'À remettre'}</span>
+        </div>
+      `).join('');
+
+  const conteneurPro = document.getElementById('synth-liste-pro');
+  conteneurPro.innerHTML = pros.length === 0
+    ? '<div class="vide">Aucune commande pro ce jour.</div>'
+    : pros.map(c => `
+        <div class="synth-client-row" onclick="ouvrirModaleEditionCommande('${c.id}')">
+          <div>
+            <div class="synth-client-nom">${c.raison_sociale}</div>
+            <div class="synth-client-meta">${c.lieu_retrait || '—'} · ${labelsStatut[c.statut] || c.statut}</div>
+          </div>
+          <span class="statut-pill statut-${c.statut}" style="margin:0;">${c.collectee ? '✓ Remis' : 'À remettre'}</span>
+        </div>
+      `).join('');
 }
 
 function changerJour(delta) {
@@ -897,11 +1017,12 @@ async function supprimerClientPro(id) {
   const aujourdhui = dateAujourdhui();
   document.getElementById('date-jour').value = aujourdhui;
   document.getElementById('date-jour-pro').value = aujourdhui;
+  document.getElementById('date-jour-synthese').value = aujourdhui;
 
   await chargerLieux();
   await chargerClientsPro();
   await chargerCatalogueProduits();
-  await chargerCommandesJour();
+  await chargerSynthese();
 })();
 </script>
 </body>
