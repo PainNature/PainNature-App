@@ -406,10 +406,13 @@ function renderCarteRecette(recette) {
     const qty = Math.round(Number(i.quantite_base_g) * coef);
     const qtyHtml = hasProd ? `<strong>${fmt(qty)}</strong>` : `<span class="no-prod">—</span>`;
 
-    // Cas particulier : ingrédient venant d'une sous-recette (ex: Empois du
-    // Pain de Mie) — on affiche le détail (farine/eau) plutôt que juste le
-    // poids fini, pour que le boulanger sache directement quoi préparer en premier.
-    if (i.recette_source_id && recetteIngredientsCache[i.recette_source_id]) {
+    // Cas particulier : ingrédient marqué explicitement comme sous-recette
+    // à détailler (aujourd'hui, uniquement l'Empois du Pain de Mie) — on
+    // affiche le détail (farine/eau) plutôt que juste le poids fini.
+    // Restreint à sous_recette_label pour ne pas affecter les autres
+    // recettes qui utilisent une pâte source (Baguette Maïs, Odette
+    // Graines, etc.), qui elles doivent garder leur affichage classique.
+    if (i.sous_recette_label && i.recette_source_id && recetteIngredientsCache[i.recette_source_id]) {
       const sousIngredients = recetteIngredientsCache[i.recette_source_id];
       const sousTotalBase = sousIngredients.reduce((s, si) => s + Number(si.quantite_base_g), 0);
       const label = i.sous_recette_label || i.nom_affiche;
