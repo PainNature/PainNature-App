@@ -102,6 +102,11 @@ main{max-width:1200px; margin:0 auto; padding:.75rem 1rem 3rem;}
 .itable .tr-total .td-base{background:#e0dbd4; color:#555; font-weight:600;}
 .itable .tr-total .td-jour{background:#e0dbd4;}
 .itable .tr-total .td-jour strong{color:#000; font-size:13px; font-weight:800;}
+.itable .empois-header td{background:var(--wheat-light); color:var(--wheat); font-size:8px; font-family:var(--mono); letter-spacing:.05em; text-transform:uppercase; padding:2px 7px; font-weight:700;}
+.itable .row-empois{background:var(--wheat-light);}
+.itable .row-empois .td-name{color:var(--wheat); padding-left:16px; font-style:italic;}
+.itable .row-empois .td-base, .itable .row-empois .td-jour{background:var(--wheat-light);}
+.itable .row-empois-total .td-name{font-weight:700; font-style:normal;}
 .itable .row-sportif td, .itable .row-cran td{background:#e8e8e8; border-top:1px solid #bbb; border-bottom:1px solid #bbb;}
 .itable .row-sportif .td-name, .itable .row-cran .td-name{font-weight:800; color:#000;}
 
@@ -400,6 +405,28 @@ function renderCarteRecette(recette) {
   let lignesHtml = ingredients.map(i => {
     const qty = Math.round(Number(i.quantite_base_g) * coef);
     const qtyHtml = hasProd ? `<strong>${fmt(qty)}</strong>` : `<span class="no-prod">—</span>`;
+
+    // Cas particulier : ingrédient venant d'une sous-recette (ex: Empois du
+    // Pain de Mie) — on affiche le détail (farine/eau) plutôt que juste le
+    // poids fini, pour que le boulanger sache directement quoi préparer en premier.
+    if (i.recette_source_id && recetteIngredientsCache[i.recette_source_id]) {
+      const sousIngredients = recetteIngredientsCache[i.recette_source_id];
+      const sousTotalBase = sousIngredients.reduce((s, si) => s + Number(si.quantite_base_g), 0);
+      const label = i.sous_recette_label || i.nom_affiche;
+      let html = `<tr class="empois-header"><td colspan="3">${label} — à préparer en premier</td></tr>`;
+      sousIngredients.forEach(si => {
+        // Le coefficient de la sous-recette suit le même ratio que la ligne
+        // parente, puisque sa base totale correspond exactement au poids
+        // "fini" déclaré dans la recette principale.
+        const sousCoef = sousTotalBase > 0 ? qty / sousTotalBase : 0;
+        const sousQty = Math.round(Number(si.quantite_base_g) * sousCoef);
+        const sousQtyHtml = hasProd ? `<strong>${fmt(sousQty)}</strong>` : `<span class="no-prod">—</span>`;
+        html += `<tr class="row-empois"><td class="td-name">${si.nom_affiche}</td><td class="td-base">${fmt(si.quantite_base_g)}</td><td class="td-jour">${sousQtyHtml}</td></tr>`;
+      });
+      html += `<tr class="row-empois row-empois-total"><td class="td-name">↳ ${label} (total)</td><td class="td-base">${fmt(i.quantite_base_g)}</td><td class="td-jour">${qtyHtml}</td></tr>`;
+      return html;
+    }
+
     return `<tr><td class="td-name">${i.nom_affiche}</td><td class="td-base">${fmt(i.quantite_base_g)}</td><td class="td-jour">${qtyHtml}</td></tr>`;
   }).join('');
 
