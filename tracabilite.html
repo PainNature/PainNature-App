@@ -632,7 +632,7 @@ async function chargerCumulBio() {
 }
 
 (async () => {
-  profilCourant = await exigerRole(['gerant', 'boulanger', 'patissier']);
+  profilCourant = await exigerRole(['gerant', 'boulanger', 'patissier', 'vendeur', 'apprenti']);
   if (!profilCourant) return;
   await chargerReferentiels();
   await chargerReleves();
