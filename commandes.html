@@ -61,6 +61,7 @@ main{max-width:920px; margin:1.2rem auto 3rem; padding:0 1.2rem;}
 }
 .lieu-boutique{background:var(--blue-light); color:var(--blue);}
 .lieu-marche{background:var(--green-light); color:var(--green);}
+.lieu-livraison{background:var(--wheat-light); color:var(--wheat);}
 .statut-pill{
   display:inline-block; padding:2px 10px; border-radius:14px; font-size:.7rem; font-weight:700;
 }
@@ -406,6 +407,12 @@ function renderLignesProduitsAjoutees() {
   `).join('');
 }
 
+function classeLieuPill(nomLieu) {
+  if (nomLieu === 'Marché') return 'lieu-marche';
+  if (nomLieu === 'Livraison') return 'lieu-livraison';
+  return 'lieu-boutique';
+}
+
 function dateAujourdhui() {
   const d = new Date();
   return d.toISOString().slice(0, 10);
@@ -567,7 +574,7 @@ async function chargerCommandesJour() {
         <div class="commande-nom">${c.prenom || ''} ${c.nom}</div>
         <div class="commande-meta">${c.telephone || ''}</div>
         <div style="margin-top:6px;">
-          ${c.lieu_retrait ? `<span class="lieu-pill ${c.lieu_retrait === 'Marché' ? 'lieu-marche' : 'lieu-boutique'}">${c.lieu_retrait}</span>` : ''}
+          ${c.lieu_retrait ? `<span class="lieu-pill ${classeLieuPill(c.lieu_retrait)}">${c.lieu_retrait}</span>` : ''}
           <span class="statut-pill statut-${c.statut}">${labelsStatut[c.statut] || c.statut}</span>
         </div>
         ${formatDetailCommande(c, lignesParCommande)}
@@ -603,7 +610,7 @@ async function chargerCommandesJourPro() {
       <div>
         <div class="commande-nom">${c.raison_sociale}</div>
         <div style="margin-top:6px;">
-          ${c.lieu_retrait ? `<span class="lieu-pill lieu-boutique">${c.lieu_retrait}</span>` : ''}
+          ${c.lieu_retrait ? `<span class="lieu-pill ${classeLieuPill(c.lieu_retrait)}">${c.lieu_retrait}</span>` : ''}
           <span class="statut-pill statut-${c.statut}">${labelsStatut[c.statut] || c.statut}</span>
         </div>
         ${formatDetailCommande(c, lignesParCommande)}
