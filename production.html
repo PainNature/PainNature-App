@@ -298,11 +298,12 @@ async function majProduction(recetteId, formatId, variantId, valeur) {
   const cle = `${recetteId}|${formatId || ''}|${variantId || ''}`;
   planJour[cle] = nbPieces;
 
-  await sb.from('production_jour').upsert({
-    date_prod: date, recette_id: recetteId,
-    format_id: formatId || null, variante_id: variantId || null,
-    nb_pieces: nbPieces
-  }, { onConflict: 'date_prod,recette_id,format_id,variante_id' });
+  const { error } = await sb.rpc('upsert_production_jour', {
+    p_date: date, p_recette_id: recetteId,
+    p_format_id: formatId || null, p_variante_id: variantId || null,
+    p_nb_pieces: nbPieces
+  });
+  if (error) { console.error('Erreur enregistrement production :', error.message); }
 
   renderTout();
 }
