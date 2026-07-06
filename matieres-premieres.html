@@ -230,15 +230,12 @@ async function confirmerAjout() {
       nom, fournisseur, categorie, bio, metiers
     }).eq('id', id));
   } else {
+    // Création via la fonction serveur qui gère les droits pour tous les
+    // rôles et enregistre maintenant la catégorie en une seule opération.
     ({ error } = await sb.rpc('creer_matiere_premiere_sans_prix', {
-      p_nom: nom, p_fournisseur: fournisseur, p_bio: bio, p_metiers: metiers
+      p_nom: nom, p_fournisseur: fournisseur, p_bio: bio,
+      p_metiers: metiers, p_categorie: categorie || null
     }));
-    // La catégorie n'est pas gérée par cette fonction RPC (créée avant
-    // l'introduction des catégories) : on la complète juste après si besoin.
-    if (!error && categorie) {
-      const { data: nouvelle } = await sb.from('matieres_premieres').select('id').eq('nom', nom).order('created_at', { ascending: false }).limit(1).maybeSingle();
-      if (nouvelle) await sb.from('matieres_premieres').update({ categorie }).eq('id', nouvelle.id);
-    }
   }
 
   btn.disabled = false; btn.textContent = id ? 'Enregistrer' : 'Ajouter';
