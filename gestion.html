@@ -125,6 +125,7 @@ tr:last-child td{border-bottom:none;}
           <option value="P">Pâtisserie</option>
           <option value="V">Viennoiserie</option>
           <option value="GV">Gâteaux de voyage</option>
+          <option value="T">Traiteur</option>
         </select>
         <div class="card liste-recettes-nav" id="liste-recettes-nav">
           <div class="vide">Chargement…</div>
@@ -152,6 +153,7 @@ tr:last-child td{border-bottom:none;}
         <option value="P">Pâtisserie</option>
         <option value="V">Viennoiserie</option>
         <option value="GV">Gâteaux de voyage</option>
+        <option value="T">Traiteur</option>
       </select>
     </div>
     <div class="row2">
@@ -355,7 +357,7 @@ async function chargerListeRecettes() {
   if (error) { conteneur.innerHTML = `<div class="vide">Erreur : ${error.message}</div>`; return; }
   if (!data || data.length === 0) { conteneur.innerHTML = '<div class="vide">Aucune recette pour ce filtre.</div>'; return; }
 
-  const labelsMetier = { B: 'Boulangerie', P: 'Pâtisserie', V: 'Viennoiserie', GV: 'Gâteaux de voyage' };
+  const labelsMetier = { B: 'Boulangerie', P: 'Pâtisserie', V: 'Viennoiserie', GV: 'Gâteaux de voyage', T: 'Traiteur' };
 
   // Si aucun filtre métier n'est actif, on regroupe visuellement par
   // métier pour faciliter le repérage dans une liste longue.
@@ -469,6 +471,7 @@ async function chargerFicheRecette(recetteId) {
           <option value="P" ${recette.metier === 'P' ? 'selected' : ''}>Pâtisserie</option>
           <option value="V" ${recette.metier === 'V' ? 'selected' : ''}>Viennoiserie</option>
           <option value="GV" ${recette.metier === 'GV' ? 'selected' : ''}>Gâteaux de voyage</option>
+          <option value="T" ${recette.metier === 'T' ? 'selected' : ''}>Traiteur</option>
         </select>
       </div>
       <div class="field"><label>Famille (si Boulangerie)</label>
