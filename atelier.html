@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Pain Nature — Mode Atelier</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#a8763f">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/shared.css">
+<style>
+/* ===== ÉCRAN DE SÉLECTION ===== */
+.topbar{
+  background:var(--wheat); color:#fff; padding:0 1.2rem; height:54px;
+  display:flex; align-items:center; justify-content:space-between;
+  box-shadow:0 2px 8px rgba(0,0,0,.2); position:sticky; top:0; z-index:10;
+}
+.topbar .marque{font-weight:800; font-size:1rem; display:flex; align-items:center; gap:.6rem;}
+.topbar .retour{color:#fff; text-decoration:none; font-size:1.3rem; opacity:.85;}
+main{max-width:700px; margin:1.2rem auto 3rem; padding:0 1.2rem;}
+
+.bar-jour{display:flex; align-items:center; gap:10px; margin-bottom:1rem;}
+.nav-jour{background:none; border:1.5px solid var(--border-strong); border-radius:var(--r); width:38px; height:38px; font-size:1.2rem; cursor:pointer; color:var(--text-muted);}
+.date-input{padding:9px 12px; border:1.5px solid var(--border-strong); border-radius:var(--r); font-family:var(--mono); font-size:.9rem; flex:1;}
+
+.selection-card{
+  display:flex; align-items:center; gap:12px; padding:14px 16px;
+  background:var(--surface); border:1.5px solid var(--border); border-radius:var(--r-lg);
+  margin-bottom:8px; cursor:grab; user-select:none;
+}
+.selection-card.selected{border-color:var(--wheat); background:var(--wheat-light);}
+.selection-card.dragging{opacity:.4;}
+.selection-card.drag-over{border-color:var(--sauge); border-style:dashed;}
+.card-ordre{
+  width:32px; height:32px; border-radius:50%; background:var(--wheat); color:#fff;
+  font-weight:800; font-size:.9rem; font-family:var(--mono); display:flex;
+  align-items:center; justify-content:center; flex-shrink:0;
+}
+.card-ordre.vide{background:var(--border-strong); color:#fff;}
+.card-info{flex:1;}
+.card-nom{font-weight:700; font-size:.95rem;}
+.card-meta{font-size:.75rem; color:var(--text-light); font-family:var(--mono); margin-top:2px;}
+.card-handle{font-size:1.2rem; color:var(--text-light); cursor:grab; padding:0 4px;}
+.card-check{width:24px; height:24px; accent-color:var(--wheat);}
+
+.btn-lancer{
+  width:100%; padding:16px; margin-top:1.5rem; font-size:1.1rem; font-weight:800;
+  background:var(--wheat); color:#fff; border:none; border-radius:var(--r-lg);
+  cursor:pointer; box-shadow:0 4px 12px rgba(168,118,63,.35);
+}
+.btn-lancer:disabled{opacity:.4; cursor:not-allowed;}
+.vide{text-align:center; padding:2rem; color:var(--text-light);}
+
+/* ===== MODE ATELIER PLEIN ÉCRAN ===== */
+#mode-atelier{
+  display:none; position:fixed; inset:0; background:#fff; z-index:1000;
+  overflow-y:auto; padding:0;
+}
+#mode-atelier.visible{display:block;}
+
+.atelier-header{
+  background:var(--sauge); color:#fff; padding:12px 20px;
+  display:flex; align-items:center; justify-content:space-between;
+  position:sticky; top:0; z-index:10;
+}
+.atelier-titre{font-weight:800; font-size:1rem; font-family:var(--mono);}
+.atelier-progression{font-size:.8rem; opacity:.8; font-family:var(--mono);}
+.btn-quitter{
+  background:rgba(255,255,255,.2); border:1px solid rgba(255,255,255,.4);
+  color:#fff; padding:8px 16px; border-radius:var(--r); font-weight:700;
+  font-size:.85rem; cursor:pointer;
+}
+
+.recette-atelier{
+  border-bottom:3px solid var(--border); padding:28px 24px 32px;
+}
+.recette-atelier:last-child{border-bottom:none;}
+
+.ra-nom{
+  font-size:2rem; font-weight:800; color:var(--sauge); margin-bottom:6px;
+  line-height:1.2;
+}
+.ra-meta{
+  display:flex; gap:16px; flex-wrap:wrap; margin-bottom:20px;
+  font-family:var(--mono); font-size:.85rem; color:var(--text-light);
+}
+.ra-meta-item{display:flex; flex-direction:column; gap:2px;}
+.ra-meta-label{font-size:.65rem; text-transform:uppercase; letter-spacing:.05em; color:var(--text-light);}
+.ra-meta-val{font-size:1.1rem; font-weight:800; color:var(--text); font-family:var(--mono);}
+
+.ra-ingredients{width:100%; border-collapse:collapse;}
+.ra-ingredients th{
+  text-align:left; font-size:.7rem; text-transform:uppercase; letter-spacing:.05em;
+  color:var(--text-light); padding:8px 0; border-bottom:2px solid var(--border);
+  font-family:var(--mono);
+}
+.ra-ingredients th:last-child{text-align:right;}
+.ra-ingredients td{
+  padding:10px 0; border-bottom:1px solid var(--border);
+  font-size:1.05rem; vertical-align:middle;
+}
+.ra-ingredients td:last-child{text-align:right;}
+.ra-ing-nom{font-weight:600; color:var(--text);}
+.ra-ing-base{font-size:.8rem; color:var(--text-light); font-family:var(--mono);}
+.ra-ing-jour{font-size:1.4rem; font-weight:800; color:var(--sauge); font-family:var(--mono);}
+.ra-ing-unite{font-size:.75rem; color:var(--text-light); font-family:var(--mono);}
+
+/* Empois : encadré doré */
+.ra-empois-header{
+  background:var(--wheat-light); color:var(--wheat); font-size:.72rem;
+  font-weight:800; text-transform:uppercase; letter-spacing:.06em;
+  padding:6px 10px; border-radius:var(--r) var(--r) 0 0; margin-top:8px;
+  font-family:var(--mono);
+}
+.ra-ing-empois td{background:var(--wheat-light); padding:8px 10px;}
+.ra-ing-empois td:first-child{border-radius:0 0 0 var(--r);}
+.ra-ing-empois td:last-child{border-radius:0 0 var(--r) 0;}
+.ra-ing-empois .ra-ing-jour{color:var(--wheat);}
+
+.ra-separator{
+  margin:28px 0 0; padding:14px 0 0; border-top:2px dashed var(--border);
+  font-size:.75rem; font-family:var(--mono); color:var(--text-light);
+  text-transform:uppercase; letter-spacing:.05em; text-align:center;
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="marque"><a href="accueil.html" class="retour">←</a> 🧑‍🍳 MODE ATELIER</span>
+</div>
+
+<main>
+  <div class="bar-jour">
+    <button class="nav-jour" onclick="changerJour(-1)">‹</button>
+    <input type="date" id="date-jour" class="date-input" onchange="chargerRecettes()">
+    <button class="nav-jour" onclick="changerJour(1)">›</button>
+  </div>
+
+  <div id="liste-selection"><div class="vide">Chargement…</div></div>
+  <button class="btn-lancer" id="btn-lancer" disabled onclick="lancerAtelier()">
+    🧑‍🍳 Lancer le mode atelier
+  </button>
+</main>
+
+<!-- Mode atelier plein écran -->
+<div id="mode-atelier">
+  <div class="atelier-header">
+    <span class="atelier-titre">🧑‍🍳 ATELIER — <span id="atelier-date"></span></span>
+    <span class="atelier-progression" id="atelier-progression"></span>
+    <button class="btn-quitter" onclick="quitterAtelier()">✕ Quitter</button>
+  </div>
+  <div id="atelier-contenu"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/supabase-client.js"></script>
+<script>
+let profilCourant = null;
+let toutesRecettes = [];
+let tousIngredients = {};
+let tousFormats = {};
+let planJour = {};
+let recettesSelectionnees = []; // dans l'ordre choisi par le boulanger
+
+function dateAujourdhui() { return new Date().toISOString().slice(0, 10); }
+function fmt(n) { return Math.round(n).toLocaleString('fr-FR'); }
+
+function changerJour(delta) {
+  const input = document.getElementById('date-jour');
+  const d = new Date(input.value);
+  d.setDate(d.getDate() + delta);
+  input.value = d.toISOString().slice(0, 10);
+  chargerRecettes();
+}
+
+async function chargerRecettes() {
+  const date = document.getElementById('date-jour').value;
+  document.getElementById('liste-selection').innerHTML = '<div class="vide">Chargement…</div>';
+  document.getElementById('btn-lancer').disabled = true;
+  recettesSelectionnees = [];
+
+  const [{ data: recs }, { data: ings }, { data: plan }, { data: fmts }] = await Promise.all([
+    sb.from('recettes').select('id, nom, metier, famille, poids_piece_g, poids_cuit_g').eq('actif', true),
+    sb.from('recette_ingredients').select('*').order('ordre'),
+    sb.from('production_jour').select('*').eq('date_prod', date),
+    sb.from('recette_formats').select('*')
+  ]);
+
+  toutesRecettes = recs || [];
+  tousFormats = {};
+  (fmts || []).forEach(f => { (tousFormats[f.recette_id] = tousFormats[f.recette_id] || []).push(f); });
+  tousIngredients = {};
+  (ings || []).forEach(i => { (tousIngredients[i.recette_id] = tousIngredients[i.recette_id] || []).push(i); });
+  planJour = {};
+  (plan || []).forEach(p => {
+    const cle = `${p.recette_id}|${p.format_id || ''}|${p.variante_id || ''}`;
+    planJour[cle] = (planJour[cle] || 0) + p.nb_pieces;
+  });
+
+  // Filtre : seulement les recettes qui ont une production saisie ce jour
+  const recettesAvecProd = toutesRecettes.filter(r => {
+    return Object.keys(planJour).some(cle => cle.startsWith(r.id + '|'));
+  });
+
+  if (recettesAvecProd.length === 0) {
+    document.getElementById('liste-selection').innerHTML = '<div class="vide">Aucune production saisie pour ce jour.</div>';
+    return;
+  }
+
+  renderSelection(recettesAvecProd);
+}
+
+function getPiecesTotal(recetteId) {
+  return Object.entries(planJour)
+    .filter(([cle]) => cle.startsWith(recetteId + '|'))
+    .reduce((s, [, n]) => s + n, 0);
+}
+
+function getPateTotal(recette) {
+  const formats = tousFormats[recette.id] || [];
+  let total = 0;
+  Object.entries(planJour).forEach(([cle, nb]) => {
+    if (!cle.startsWith(recette.id + '|')) return;
+    const formatId = cle.split('|')[1];
+    const fmt_obj = formats.find(f => f.id === formatId);
+    const poids = fmt_obj?.poids_g || recette.poids_piece_g || 0;
+    total += nb * poids;
+  });
+  return total;
+}
+
+// ===== SÉLECTION AVEC DRAG & DROP =====
+let dragSrc = null;
+
+function renderSelection(recettes) {
+  const conteneur = document.getElementById('liste-selection');
+  conteneur.innerHTML = recettes.map((r, i) => {
+    const pieces = getPiecesTotal(r.id);
+    const pate = (getPateTotal(r) / 1000).toFixed(2);
+    return `
+      <div class="selection-card" id="sc-${r.id}" draggable="true"
+           ondragstart="onDragStart(event,'${r.id}')"
+           ondragover="onDragOver(event,'${r.id}')"
+           ondrop="onDrop(event,'${r.id}')"
+           ondragend="onDragEnd(event)"
+           onclick="toggleSelection('${r.id}')">
+        <div class="card-ordre vide" id="ordre-${r.id}">—</div>
+        <div class="card-info">
+          <div class="card-nom">${r.nom}</div>
+          <div class="card-meta">${pieces} pces · ${pate} kg de pâte</div>
+        </div>
+        <span class="card-handle">⠿</span>
+      </div>`;
+  }).join('');
+
+  // Stocke la liste dans l'ordre courant
+  conteneur.dataset.recettes = JSON.stringify(recettes.map(r => r.id));
+}
+
+function toggleSelection(recetteId) {
+  const idx = recettesSelectionnees.indexOf(recetteId);
+  if (idx === -1) {
+    recettesSelectionnees.push(recetteId);
+  } else {
+    recettesSelectionnees.splice(idx, 1);
+  }
+  majAffichageSelection();
+}
+
+function majAffichageSelection() {
+  // Met à jour les numéros d'ordre + classes visuelles
+  const toutes = JSON.parse(document.getElementById('liste-selection').dataset.recettes || '[]');
+  toutes.forEach(id => {
+    const card = document.getElementById('sc-' + id);
+    const ordre = document.getElementById('ordre-' + id);
+    if (!card || !ordre) return;
+    const pos = recettesSelectionnees.indexOf(id);
+    if (pos !== -1) {
+      card.classList.add('selected');
+      ordre.textContent = pos + 1;
+      ordre.classList.remove('vide');
+    } else {
+      card.classList.remove('selected');
+      ordre.textContent = '—';
+      ordre.classList.add('vide');
+    }
+  });
+  document.getElementById('btn-lancer').disabled = recettesSelectionnees.length === 0;
+}
+
+// Drag & drop pour réordonner les cartes
+function onDragStart(e, id) {
+  dragSrc = id;
+  document.getElementById('sc-' + id).classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+}
+function onDragOver(e, id) {
+  e.preventDefault();
+  if (id !== dragSrc) document.getElementById('sc-' + id).classList.add('drag-over');
+}
+function onDrop(e, targetId) {
+  e.preventDefault();
+  if (!dragSrc || dragSrc === targetId) return;
+  const conteneur = document.getElementById('liste-selection');
+  const srcCard = document.getElementById('sc-' + dragSrc);
+  const tgtCard = document.getElementById('sc-' + targetId);
+  // Insère la carte source avant ou après la cible
+  const cards = [...conteneur.querySelectorAll('.selection-card')];
+  const srcIdx = cards.indexOf(srcCard);
+  const tgtIdx = cards.indexOf(tgtCard);
+  if (srcIdx < tgtIdx) conteneur.insertBefore(srcCard, tgtCard.nextSibling);
+  else conteneur.insertBefore(srcCard, tgtCard);
+  // Met à jour l'ordre stocké
+  const newOrder = [...conteneur.querySelectorAll('.selection-card')].map(c => c.id.replace('sc-', ''));
+  conteneur.dataset.recettes = JSON.stringify(newOrder);
+  // Réordonne la sélection si les deux sont sélectionnés
+  const srcInSel = recettesSelectionnees.indexOf(dragSrc);
+  const tgtInSel = recettesSelectionnees.indexOf(targetId);
+  if (srcInSel !== -1 && tgtInSel !== -1) {
+    recettesSelectionnees.splice(srcInSel, 1);
+    recettesSelectionnees.splice(tgtInSel, 0, dragSrc);
+  }
+  majAffichageSelection();
+}
+function onDragEnd(e) {
+  document.querySelectorAll('.selection-card').forEach(c => {
+    c.classList.remove('dragging', 'drag-over');
+  });
+  dragSrc = null;
+}
+
+// ===== MODE ATELIER =====
+function lancerAtelier() {
+  if (recettesSelectionnees.length === 0) return;
+  const date = document.getElementById('date-jour').value;
+  const dateAffichee = new Date(date).toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' });
+  document.getElementById('atelier-date').textContent = dateAffichee;
+  document.getElementById('atelier-progression').textContent = `${recettesSelectionnees.length} recette${recettesSelectionnees.length > 1 ? 's' : ''}`;
+
+  let html = '';
+  recettesSelectionnees.forEach((recetteId, index) => {
+    const recette = toutesRecettes.find(r => r.id === recetteId);
+    if (!recette) return;
+
+    const pieces = getPiecesTotal(recetteId);
+    const pateG = getPateTotal(recette);
+    const pateKg = (pateG / 1000).toFixed(2);
+    const ings = tousIngredients[recetteId] || [];
+    const totalBase = ings.reduce((s, i) => s + Number(i.quantite_base_g), 0);
+    const coef = totalBase > 0 ? Math.ceil((pateG / totalBase) * 10) / 10 : 0;
+
+    // Calcul hydratation
+    let totalFarine = 0, totalEau = 0;
+    ings.forEach(i => {
+      const nom = (i.nom_affiche || '').toLowerCase();
+      const qty = Math.round(Number(i.quantite_base_g) * coef);
+      if (nom.includes('farine') || nom.includes('sarrasin') || nom.includes('engrain') || nom.includes('seigle')) totalFarine += qty;
+      if (nom.includes('eau')) totalEau += qty;
+    });
+    const hydratation = totalFarine > 0 ? Math.round((totalEau / totalFarine) * 100) : null;
+
+    // Bacs (600g/bac standard sauf si autre)
+    const nbBacs = pateG > 0 ? Math.ceil(pateG / 6000) : null;
+
+    if (index > 0) html += `<div class="ra-separator">— suite —</div>`;
+
+    html += `<div class="recette-atelier">
+      <div class="ra-nom">${recette.nom}</div>
+      <div class="ra-meta">
+        <div class="ra-meta-item"><span class="ra-meta-label">Pièces</span><span class="ra-meta-val">${pieces}</span></div>
+        <div class="ra-meta-item"><span class="ra-meta-label">Pâte</span><span class="ra-meta-val">${pateKg} kg</span></div>
+        <div class="ra-meta-item"><span class="ra-meta-label">Coefficient</span><span class="ra-meta-val">× ${coef}</span></div>
+        ${nbBacs ? `<div class="ra-meta-item"><span class="ra-meta-label">Bacs</span><span class="ra-meta-val">${nbBacs}</span></div>` : ''}
+        ${hydratation ? `<div class="ra-meta-item"><span class="ra-meta-label">Hydratation</span><span class="ra-meta-val">${hydratation}%</span></div>` : ''}
+      </div>
+      <table class="ra-ingredients">
+        <thead><tr><th>Ingrédient</th><th>Base (g)</th><th>Jour (g)</th></tr></thead>
+        <tbody>`;
+
+    ings.forEach(i => {
+      const qteBase = Number(i.quantite_base_g);
+      const qteJour = Math.round(qteBase * coef);
+
+      if (i.sous_recette_label && i.recette_source_id && tousIngredients[i.recette_source_id]) {
+        // Détail empois
+        const sousIngs = tousIngredients[i.recette_source_id];
+        const sousTotalBase = sousIngs.reduce((s, si) => s + Number(si.quantite_base_g), 0);
+        html += `<tr><td colspan="3" style="padding:0;">
+          <div class="ra-empois-header">↳ ${i.sous_recette_label} — à préparer en premier</div>
+        </td></tr>`;
+        sousIngs.forEach(si => {
+          const sousCoef = sousTotalBase > 0 ? qteJour / sousTotalBase : 0;
+          const sousQte = Math.round(Number(si.quantite_base_g) * sousCoef);
+          html += `<tr class="ra-ing-empois">
+            <td class="ra-ing-nom">${si.nom_affiche}</td>
+            <td class="ra-ing-base">${fmt(si.quantite_base_g)}</td>
+            <td><span class="ra-ing-jour">${fmt(sousQte)}</span></td>
+          </tr>`;
+        });
+        html += `<tr><td colspan="3" style="padding:4px 0 8px; font-size:.75rem; color:var(--text-light); font-family:var(--mono);">
+          Total ${i.sous_recette_label} : ${fmt(qteJour)} g
+        </td></tr>`;
+      } else {
+        html += `<tr>
+          <td class="ra-ing-nom">${i.nom_affiche}</td>
+          <td class="ra-ing-base">${fmt(qteBase)}</td>
+          <td><span class="ra-ing-jour">${fmt(qteJour)}</span> <span class="ra-ing-unite">g</span></td>
+        </tr>`;
+      }
+    });
+
+    html += `</tbody></table></div>`;
+  });
+
+  document.getElementById('atelier-contenu').innerHTML = html;
+  document.getElementById('mode-atelier').classList.add('visible');
+  // Plein écran sur iOS/iPad si supporté
+  if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {});
+  window.scrollTo(0, 0);
+}
+
+function quitterAtelier() {
+  document.getElementById('mode-atelier').classList.remove('visible');
+  if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
+}
+
+(async () => {
+  profilCourant = await exigerRole(['gerant', 'boulanger', 'patissier', 'apprenti']);
+  if (!profilCourant) return;
+  document.getElementById('date-jour').value = dateAujourdhui();
+  await chargerRecettes();
+})();
+</script>
+</body>
+</html>
