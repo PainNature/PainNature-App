@@ -292,7 +292,10 @@ async function chargerMP() {
           <input type="number" step="0.0001" class="input-mini" value="${mp.prix_ht_kg}"
                  onchange="majPrixMP('${mp.id}', this.value)">
         </td>
-        <td><button class="btn-icon" onclick="supprimerMP('${mp.id}')">🗑️</button></td>
+        <td style="display:flex;gap:4px;">
+          <button class="btn-icon" title="Éditer" onclick='ouvrirModaleEditionMP(${JSON.stringify(mp).replace(/'/g,"&apos;")})'>✏️</button>
+          <button class="btn-icon" onclick="supprimerMP('${mp.id}')">🗑️</button>
+        </td>
       </tr>`;
   });
   corps.innerHTML = html;
@@ -311,6 +314,56 @@ async function supprimerMP(id) {
   const { error } = await sb.from('matieres_premieres').delete().eq('id', id);
   if (error) { alert('Erreur : ' + error.message); return; }
   await chargerMP();
+}
+
+function ouvrirModaleEditionMP(mp) {
+  document.getElementById('erreur-edition-mp').classList.remove('visible');
+  document.getElementById('edit-mp-id').value = mp.id;
+  document.getElementById('edit-mp-nom').value = mp.nom || '';
+  document.getElementById('edit-mp-fournisseur').value = mp.fournisseur || '';
+  document.getElementById('edit-mp-categorie').value = mp.categorie || '';
+  document.getElementById('edit-mp-bio').checked = mp.bio || false;
+  const metiers = mp.metiers || [];
+  document.getElementById('edit-mp-b').checked = metiers.includes('B');
+  document.getElementById('edit-mp-p').checked = metiers.includes('P');
+  document.getElementById('edit-mp-v').checked = metiers.includes('V');
+  document.getElementById('edit-mp-gv').checked = metiers.includes('GV');
+  document.getElementById('edit-mp-t').checked = metiers.includes('T');
+  document.getElementById('overlay-edition-mp').classList.add('visible');
+}
+
+function fermerModaleEditionMP() {
+  document.getElementById('overlay-edition-mp').classList.remove('visible');
+}
+
+async function confirmerEditionMP() {
+  const id = document.getElementById('edit-mp-id').value;
+  const nom = document.getElementById('edit-mp-nom').value.trim();
+  const fournisseur = document.getElementById('edit-mp-fournisseur').value.trim();
+  const categorie = document.getElementById('edit-mp-categorie').value || null;
+  const bio = document.getElementById('edit-mp-bio').checked;
+  const erreur = document.getElementById('erreur-edition-mp');
+
+  const metiers = [];
+  if (document.getElementById('edit-mp-b').checked) metiers.push('B');
+  if (document.getElementById('edit-mp-p').checked) metiers.push('P');
+  if (document.getElementById('edit-mp-v').checked) metiers.push('V');
+  if (document.getElementById('edit-mp-gv').checked) metiers.push('GV');
+  if (document.getElementById('edit-mp-t').checked) metiers.push('T');
+
+  if (!nom) { erreur.textContent = 'Le nom est obligatoire.'; erreur.classList.add('visible'); return; }
+
+  const { error } = await sb.from('matieres_premieres').update({
+    nom, fournisseur, categorie, bio, metiers
+  }).eq('id', id);
+
+  if (error) { erreur.textContent = error.message; erreur.classList.add('visible'); return; }
+
+  fermerModaleEditionMP();
+  await chargerMP();
+  // Rechargement de la fiche recette si une est ouverte (le nom de la MP
+  // peut y être affiché — on rafraîchit pour éviter un affichage obsolète)
+  if (recetteSelectionneeId) await chargerFicheRecette(recetteSelectionneeId);
 }
 
 function ouvrirModaleMP() {
@@ -743,5 +796,47 @@ async function confirmerAjoutIngredient() {
   await chargerListeRecettes();
 })();
 </script>
+<!-- Modale édition complète matière première -->
+<div class="overlay" id="overlay-edition-mp">
+  <div class="modale">
+    <h3>Modifier la matière première</h3>
+    <div class="msg-erreur-modale" id="erreur-edition-mp"></div>
+    <input type="hidden" id="edit-mp-id">
+    <div class="field"><label>Nom</label><input type="text" id="edit-mp-nom" required></div>
+    <div class="field"><label>Fournisseur</label><input type="text" id="edit-mp-fournisseur"></div>
+    <div class="field"><label>Catégorie</label>
+      <select id="edit-mp-categorie" style="width:100%; padding:10px 12px; border:1.5px solid var(--border-strong); border-radius:var(--r); background:#fff;">
+        <option value="">—</option>
+        <option value="farines">Farines</option>
+        <option value="levains_ferments">Levains & ferments</option>
+        <option value="sel_sucres_epices">Sel, sucres et épices</option>
+        <option value="matieres_grasses">Matières grasses</option>
+        <option value="liquides_oeufs">Liquides et œufs</option>
+        <option value="graines_fruits_secs">Graines et fruits secs</option>
+        <option value="fruits_legumes">Fruits & légumes</option>
+        <option value="chocolat_cacao">Chocolat & cacao</option>
+        <option value="emballage_consommables">Emballage & consommables</option>
+        <option value="autres_preparations">Autres / Préparations</option>
+        <option value="viandes_fromages">Viandes & Fromages</option>
+      </select>
+    </div>
+    <div class="field field-checkbox"><input type="checkbox" id="edit-mp-bio"><label style="margin:0;">Matière biologique</label></div>
+    <div class="field">
+      <label>Métiers concernés</label>
+      <div style="display:flex; flex-direction:column; gap:6px; margin-top:4px;">
+        <label style="display:flex; align-items:center; gap:8px; font-size:.85rem; font-weight:600; cursor:pointer;"><input type="checkbox" id="edit-mp-b" style="width:18px;height:18px;"> Boulangerie</label>
+        <label style="display:flex; align-items:center; gap:8px; font-size:.85rem; font-weight:600; cursor:pointer;"><input type="checkbox" id="edit-mp-p" style="width:18px;height:18px;"> Pâtisserie</label>
+        <label style="display:flex; align-items:center; gap:8px; font-size:.85rem; font-weight:600; cursor:pointer;"><input type="checkbox" id="edit-mp-v" style="width:18px;height:18px;"> Viennoiserie</label>
+        <label style="display:flex; align-items:center; gap:8px; font-size:.85rem; font-weight:600; cursor:pointer;"><input type="checkbox" id="edit-mp-gv" style="width:18px;height:18px;"> Gâteaux de voyage</label>
+        <label style="display:flex; align-items:center; gap:8px; font-size:.85rem; font-weight:600; cursor:pointer;"><input type="checkbox" id="edit-mp-t" style="width:18px;height:18px;"> Traiteur</label>
+      </div>
+    </div>
+    <div class="modale-actions">
+      <button class="btn btn-ghost" onclick="fermerModaleEditionMP()">Annuler</button>
+      <button class="btn btn-primary" onclick="confirmerEditionMP()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
