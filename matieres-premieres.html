@@ -73,6 +73,7 @@ tr:last-child td{border-bottom:none;}
       <option value="P">Pâtisserie</option>
       <option value="V">Viennoiserie</option>
       <option value="GV">Gâteaux de voyage</option>
+      <option value="T">Traiteur</option>
     </select>
   </div>
 
@@ -103,6 +104,7 @@ tr:last-child td{border-bottom:none;}
           <label style="display:flex; align-items:center; gap:8px; font-size:.85rem; font-weight:600; cursor:pointer;"><input type="checkbox" id="add-metier-p" style="width:18px;height:18px;"> Pâtisserie</label>
           <label style="display:flex; align-items:center; gap:8px; font-size:.85rem; font-weight:600; cursor:pointer;"><input type="checkbox" id="add-metier-v" style="width:18px;height:18px;"> Viennoiserie</label>
           <label style="display:flex; align-items:center; gap:8px; font-size:.85rem; font-weight:600; cursor:pointer;"><input type="checkbox" id="add-metier-gv" style="width:18px;height:18px;"> Gâteaux de voyage</label>
+          <label style="display:flex; align-items:center; gap:8px; font-size:.85rem; font-weight:600; cursor:pointer;"><input type="checkbox" id="add-metier-t" style="width:18px;height:18px;"> Traiteur</label>
         </div>
       </div>
       <p class="note-prix-gerant">💡 Le prix sera renseigné par le gérant depuis l'écran Gestion.</p>
@@ -119,13 +121,13 @@ tr:last-child td{border-bottom:none;}
 <script>
 let profilCourant = null;
 
-const labelsMetier = { B: 'Boulangerie', P: 'Pâtisserie', V: 'Viennoiserie', GV: 'Gâteaux de voyage' };
+const labelsMetier = { B: 'Boulangerie', P: 'Pâtisserie', V: 'Viennoiserie', GV: 'Gâteaux de voyage', T: 'Traiteur' };
 const labelsCategorie = {
   farines: 'Farines', levains_ferments: 'Levains & ferments',
   sel_sucres_epices: 'Sel, sucres et épices', matieres_grasses: 'Matières grasses',
   liquides_oeufs: 'Liquides et œufs', graines_fruits_secs: 'Graines et fruits secs',
   fruits_legumes: 'Fruits & légumes', chocolat_cacao: 'Chocolat & cacao',
-  emballage_consommables: 'Emballage & consommables', autres_preparations: 'Autres / Préparations'
+  emballage_consommables: 'Emballage & consommables', autres_preparations: 'Autres / Préparations', viandes_fromages: 'Viandes & Fromages'
 };
 
 function remplirSelectsCategorie() {
@@ -172,6 +174,7 @@ function remplirFormulaire(mp) {
   document.getElementById('add-metier-p').checked = metiers.includes('P');
   document.getElementById('add-metier-v').checked = metiers.includes('V');
   document.getElementById('add-metier-gv').checked = metiers.includes('GV');
+  document.getElementById('add-metier-t').checked = metiers.includes('T');
 }
 
 function ouvrirModaleAjout() {
@@ -208,6 +211,7 @@ async function confirmerAjout() {
   if (document.getElementById('add-metier-p').checked) metiers.push('P');
   if (document.getElementById('add-metier-v').checked) metiers.push('V');
   if (document.getElementById('add-metier-gv').checked) metiers.push('GV');
+  if (document.getElementById('add-metier-t').checked) metiers.push('T');
 
   if (!nom) {
     erreur.textContent = 'Le nom est obligatoire.';
