@@ -488,7 +488,7 @@ function toutSelectionner(val) {
   renderTout();
 }
 
-const labelsMetierFiltre = { B: 'Boulangerie', V: 'Viennoiserie', GV: 'Gâteaux de voyage', P: 'Pâtisserie' };
+const labelsMetierFiltre = { B: 'Boulangerie', V: 'Viennoiserie', GV: 'Gâteaux de voyage', P: 'Pâtisserie', T: 'Traiteur' };
 
 function renderFiltreMetier() {
   const conteneur = document.getElementById('filtre-metier-bar');
@@ -523,8 +523,8 @@ function renderTout() {
   // Si un métier est sélectionné, on n'affiche QUE celui-là (économie
   // d'écran et de manipulation quand on n'a besoin que d'un seul métier
   // à l'instant — ex: le boulanger qui n'a pas à voir Pâtisserie/Viennoiserie).
-  const metiersAffiches = metierFiltre ? [metierFiltre] : ['B', 'V', 'GV', 'P'];
-  const labelsMetier = { B: 'Boulangerie', V: 'Viennoiserie', GV: 'Gâteaux de voyage', P: 'Pâtisserie' };
+  const metiersAffiches = metierFiltre ? [metierFiltre] : ['B', 'V', 'GV', 'P', 'T'];
+  const labelsMetier = { B: 'Boulangerie', V: 'Viennoiserie', GV: 'Gâteaux de voyage', P: 'Pâtisserie', T: 'Traiteur' };
   const labelsFamille = {
     baguettes: 'Baguettes', bles_levain: 'Blés au levain',
     autres_cereales_levain: 'Autres céréales au levain', pains_sucres: 'Pains sucrés'
