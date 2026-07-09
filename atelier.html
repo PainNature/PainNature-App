@@ -430,12 +430,31 @@ async function lancerAtelier() {
     // Bacs (600g/bac standard sauf si autre)
     const nbBacs = pateG > 0 ? Math.ceil(pateG / 6000) : null;
 
+    // Détail pièces par format
+    const formats = tousFormats[recette.id] || [];
+    let detailFormats = '';
+    if (formats.length > 0) {
+      const lignesFormats = formats.map(f => {
+        const cle = `${recette.id}|${f.id}|`;
+        const nb = Object.entries(planJour)
+          .filter(([k]) => k.startsWith(cle))
+          .reduce((s, [, n]) => s + n, 0);
+        if (!nb) return '';
+        const label = f.poids_g ? `${f.poids_g >= 1000 ? (f.poids_g/1000).toFixed(1)+'kg' : f.poids_g+'g'}` : f.label;
+        return `<span style="font-family:var(--mono); font-size:.85rem; background:var(--sauge); color:#fff; border-radius:var(--r); padding:3px 8px; white-space:nowrap;">${label} × ${nb}</span>`;
+      }).filter(Boolean);
+      if (lignesFormats.length > 0) {
+        detailFormats = `<div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; margin-bottom:4px;">${lignesFormats.join('')}</div>`;
+      }
+    }
+
     if (index > 0) html += `<div class="ra-separator">— suite —</div>`;
 
     html += `<div class="recette-atelier">
       <div class="ra-nom">${recette.nom}</div>
+      ${detailFormats}
       <div class="ra-meta">
-        <div class="ra-meta-item"><span class="ra-meta-label">Pièces</span><span class="ra-meta-val">${pieces}</span></div>
+        <div class="ra-meta-item"><span class="ra-meta-label">Total pièces</span><span class="ra-meta-val">${pieces}</span></div>
         <div class="ra-meta-item"><span class="ra-meta-label">Pâte</span><span class="ra-meta-val">${pateKg} kg</span></div>
         <div class="ra-meta-item"><span class="ra-meta-label">Coefficient</span><span class="ra-meta-val">× ${coef}</span></div>
         ${nbBacs ? `<div class="ra-meta-item"><span class="ra-meta-label">Bacs</span><span class="ra-meta-val">${nbBacs}</span></div>` : ''}
