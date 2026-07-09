@@ -122,6 +122,26 @@ main{max-width:700px; margin:1.2rem auto 3rem; padding:0 1.2rem;}
   font-size:.75rem; font-family:var(--mono); color:var(--text-light);
   text-transform:uppercase; letter-spacing:.05em; text-align:center;
 }
+
+/* Bloc levains atelier */
+.atelier-levains{
+  padding:24px 24px 28px; border-bottom:3px solid var(--border);
+  background:var(--wheat-light);
+}
+.atelier-levains-titre{
+  font-size:1.5rem; font-weight:800; color:var(--wheat); margin-bottom:16px;
+}
+.levain-card{
+  background:#fff; border:1.5px solid var(--wheat); border-radius:var(--r-lg);
+  padding:16px 20px; margin-bottom:12px;
+}
+.levain-card-nom{font-weight:800; font-size:1.1rem; color:var(--wheat); margin-bottom:10px;}
+.levain-table{width:100%; border-collapse:collapse;}
+.levain-table td{padding:6px 0; font-size:1rem; border-bottom:1px solid var(--border);}
+.levain-table td:last-child{text-align:right; font-family:var(--mono); font-weight:800; font-size:1.2rem; color:var(--sauge);}
+.levain-table tr:last-child td{border-bottom:none;}
+.levain-label{color:var(--text-light); font-size:.8rem;}
+.levain-souche-detail{font-size:.78rem; color:var(--text-light); font-family:var(--mono); margin-top:4px;}
 </style>
 </head>
 <body>
@@ -331,14 +351,61 @@ function onDragEnd(e) {
 }
 
 // ===== MODE ATELIER =====
-function lancerAtelier() {
+async function lancerAtelier() {
   if (recettesSelectionnees.length === 0) return;
   const date = document.getElementById('date-jour').value;
   const dateAffichee = new Date(date).toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' });
   document.getElementById('atelier-date').textContent = dateAffichee;
   document.getElementById('atelier-progression').textContent = `${recettesSelectionnees.length} recette${recettesSelectionnees.length > 1 ? 's' : ''}`;
 
+  // Calcul levains via la même RPC que Production
+  const { data: levains } = await sb.rpc('get_besoins_levains', { p_date: date });
+
   let html = '';
+
+  // Bloc levains en tête si au moins un besoin > 0
+  const levainsFiltres = (levains || []).filter(l => l.besoin_g > 0);
+  if (levainsFiltres.length > 0) {
+    html += `<div class="atelier-levains">
+      <div class="atelier-levains-titre">🌾 Levains à préparer</div>`;
+
+    levainsFiltres.forEach(l => {
+      const isDur = l.type === 'dur';
+      const souche = isDur
+        ? Math.round((l.besoin_g + 100) / 7)
+        : Math.round(l.besoin_g / 9);
+      const farine = isDur
+        ? Math.round(souche * 4 + 250)
+        : Math.round(souche * 4 + 250);
+      const eau = isDur
+        ? Math.round(souche * 2 + 150)
+        : Math.round(souche * 4 + 250);
+
+      html += `<div class="levain-card">
+        <div class="levain-card-nom">${l.nom} <span style="font-weight:400; font-size:.8rem; color:var(--text-light);">(${isDur ? 'dur' : 'liquide'})</span></div>
+        <table class="levain-table">
+          <tr>
+            <td>Besoin total<div class="levain-label">quantité à produire</div></td>
+            <td>${Math.round(l.besoin_g)} g</td>
+          </tr>
+          <tr>
+            <td>Souche à prélever<div class="levain-souche-detail">depuis votre levain chef</div></td>
+            <td>${souche} g</td>
+          </tr>
+          <tr>
+            <td>Farine du rafraîchi</td>
+            <td>${farine} g</td>
+          </tr>
+          <tr>
+            <td>Eau du rafraîchi</td>
+            <td>${eau} g</td>
+          </tr>
+        </table>
+      </div>`;
+    });
+
+    html += `</div>`; // fin atelier-levains
+  }
   recettesSelectionnees.forEach((recetteId, index) => {
     const recette = toutesRecettes.find(r => r.id === recetteId);
     if (!recette) return;
