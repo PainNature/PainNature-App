@@ -275,7 +275,7 @@ async function chargerDonnees(){
     const cle = `${p.recette_id}|${p.format_id||''}|${p.variante_id||''}`;
     planJour[cle] = (planJour[cle] || 0) + p.nb_pieces;
   });
-  donneesLevains = (levains || []).filter(l => Number(l.besoin_g) > 0);
+  donneesLevains = (levains || []).filter(l => Number(l.total_g) > 0);
 
   // Afficher les levains dans le panneau de sélection
   afficherLevainsSelection();
@@ -300,9 +300,10 @@ function afficherLevainsSelection(){
 
   pills.innerHTML = donneesLevains.map(l => {
     const info = calcLevain(l);
+    const typeLabel = l.type === 'dur' ? 'dur' : l.type === 'liquide_engrain' ? 'engrain' : 'liquide';
     return `<div class="levain-pill">
-      <div class="levain-pill-nom">${l.nom}</div>
-      <div class="levain-pill-detail">Besoin ${fmt(l.besoin_g)} g · Souche ${fmt(info.souche)} g</div>
+      <div class="levain-pill-nom">${l.nom} <span style="font-weight:400;font-size:.75rem;">(${typeLabel})</span></div>
+      <div class="levain-pill-detail">Total ${fmt(info.total)} g · Souche ${fmt(info.souche)} g</div>
       <div class="levain-pill-detail">Farine ${fmt(info.farine)} g · Eau ${fmt(info.eau)} g</div>
     </div>`;
   }).join('');
@@ -310,12 +311,14 @@ function afficherLevainsSelection(){
 }
 
 function calcLevain(l){
-  const besoin = Number(l.besoin_g);
-  const isDur  = l.type === 'dur';
-  const souche = isDur ? Math.round((besoin + 100) / 7) : Math.round(besoin / 9);
-  const farine = Math.round(souche * 4 + 250);
-  const eau    = isDur ? Math.round(souche * 2 + 150) : Math.round(souche * 4 + 250);
-  return { souche, farine, eau };
+  // La RPC get_besoins_levains retourne directement souche_g, total_farine_g,
+  // total_eau_g, total_g — on les utilise tels quels, pas besoin de recalculer.
+  return {
+    souche : Number(l.souche_g),
+    farine : Number(l.total_farine_g),
+    eau    : Number(l.total_eau_g),
+    total  : Number(l.total_g)
+  };
 }
 
 // ─── cartes sélection ───────────────────────────────────────────
@@ -343,12 +346,14 @@ function getDetailFormats(recette){
   const lignes  = [];
   Object.entries(planJour).forEach(([cle, nb]) => {
     if (!cle.startsWith(recette.id + '|') || !nb) return;
-    const formatId  = cle.split('|')[1];
-    const f         = formats.find(f => f.id === formatId);
+    const formatId = cle.split('|')[1];
+    if (!formatId) return;
+    const f = formats.find(f => f.id === formatId);
     if (!f) return;
-    const label = f.poids_g
-      ? (f.poids_g >= 1000 ? (f.poids_g/1000).toFixed(1)+' kg' : f.poids_g+' g')
-      : f.label;
+    const poidsG = f.poids_g || f.poids_cuit_g || null;
+    const label  = poidsG
+      ? (poidsG >= 1000 ? (poidsG/1000).toFixed(1)+' kg' : poidsG+' g')
+      : (f.label || f.nom || '?');
     lignes.push({ label, nb });
   });
   return lignes;
@@ -448,6 +453,23 @@ function onDragEnd(){
 // ─── MODE ATELIER ───────────────────────────────────────────────
 function lancerAtelier(){
   if (!recettesSelectionnees.length) return;
+  // DEBUG VISIBLE
+  const nbFormats = Object.keys(tousFormats).length;
+  const nbPlan = Object.keys(planJour).length;
+  const nbLevains = donneesLevains.length;
+  const exempleFormat = nbFormats > 0 ? JSON.stringify(Object.values(tousFormats)[0][0]).slice(0,80) : 'vide';
+  const exemplePlan = nbPlan > 0 ? Object.entries(planJour).slice(0,2).map(([k,v])=>`${k}=${v}`).join(' | ') : 'vide';
+  document.getElementById('atelier-contenu').innerHTML = `
+    <div style="padding:20px;font-family:monospace;font-size:14px;background:#f0f0f0;margin:16px;">
+      <b>DEBUG</b><br>
+      tousFormats: ${nbFormats} recettes<br>
+      Exemple format: ${exempleFormat}<br><br>
+      planJour: ${nbPlan} lignes<br>
+      Exemple plan: ${exemplePlan}<br><br>
+      donneesLevains: ${nbLevains} levains<br>
+      ${nbLevains > 0 ? 'Premier levain: ' + donneesLevains[0].nom + ' total_g=' + donneesLevains[0].total_g : ''}
+    </div>`;
+  document.getElementById('mode-atelier').classList.add('visible');
   const date = document.getElementById('date-jour').value;
   document.getElementById('atelier-date-affiche').textContent =
     new Date(date).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
@@ -465,7 +487,7 @@ function lancerAtelier(){
         <div class="levain-bloc-nom">${l.nom} <span style="font-weight:400;font-size:.8rem;color:var(--text-light);">(${l.type === 'dur' ? 'levain dur 2:1' : 'levain liquide 1:1'})</span></div>
         <div class="levain-ligne">
           <div><div class="levain-ligne-label">Besoin total</div><div class="levain-ligne-sous">quantité à produire</div></div>
-          <div class="levain-ligne-val">${fmt(l.besoin_g)} g</div>
+          <div class="levain-ligne-val">${fmt(info.total)} g</div>
         </div>
         <div class="levain-ligne">
           <div><div class="levain-ligne-label">Souche à prélever</div><div class="levain-ligne-sous">depuis votre levain chef</div></div>
