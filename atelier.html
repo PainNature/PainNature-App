@@ -9,171 +9,82 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/shared.css">
 <style>
+.topbar{background:var(--sauge);color:#fff;padding:0 1.2rem;height:54px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,.25);position:sticky;top:0;z-index:10;}
+.topbar .marque{font-weight:800;font-size:1rem;display:flex;align-items:center;gap:.6rem;}
+.topbar .retour{color:#fff;text-decoration:none;font-size:1.3rem;opacity:.85;}
+main{max-width:720px;margin:1.2rem auto 4rem;padding:0 1.2rem;}
+.bar-jour{display:flex;align-items:center;gap:10px;margin-bottom:1.2rem;}
+.nav-jour{background:none;border:1.5px solid var(--border-strong);border-radius:var(--r);width:38px;height:38px;font-size:1.2rem;cursor:pointer;color:var(--text-muted);}
+.date-input{padding:9px 12px;border:1.5px solid var(--border-strong);border-radius:var(--r);font-family:var(--mono);font-size:.9rem;flex:1;background:#fff;}
 
-/* ===== ÉCRAN SÉLECTION ===== */
-.topbar{
-  background:var(--sauge); color:#fff; padding:0 1.2rem; height:54px;
-  display:flex; align-items:center; justify-content:space-between;
-  box-shadow:0 2px 8px rgba(0,0,0,.25); position:sticky; top:0; z-index:10;
-}
-.topbar .marque{font-weight:800; font-size:1rem; display:flex; align-items:center; gap:.6rem;}
-.topbar .retour{color:#fff; text-decoration:none; font-size:1.3rem; opacity:.85;}
-main{max-width:720px; margin:1.2rem auto 4rem; padding:0 1.2rem;}
+/* levains sélection */
+.levains-resume{background:var(--wheat-light);border:1.5px solid var(--wheat);border-radius:var(--r-lg);padding:14px 16px;margin-bottom:1rem;}
+.levains-resume-titre{font-weight:800;font-size:.82rem;color:var(--wheat);font-family:var(--mono);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;}
+.levain-pills{display:flex;flex-wrap:wrap;gap:8px;}
+.levain-pill{background:#fff;border:1.5px solid var(--wheat);border-radius:var(--r-lg);padding:8px 14px;}
+.levain-pill-nom{font-weight:700;color:var(--wheat);}
+.levain-pill-detail{font-family:var(--mono);font-size:.78rem;color:var(--text-light);margin-top:2px;}
 
-.bar-jour{display:flex; align-items:center; gap:10px; margin-bottom:1.2rem;}
-.nav-jour{background:none; border:1.5px solid var(--border-strong); border-radius:var(--r); width:38px; height:38px; font-size:1.2rem; cursor:pointer; color:var(--text-muted);}
-.date-input{padding:9px 12px; border:1.5px solid var(--border-strong); border-radius:var(--r); font-family:var(--mono); font-size:.9rem; flex:1; background:#fff;}
-
-/* Bloc levains sélection */
-.levains-resume{
-  background:var(--wheat-light); border:1.5px solid var(--wheat);
-  border-radius:var(--r-lg); padding:14px 16px; margin-bottom:1rem;
-}
-.levains-resume-titre{
-  font-weight:800; font-size:.82rem; color:var(--wheat); font-family:var(--mono);
-  text-transform:uppercase; letter-spacing:.05em; margin-bottom:10px;
-}
-.levain-pills{display:flex; flex-wrap:wrap; gap:8px;}
-.levain-pill{
-  background:#fff; border:1.5px solid var(--wheat); border-radius:var(--r-lg);
-  padding:8px 14px; font-size:.85rem;
-}
-.levain-pill-nom{font-weight:700; color:var(--wheat);}
-.levain-pill-detail{font-family:var(--mono); font-size:.78rem; color:var(--text-light); margin-top:2px;}
-
-/* Cartes sélection */
-.selection-card{
-  display:flex; align-items:center; gap:12px; padding:14px 16px;
-  background:var(--surface); border:1.5px solid var(--border); border-radius:var(--r-lg);
-  margin-bottom:8px; cursor:grab; user-select:none; touch-action:none;
-}
-.selection-card.selected{border-color:var(--wheat); background:var(--wheat-light);}
-.selection-card.dragging{opacity:.35;}
-.selection-card.drag-over{border-color:var(--sauge); border-style:dashed; background:rgba(84,96,84,.05);}
-.card-ordre{
-  width:32px; height:32px; border-radius:50%; background:var(--wheat); color:#fff;
-  font-weight:800; font-size:.9rem; font-family:var(--mono);
-  display:flex; align-items:center; justify-content:center; flex-shrink:0;
-}
+/* cartes sélection */
+.selection-card{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r-lg);margin-bottom:8px;cursor:pointer;user-select:none;}
+.selection-card.selected{border-color:var(--wheat);background:var(--wheat-light);}
+.card-ordre{width:32px;height:32px;border-radius:50%;background:var(--wheat);color:#fff;font-weight:800;font-size:.9rem;font-family:var(--mono);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .card-ordre.vide{background:var(--border-strong);}
-.card-info{flex:1; min-width:0;}
-.card-nom{font-weight:700; font-size:.95rem;}
-.card-meta{font-size:.75rem; color:var(--text-light); font-family:var(--mono); margin-top:2px;}
-.card-formats{display:flex; flex-wrap:wrap; gap:4px; margin-top:5px;}
-.fmt-badge{
-  font-family:var(--mono); font-size:.72rem; font-weight:700;
-  background:var(--sauge); color:#fff; border-radius:var(--r); padding:2px 7px;
-}
-.card-handle{font-size:1.2rem; color:var(--border-strong); cursor:grab; padding:0 4px; flex-shrink:0;}
+.card-info{flex:1;min-width:0;}
+.card-nom{font-weight:700;font-size:.95rem;}
+.card-meta{font-size:.75rem;color:var(--text-light);font-family:var(--mono);margin-top:2px;}
+.card-formats{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;}
+.fmt-badge{font-family:var(--mono);font-size:.72rem;font-weight:700;background:var(--sauge);color:#fff;border-radius:var(--r);padding:2px 8px;}
+.card-handle{font-size:1.2rem;color:var(--border-strong);padding:0 4px;flex-shrink:0;}
 
-.btn-lancer{
-  width:100%; padding:16px; margin-top:1.2rem; font-size:1.05rem; font-weight:800;
-  background:var(--sauge); color:#fff; border:none; border-radius:var(--r-lg);
-  cursor:pointer; box-shadow:0 4px 12px rgba(84,96,84,.3);
-}
-.btn-lancer:disabled{opacity:.4; cursor:not-allowed;}
-.vide{text-align:center; padding:2rem; color:var(--text-light); font-size:.9rem;}
+.btn-lancer{width:100%;padding:16px;margin-top:1.2rem;font-size:1.05rem;font-weight:800;background:var(--sauge);color:#fff;border:none;border-radius:var(--r-lg);cursor:pointer;box-shadow:0 4px 12px rgba(84,96,84,.3);}
+.btn-lancer:disabled{opacity:.4;cursor:not-allowed;}
+.vide{text-align:center;padding:2rem;color:var(--text-light);font-size:.9rem;}
 
-/* ===== MODE ATELIER PLEIN ÉCRAN ===== */
-#mode-atelier{
-  display:none; position:fixed; inset:0; background:#fff;
-  z-index:1000; overflow-y:auto;
-}
+/* mode atelier */
+#mode-atelier{display:none;position:fixed;inset:0;background:#fff;z-index:1000;overflow-y:auto;}
 #mode-atelier.visible{display:block;}
+.atelier-topbar{background:var(--sauge);color:#fff;padding:0 20px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;}
+.atelier-topbar-titre{font-weight:800;font-size:.95rem;font-family:var(--mono);}
+.atelier-topbar-date{font-size:.78rem;opacity:.75;}
+.btn-quitter{background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.5);color:#fff;padding:7px 16px;border-radius:var(--r);font-weight:700;font-size:.85rem;cursor:pointer;}
 
-.atelier-topbar{
-  background:var(--sauge); color:#fff; padding:0 20px; height:52px;
-  display:flex; align-items:center; justify-content:space-between;
-  position:sticky; top:0; z-index:10; box-shadow:0 2px 6px rgba(0,0,0,.2);
-}
-.atelier-topbar-titre{font-weight:800; font-size:.95rem; font-family:var(--mono);}
-.atelier-topbar-date{font-size:.78rem; opacity:.75;}
-.btn-quitter{
-  background:rgba(255,255,255,.2); border:1.5px solid rgba(255,255,255,.5);
-  color:#fff; padding:7px 16px; border-radius:var(--r); font-weight:700;
-  font-size:.85rem; cursor:pointer;
-}
-
-/* Bloc levains atelier */
-.section-levains{
-  background:var(--wheat-light); border-bottom:3px solid var(--wheat);
-  padding:22px 20px 24px;
-}
-.section-levains-titre{
-  font-size:1.4rem; font-weight:800; color:var(--wheat); margin-bottom:14px;
-}
-.levain-bloc{
-  background:#fff; border:1.5px solid var(--wheat); border-radius:var(--r-lg);
-  padding:16px 18px; margin-bottom:10px;
-}
+/* levains atelier */
+.section-levains{background:var(--wheat-light);border-bottom:3px solid var(--wheat);padding:22px 20px 24px;}
+.section-levains-titre{font-size:1.4rem;font-weight:800;color:var(--wheat);margin-bottom:14px;}
+.levain-bloc{background:#fff;border:1.5px solid var(--wheat);border-radius:var(--r-lg);padding:16px 18px;margin-bottom:10px;}
 .levain-bloc:last-child{margin-bottom:0;}
-.levain-bloc-nom{
-  font-weight:800; font-size:1.05rem; color:var(--wheat); margin-bottom:10px;
-  border-bottom:1px solid var(--border); padding-bottom:8px;
-}
-.levain-ligne{
-  display:flex; justify-content:space-between; align-items:center;
-  padding:7px 0; border-bottom:1px solid var(--border);
-}
+.levain-bloc-nom{font-weight:800;font-size:1.05rem;color:var(--wheat);margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:8px;}
+.levain-ligne{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);}
 .levain-ligne:last-child{border-bottom:none;}
-.levain-ligne-label{font-size:.95rem; color:var(--text);}
-.levain-ligne-sous{font-size:.72rem; color:var(--text-light); font-family:var(--mono);}
-.levain-ligne-val{
-  font-family:var(--mono); font-weight:800; font-size:1.3rem; color:var(--sauge);
-}
+.levain-ligne-label{font-size:.95rem;color:var(--text);}
+.levain-ligne-sous{font-size:.72rem;color:var(--text-light);font-family:var(--mono);}
+.levain-ligne-val{font-family:var(--mono);font-weight:800;font-size:1.3rem;color:var(--sauge);}
 
-/* Bloc recette atelier */
-.section-recette{
-  padding:24px 20px 28px; border-bottom:3px solid var(--border);
-}
+/* recettes atelier */
+.section-recette{padding:24px 20px 28px;border-bottom:3px solid var(--border);}
 .section-recette:last-child{border-bottom:none;}
-.recette-nom{
-  font-size:1.9rem; font-weight:800; color:var(--sauge);
-  line-height:1.2; margin-bottom:10px;
-}
-.recette-formats{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px;}
-.recette-fmt-pill{
-  background:var(--sauge); color:#fff; font-family:var(--mono);
-  font-weight:800; font-size:1rem; border-radius:var(--r-lg);
-  padding:6px 14px; display:flex; flex-direction:column; align-items:center; gap:1px;
-}
-.recette-fmt-pill .fp-poids{font-size:.7rem; opacity:.8; font-weight:500;}
-.recette-fmt-pill .fp-nb{font-size:1.1rem;}
-.recette-meta{
-  display:flex; flex-wrap:wrap; gap:12px; margin-bottom:18px;
-  padding:12px 14px; background:var(--surface); border-radius:var(--r-lg);
-}
-.recette-meta-item{display:flex; flex-direction:column; gap:2px;}
-.rmi-label{font-size:.62rem; text-transform:uppercase; letter-spacing:.05em; color:var(--text-light); font-family:var(--mono);}
-.rmi-val{font-size:1rem; font-weight:800; color:var(--text); font-family:var(--mono);}
-
-.ing-table{width:100%; border-collapse:collapse;}
-.ing-table th{
-  text-align:left; padding:8px 0; font-size:.68rem; text-transform:uppercase;
-  letter-spacing:.05em; color:var(--text-light); font-family:var(--mono);
-  border-bottom:2px solid var(--border);
-}
+.recette-nom{font-size:1.9rem;font-weight:800;color:var(--sauge);line-height:1.2;margin-bottom:12px;}
+.recette-formats{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px;}
+.recette-fmt-pill{background:var(--sauge);color:#fff;border-radius:var(--r-lg);padding:10px 18px;display:flex;flex-direction:column;align-items:center;min-width:80px;}
+.fp-poids{font-family:var(--mono);font-size:.75rem;opacity:.85;font-weight:500;}
+.fp-nb{font-family:var(--mono);font-weight:800;font-size:1.4rem;}
+.fp-unite{font-size:.65rem;opacity:.75;}
+.recette-meta{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:18px;padding:12px 14px;background:var(--surface);border-radius:var(--r-lg);}
+.rmi-label{font-size:.62rem;text-transform:uppercase;letter-spacing:.05em;color:var(--text-light);font-family:var(--mono);}
+.rmi-val{font-size:1rem;font-weight:800;color:var(--text);font-family:var(--mono);}
+.ing-table{width:100%;border-collapse:collapse;}
+.ing-table th{text-align:left;padding:8px 0;font-size:.68rem;text-transform:uppercase;letter-spacing:.05em;color:var(--text-light);font-family:var(--mono);border-bottom:2px solid var(--border);}
 .ing-table th:last-child{text-align:right;}
-.ing-table td{padding:10px 0; border-bottom:1px solid var(--border); vertical-align:middle; font-size:1rem;}
+.ing-table td{padding:10px 0;border-bottom:1px solid var(--border);vertical-align:middle;font-size:1rem;}
 .ing-table td:last-child{text-align:right;}
 .ing-nom{font-weight:600;}
-.ing-val{font-family:var(--mono); font-weight:800; font-size:1.35rem; color:var(--sauge);}
-.ing-base{font-size:.75rem; color:var(--text-light); font-family:var(--mono);}
-
-/* Empois */
-.empois-header{
-  background:var(--wheat-light); color:var(--wheat); font-size:.7rem;
-  font-weight:800; text-transform:uppercase; letter-spacing:.06em;
-  padding:5px 10px; font-family:var(--mono); margin-top:6px;
-}
+.ing-val{font-family:var(--mono);font-weight:800;font-size:1.35rem;color:var(--sauge);}
+.ing-base{font-size:.75rem;color:var(--text-light);font-family:var(--mono);}
+.empois-header{background:var(--wheat-light);color:var(--wheat);font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;padding:5px 10px;font-family:var(--mono);margin-top:6px;}
 .ing-empois td{background:var(--wheat-light);}
 .ing-empois .ing-val{color:var(--wheat);}
-
-.section-separator{
-  text-align:center; padding:18px 0; font-size:.72rem; font-family:var(--mono);
-  color:var(--text-light); text-transform:uppercase; letter-spacing:.06em;
-  border-top:2px dashed var(--border);
-}
+.section-separator{text-align:center;padding:18px 0;font-size:.72rem;font-family:var(--mono);color:var(--text-light);text-transform:uppercase;letter-spacing:.06em;border-top:2px dashed var(--border);}
 </style>
 </head>
 <body>
@@ -188,23 +99,16 @@ main{max-width:720px; margin:1.2rem auto 4rem; padding:0 1.2rem;}
     <input type="date" id="date-jour" class="date-input" onchange="chargerDonnees()">
     <button class="nav-jour" onclick="changerJour(1)">›</button>
   </div>
-
-  <!-- Levains visibles en permanence -->
   <div id="bloc-levains-selection" style="display:none;">
     <div class="levains-resume">
       <div class="levains-resume-titre">🌾 Levains du jour</div>
       <div class="levain-pills" id="levains-pills"></div>
     </div>
   </div>
-
   <div id="liste-selection"><div class="vide">Chargement…</div></div>
-
-  <button class="btn-lancer" id="btn-lancer" disabled onclick="lancerAtelier()">
-    🧑‍🍳 Lancer le mode atelier
-  </button>
+  <button class="btn-lancer" id="btn-lancer" disabled onclick="lancerAtelier()">🧑‍🍳 Lancer le mode atelier</button>
 </main>
 
-<!-- Mode atelier plein écran -->
 <div id="mode-atelier">
   <div class="atelier-topbar">
     <div>
@@ -220,26 +124,25 @@ main{max-width:720px; margin:1.2rem auto 4rem; padding:0 1.2rem;}
 <script src="js/supabase-client.js"></script>
 <script>
 let profilCourant = null;
-let toutesRecettes   = [];
-let tousIngredients  = {};  // recette_id → [ingredients]
-let tousFormats      = {};  // recette_id → [formats]
-let planJour         = {};  // "recetteId|formatId|varianteId" → nb_pieces
-let donneesLevains   = [];  // résultat get_besoins_levains
+let toutesRecettes = [];
+let tousIngredients = {};
+let donneesLevains = [];
 let recettesSelectionnees = [];
 
-// ─── utilitaires ───────────────────────────────────────────────
+// planJour[recette_id] = { total: N, formats: [{label, nb, poids_g}], variantes: [{nom, nb}] }
+let planJour = {};
+
 function dateAujourdhui(){ return new Date().toISOString().slice(0,10); }
 function fmt(n){ return Math.round(n).toLocaleString('fr-FR'); }
 
 function changerJour(delta){
   const el = document.getElementById('date-jour');
-  const d  = new Date(el.value);
+  const d = new Date(el.value);
   d.setDate(d.getDate() + delta);
   el.value = d.toISOString().slice(0,10);
   chargerDonnees();
 }
 
-// ─── chargement principal ───────────────────────────────────────
 async function chargerDonnees(){
   const date = document.getElementById('date-jour').value;
   document.getElementById('liste-selection').innerHTML = '<div class="vide">Chargement…</div>';
@@ -247,46 +150,52 @@ async function chargerDonnees(){
   document.getElementById('bloc-levains-selection').style.display = 'none';
   recettesSelectionnees = [];
 
+  // Charge tout en parallèle — production_jour avec formats ET variantes joinés
   const [
     { data: recs },
     { data: ings },
     { data: plan },
-    { data: fmts },
     { data: levains }
   ] = await Promise.all([
     sb.from('recettes').select('id,nom,metier,poids_piece_g,poids_cuit_g').eq('actif', true),
     sb.from('recette_ingredients').select('*').order('ordre'),
-    sb.from('production_jour').select('*').eq('date_prod', date),
-    sb.from('recette_formats').select('*'),
+    sb.from('production_jour').select(`
+      recette_id, nb_pieces, format_id, variante_id,
+      recette_formats(id, label, poids_g, poids_cuit_g),
+      recette_variantes(id, nom)
+    `).eq('date_prod', date),
     sb.rpc('get_besoins_levains', { p_date: date })
   ]);
 
-  toutesRecettes  = recs  || [];
+  toutesRecettes = recs || [];
   tousIngredients = {};
-  (ings  || []).forEach(i => {
+  (ings || []).forEach(i => {
     (tousIngredients[i.recette_id] = tousIngredients[i.recette_id] || []).push(i);
   });
-  tousFormats = {};
-  formatsParId = {};
-  (fmts  || []).forEach(f => {
-    (tousFormats[f.recette_id] = tousFormats[f.recette_id] || []).push(f);
-    formatsParId[f.id] = f;
-  });
-  planJour = {};
-  (plan  || []).forEach(p => {
-    const cle = `${p.recette_id}|${p.format_id||''}|${p.variante_id||''}`;
-    planJour[cle] = (planJour[cle] || 0) + p.nb_pieces;
-  });
-  donneesLevains = (levains || []).filter(l => Number(l.total_g) > 0);
 
-  // Afficher les levains dans le panneau de sélection
+  // Construire planJour avec les labels déjà résolus par la jointure
+  planJour = {};
+  (plan || []).forEach(p => {
+    if (!planJour[p.recette_id]) planJour[p.recette_id] = { total: 0, formats: [], variantes: [] };
+    const nb = Number(p.nb_pieces) || 0;
+    planJour[p.recette_id].total += nb;
+
+    if (p.recette_formats && nb > 0) {
+      const f = p.recette_formats;
+      const poidsG = Number(f.poids_g) || Number(f.poids_cuit_g) || 0;
+      const label = poidsG > 0
+        ? (poidsG >= 1000 ? (poidsG/1000).toFixed(1)+' kg' : poidsG+' g')
+        : f.label;
+      planJour[p.recette_id].formats.push({ label, nb, poids_g: poidsG });
+    } else if (p.recette_variantes && nb > 0) {
+      planJour[p.recette_id].variantes.push({ nom: p.recette_variantes.nom, nb });
+    }
+  });
+
+  donneesLevains = (levains || []).filter(l => Number(l.total_g) > 0);
   afficherLevainsSelection();
 
-  // Filtrer recettes ayant une production saisie
-  const recettesAvecProd = toutesRecettes.filter(r =>
-    Object.keys(planJour).some(k => k.startsWith(r.id + '|'))
-  );
-
+  const recettesAvecProd = toutesRecettes.filter(r => planJour[r.id] && planJour[r.id].total > 0);
   if (!recettesAvecProd.length){
     document.getElementById('liste-selection').innerHTML = '<div class="vide">Aucune production saisie pour ce jour.</div>';
     return;
@@ -294,80 +203,38 @@ async function chargerDonnees(){
   renderCartesSel(recettesAvecProd);
 }
 
-// ─── levains panneau sélection ──────────────────────────────────
+function calcLevain(l){
+  return {
+    souche: Number(l.souche_g),
+    farine: Number(l.total_farine_g),
+    eau:    Number(l.total_eau_g),
+    total:  Number(l.total_g)
+  };
+}
+
 function afficherLevainsSelection(){
   const bloc = document.getElementById('bloc-levains-selection');
   const pills = document.getElementById('levains-pills');
   if (!donneesLevains.length){ bloc.style.display='none'; return; }
-
   pills.innerHTML = donneesLevains.map(l => {
-    const info = calcLevain(l);
+    const { souche, farine, eau, total } = calcLevain(l);
     const typeLabel = l.type === 'dur' ? 'dur' : l.type === 'liquide_engrain' ? 'engrain' : 'liquide';
     return `<div class="levain-pill">
       <div class="levain-pill-nom">${l.nom} <span style="font-weight:400;font-size:.75rem;">(${typeLabel})</span></div>
-      <div class="levain-pill-detail">Total ${fmt(info.total)} g · Souche ${fmt(info.souche)} g</div>
-      <div class="levain-pill-detail">Farine ${fmt(info.farine)} g · Eau ${fmt(info.eau)} g</div>
+      <div class="levain-pill-detail">Total ${fmt(total)} g · Souche ${fmt(souche)} g</div>
+      <div class="levain-pill-detail">Farine ${fmt(farine)} g · Eau ${fmt(eau)} g</div>
     </div>`;
   }).join('');
   bloc.style.display = 'block';
 }
 
-function calcLevain(l){
-  // La RPC get_besoins_levains retourne directement souche_g, total_farine_g,
-  // total_eau_g, total_g — on les utilise tels quels, pas besoin de recalculer.
-  return {
-    souche : Number(l.souche_g),
-    farine : Number(l.total_farine_g),
-    eau    : Number(l.total_eau_g),
-    total  : Number(l.total_g)
-  };
-}
-
-// ─── cartes sélection ───────────────────────────────────────────
-function getPiecesTotal(recetteId){
-  return Object.entries(planJour)
-    .filter(([k]) => k.startsWith(recetteId + '|'))
-    .reduce((s,[,n]) => s + n, 0);
-}
-
 function getPateTotal(recette){
-  const formats = tousFormats[recette.id] || [];
-  let total = 0;
-  Object.entries(planJour).forEach(([cle, nb]) => {
-    if (!cle.startsWith(recette.id + '|')) return;
-    const formatId = cle.split('|')[1];
-    const f = formats.find(f => f.id === formatId);
-    const poids = f?.poids_g || recette.poids_piece_g || 0;
-    total += nb * poids;
-  });
-  return total;
-}
-
-// Index plat : format_id → format (plus fiable que tousFormats[recette_id])
-let formatsParId = {};
-
-function getDetailFormats(recette){
-  const lignes = [];
-  Object.entries(planJour).forEach(([cle, nb]) => {
-    if (!cle.startsWith(recette.id + '|') || nb <= 0) return;
-    const parts    = cle.split('|');
-    const formatId = parts[1];
-    if (!formatId) return;
-    const f = formatsParId[formatId];
-    if (!f) return;
-    const poidsG = Number(f.poids_g) || Number(f.poids_cuit_g) || 0;
-    const label  = poidsG > 0
-      ? (poidsG >= 1000 ? (poidsG/1000).toFixed(1)+' kg' : poidsG+' g')
-      : (f.label || '?');
-    lignes.push({ label, nb });
-  });
-  // Trier par poids croissant
-  lignes.sort((a, b) => {
-    const pa = parseFloat(a.label);
-    const pb = parseFloat(b.label);
-    return pa - pb;
-  });
-  return lignes;
+  const p = planJour[recette.id];
+  if (!p) return 0;
+  if (p.formats.length > 0){
+    return p.formats.reduce((s, f) => s + f.nb * (f.poids_g || recette.poids_piece_g || 0), 0);
+  }
+  return p.total * (recette.poids_piece_g || 0);
 }
 
 let dragSrc = null;
@@ -375,12 +242,18 @@ let dragSrc = null;
 function renderCartesSel(recettes){
   const conteneur = document.getElementById('liste-selection');
   conteneur.innerHTML = recettes.map(r => {
-    const pieces  = getPiecesTotal(r.id);
-    const pateKg  = (getPateTotal(r)/1000).toFixed(2);
-    const fmts    = getDetailFormats(r);
-    const fmtHtml = fmts.length
-      ? `<div class="card-formats">${fmts.map(f=>`<span class="fmt-badge">${f.label} × ${f.nb}</span>`).join('')}</div>`
-      : '';
+    const p = planJour[r.id] || { total: 0, formats: [], variantes: [] };
+    const pateKg = (getPateTotal(r)/1000).toFixed(2);
+
+    let fmtHtml = '';
+    if (p.formats.length > 0){
+      // Trier par poids
+      const sorted = [...p.formats].sort((a,b) => (a.poids_g||0)-(b.poids_g||0));
+      fmtHtml = `<div class="card-formats">${sorted.map(f=>`<span class="fmt-badge">${f.label} × ${f.nb}</span>`).join('')}</div>`;
+    } else if (p.variantes.length > 0){
+      fmtHtml = `<div class="card-formats">${p.variantes.map(v=>`<span class="fmt-badge">${v.nom} × ${v.nb}</span>`).join('')}</div>`;
+    }
+
     return `<div class="selection-card" id="sc-${r.id}"
         draggable="true"
         ondragstart="onDragStart(event,'${r.id}')"
@@ -391,7 +264,7 @@ function renderCartesSel(recettes){
       <div class="card-ordre vide" id="ordre-${r.id}">—</div>
       <div class="card-info">
         <div class="card-nom">${r.nom}</div>
-        <div class="card-meta">${pieces} pces · ${pateKg} kg pâte</div>
+        <div class="card-meta">${p.total} pces · ${pateKg} kg pâte</div>
         ${fmtHtml}
       </div>
       <span class="card-handle">⠿</span>
@@ -403,65 +276,42 @@ function renderCartesSel(recettes){
 function toggleSel(id){
   const idx = recettesSelectionnees.indexOf(id);
   if (idx === -1) recettesSelectionnees.push(id);
-  else            recettesSelectionnees.splice(idx,1);
+  else recettesSelectionnees.splice(idx,1);
   majOrdreVisuel();
 }
 
 function majOrdreVisuel(){
   const ids = JSON.parse(document.getElementById('liste-selection').dataset.ordre || '[]');
   ids.forEach(id => {
-    const card  = document.getElementById('sc-'+id);
+    const card = document.getElementById('sc-'+id);
     const badge = document.getElementById('ordre-'+id);
-    if (!card || !badge) return;
+    if (!card||!badge) return;
     const pos = recettesSelectionnees.indexOf(id);
-    if (pos !== -1){
-      card.classList.add('selected');
-      badge.textContent = pos + 1;
-      badge.classList.remove('vide');
-    } else {
-      card.classList.remove('selected');
-      badge.textContent = '—';
-      badge.classList.add('vide');
-    }
+    if (pos !== -1){ card.classList.add('selected'); badge.textContent=pos+1; badge.classList.remove('vide'); }
+    else { card.classList.remove('selected'); badge.textContent='—'; badge.classList.add('vide'); }
   });
   document.getElementById('btn-lancer').disabled = !recettesSelectionnees.length;
 }
 
-// drag & drop
-function onDragStart(e, id){
-  dragSrc = id;
-  document.getElementById('sc-'+id).classList.add('dragging');
-  e.dataTransfer.effectAllowed = 'move';
-}
-function onDragOver(e, id){
+function onDragStart(e,id){ dragSrc=id; document.getElementById('sc-'+id).classList.add('dragging'); e.dataTransfer.effectAllowed='move'; }
+function onDragOver(e,id){ e.preventDefault(); if(id!==dragSrc) document.getElementById('sc-'+id).classList.add('drag-over'); }
+function onDrop(e,targetId){
   e.preventDefault();
-  if (id !== dragSrc) document.getElementById('sc-'+id).classList.add('drag-over');
-}
-function onDrop(e, targetId){
-  e.preventDefault();
-  if (!dragSrc || dragSrc === targetId) return;
-  const cont = document.getElementById('liste-selection');
-  const src  = document.getElementById('sc-'+dragSrc);
-  const tgt  = document.getElementById('sc-'+targetId);
-  const cards = [...cont.querySelectorAll('.selection-card')];
-  if (cards.indexOf(src) < cards.indexOf(tgt)) cont.insertBefore(src, tgt.nextSibling);
-  else cont.insertBefore(src, tgt);
-  cont.dataset.ordre = JSON.stringify([...cont.querySelectorAll('.selection-card')].map(c => c.id.replace('sc-','')));
-  // réordonner la sélection
-  const si = recettesSelectionnees.indexOf(dragSrc);
-  const ti = recettesSelectionnees.indexOf(targetId);
-  if (si !== -1 && ti !== -1){
-    recettesSelectionnees.splice(si,1);
-    recettesSelectionnees.splice(ti,0,dragSrc);
-  }
+  if(!dragSrc||dragSrc===targetId) return;
+  const cont=document.getElementById('liste-selection');
+  const src=document.getElementById('sc-'+dragSrc);
+  const tgt=document.getElementById('sc-'+targetId);
+  const cards=[...cont.querySelectorAll('.selection-card')];
+  if(cards.indexOf(src)<cards.indexOf(tgt)) cont.insertBefore(src,tgt.nextSibling);
+  else cont.insertBefore(src,tgt);
+  cont.dataset.ordre=JSON.stringify([...cont.querySelectorAll('.selection-card')].map(c=>c.id.replace('sc-','')));
+  const si=recettesSelectionnees.indexOf(dragSrc);
+  const ti=recettesSelectionnees.indexOf(targetId);
+  if(si!==-1&&ti!==-1){ recettesSelectionnees.splice(si,1); recettesSelectionnees.splice(ti,0,dragSrc); }
   majOrdreVisuel();
 }
-function onDragEnd(){
-  document.querySelectorAll('.selection-card').forEach(c => c.classList.remove('dragging','drag-over'));
-  dragSrc = null;
-}
+function onDragEnd(){ document.querySelectorAll('.selection-card').forEach(c=>c.classList.remove('dragging','drag-over')); dragSrc=null; }
 
-// ─── MODE ATELIER ───────────────────────────────────────────────
 function lancerAtelier(){
   if (!recettesSelectionnees.length) return;
   const date = document.getElementById('date-jour').value;
@@ -470,89 +320,78 @@ function lancerAtelier(){
 
   let html = '';
 
-  // ── Bloc levains toujours en premier ──
+  // Levains en premier
   if (donneesLevains.length > 0){
-    html += `<div class="section-levains">
-      <div class="section-levains-titre">🌾 Levains à préparer en premier</div>`;
-
+    html += `<div class="section-levains"><div class="section-levains-titre">🌾 Levains à préparer en premier</div>`;
     donneesLevains.forEach(l => {
       const { souche, farine, eau, total } = calcLevain(l);
+      const typeLabel = l.type === 'dur' ? 'levain dur 2:1' : l.type === 'liquide_engrain' ? 'levain engrain 1:1' : 'levain liquide 1:1';
       html += `<div class="levain-bloc">
-        <div class="levain-bloc-nom">${l.nom} <span style="font-weight:400;font-size:.8rem;color:var(--text-light);">(${l.type === 'dur' ? 'levain dur 2:1' : 'levain liquide 1:1'})</span></div>
-        <div class="levain-ligne">
-          <div><div class="levain-ligne-label">Besoin total</div><div class="levain-ligne-sous">quantité à produire</div></div>
-          <div class="levain-ligne-val">${fmt(total)} g</div>
-        </div>
-        <div class="levain-ligne">
-          <div><div class="levain-ligne-label">Souche à prélever</div><div class="levain-ligne-sous">depuis votre levain chef</div></div>
-          <div class="levain-ligne-val">${fmt(souche)} g</div>
-        </div>
-        <div class="levain-ligne">
-          <div class="levain-ligne-label">Farine rafraîchi</div>
-          <div class="levain-ligne-val">${fmt(farine)} g</div>
-        </div>
-        <div class="levain-ligne">
-          <div class="levain-ligne-label">Eau rafraîchi</div>
-          <div class="levain-ligne-val">${fmt(eau)} g</div>
-        </div>
+        <div class="levain-bloc-nom">${l.nom} <span style="font-weight:400;font-size:.8rem;color:var(--text-light);">(${typeLabel})</span></div>
+        <div class="levain-ligne"><div><div class="levain-ligne-label">Besoin total</div><div class="levain-ligne-sous">quantité à produire</div></div><div class="levain-ligne-val">${fmt(total)} g</div></div>
+        <div class="levain-ligne"><div><div class="levain-ligne-label">Souche à prélever</div><div class="levain-ligne-sous">depuis votre levain chef</div></div><div class="levain-ligne-val">${fmt(souche)} g</div></div>
+        <div class="levain-ligne"><div class="levain-ligne-label">Farine rafraîchi</div><div class="levain-ligne-val">${fmt(farine)} g</div></div>
+        <div class="levain-ligne"><div class="levain-ligne-label">Eau rafraîchi</div><div class="levain-ligne-val">${fmt(eau)} g</div></div>
       </div>`;
     });
     html += `</div>`;
   }
 
-  // ── Recettes sélectionnées ──
+  // Recettes
   recettesSelectionnees.forEach((recetteId, index) => {
     const recette = toutesRecettes.find(r => r.id === recetteId);
     if (!recette) return;
-
-    const pateG   = getPateTotal(recette);
-    const pateKg  = (pateG/1000).toFixed(2);
-    const ings    = tousIngredients[recetteId] || [];
+    const p = planJour[recetteId] || { total: 0, formats: [], variantes: [] };
+    const pateG = getPateTotal(recette);
+    const pateKg = (pateG/1000).toFixed(2);
+    const ings = tousIngredients[recetteId] || [];
     const totalBase = ings.reduce((s,i) => s + Number(i.quantite_base_g), 0);
-    const coef    = totalBase > 0 ? Math.ceil((pateG / totalBase) * 10) / 10 : 0;
+    const coef = totalBase > 0 ? Math.ceil((pateG/totalBase)*10)/10 : 0;
 
-    // hydratation
     let tFarine=0, tEau=0;
     ings.forEach(i => {
-      const n = (i.nom_affiche||'').toLowerCase();
-      const q = Math.round(Number(i.quantite_base_g) * coef);
-      if (n.includes('farine')||n.includes('sarrasin')||n.includes('engrain')||n.includes('seigle')) tFarine += q;
-      if (n.includes('eau')) tEau += q;
+      const n=(i.nom_affiche||'').toLowerCase();
+      const q=Math.round(Number(i.quantite_base_g)*coef);
+      if(n.includes('farine')||n.includes('sarrasin')||n.includes('engrain')||n.includes('seigle')) tFarine+=q;
+      if(n.includes('eau')) tEau+=q;
     });
     const hydratation = tFarine > 0 ? Math.round((tEau/tFarine)*100) : null;
     const nbBacs = pateG > 0 ? Math.ceil(pateG/6000) : null;
 
-    // ── Détail par format ──
-    const detailFmts = getDetailFormats(recette);
+    // Formats triés par poids
     let fmtHtml = '';
-    if (detailFmts.length > 0){
-      fmtHtml = `<div class="recette-formats">` +
-        detailFmts.map(f => `<div class="recette-fmt-pill">
+    if (p.formats.length > 0){
+      const sorted = [...p.formats].sort((a,b) => (a.poids_g||0)-(b.poids_g||0));
+      fmtHtml = `<div class="recette-formats">${sorted.map(f=>`
+        <div class="recette-fmt-pill">
           <span class="fp-poids">${f.label}</span>
-          <span class="fp-nb">${f.nb} pce${f.nb > 1 ? 's' : ''}</span>
-        </div>`).join('') +
-        `</div>`;
+          <span class="fp-nb">${f.nb}</span>
+          <span class="fp-unite">pce${f.nb>1?'s':''}</span>
+        </div>`).join('')}</div>`;
+    } else if (p.variantes.length > 0){
+      fmtHtml = `<div class="recette-formats">${p.variantes.map(v=>`
+        <div class="recette-fmt-pill">
+          <span class="fp-poids">${v.nom}</span>
+          <span class="fp-nb">${v.nb}</span>
+          <span class="fp-unite">pce${v.nb>1?'s':''}</span>
+        </div>`).join('')}</div>`;
     } else {
-      // recette sans format (pièces globales)
-      const pieces = getPiecesTotal(recetteId);
       fmtHtml = `<div class="recette-formats">
         <div class="recette-fmt-pill">
           <span class="fp-poids">Pièces</span>
-          <span class="fp-nb">${pieces}</span>
-        </div>
-      </div>`;
+          <span class="fp-nb">${p.total}</span>
+        </div></div>`;
     }
 
     if (index > 0) html += `<div class="section-separator">— suite —</div>`;
-
     html += `<div class="section-recette">
       <div class="recette-nom">${recette.nom}</div>
       ${fmtHtml}
       <div class="recette-meta">
-        <div class="recette-meta-item"><span class="rmi-label">Pâte totale</span><span class="rmi-val">${pateKg} kg</span></div>
-        <div class="recette-meta-item"><span class="rmi-label">Coefficient</span><span class="rmi-val">× ${coef}</span></div>
-        ${nbBacs ? `<div class="recette-meta-item"><span class="rmi-label">Bacs</span><span class="rmi-val">${nbBacs}</span></div>` : ''}
-        ${hydratation ? `<div class="recette-meta-item"><span class="rmi-label">Hydratation</span><span class="rmi-val">${hydratation}%</span></div>` : ''}
+        <div style="display:flex;flex-direction:column;gap:2px;"><span class="rmi-label">Pâte totale</span><span class="rmi-val">${pateKg} kg</span></div>
+        <div style="display:flex;flex-direction:column;gap:2px;"><span class="rmi-label">Coefficient</span><span class="rmi-val">× ${coef}</span></div>
+        ${nbBacs?`<div style="display:flex;flex-direction:column;gap:2px;"><span class="rmi-label">Bacs</span><span class="rmi-val">${nbBacs}</span></div>`:''}
+        ${hydratation?`<div style="display:flex;flex-direction:column;gap:2px;"><span class="rmi-label">Hydratation</span><span class="rmi-val">${hydratation}%</span></div>`:''}
       </div>
       <table class="ing-table">
         <thead><tr><th>Ingrédient</th><th>Base g</th><th>Jour g</th></tr></thead>
@@ -561,32 +400,18 @@ function lancerAtelier(){
     ings.forEach(i => {
       const qteBase = Number(i.quantite_base_g);
       const qteJour = Math.round(qteBase * coef);
-
       if (i.sous_recette_label && i.recette_source_id && tousIngredients[i.recette_source_id]){
-        // Détail empois
         const sousIngs = tousIngredients[i.recette_source_id];
-        const sousTotal = sousIngs.reduce((s,si) => s + Number(si.quantite_base_g), 0);
-        html += `<tr><td colspan="3" style="padding:0 0 4px;">
-          <div class="empois-header">↳ ${i.sous_recette_label} — à préparer en premier</div>
-        </td></tr>`;
+        const sousTotal = sousIngs.reduce((s,si)=>s+Number(si.quantite_base_g),0);
+        html += `<tr><td colspan="3" style="padding:0 0 4px;"><div class="empois-header">↳ ${i.sous_recette_label} — à préparer en premier</div></td></tr>`;
         sousIngs.forEach(si => {
-          const sc   = sousTotal > 0 ? qteJour / sousTotal : 0;
-          const sq   = Math.round(Number(si.quantite_base_g) * sc);
-          html += `<tr class="ing-empois">
-            <td class="ing-nom">${si.nom_affiche}</td>
-            <td class="ing-base">${fmt(si.quantite_base_g)}</td>
-            <td><span class="ing-val">${fmt(sq)}</span></td>
-          </tr>`;
+          const sc = sousTotal>0 ? qteJour/sousTotal : 0;
+          const sq = Math.round(Number(si.quantite_base_g)*sc);
+          html += `<tr class="ing-empois"><td class="ing-nom">${si.nom_affiche}</td><td class="ing-base">${fmt(si.quantite_base_g)}</td><td><span class="ing-val">${fmt(sq)}</span></td></tr>`;
         });
-        html += `<tr><td colspan="3" style="font-size:.75rem; color:var(--text-light); font-family:var(--mono); padding:3px 0 8px;">
-          Total ${i.sous_recette_label} : ${fmt(qteJour)} g
-        </td></tr>`;
+        html += `<tr><td colspan="3" style="font-size:.75rem;color:var(--text-light);font-family:var(--mono);padding:3px 0 8px;">Total ${i.sous_recette_label} : ${fmt(qteJour)} g</td></tr>`;
       } else {
-        html += `<tr>
-          <td class="ing-nom">${i.nom_affiche}</td>
-          <td class="ing-base">${fmt(qteBase)}</td>
-          <td><span class="ing-val">${fmt(qteJour)}</span></td>
-        </tr>`;
+        html += `<tr><td class="ing-nom">${i.nom_affiche}</td><td class="ing-base">${fmt(qteBase)}</td><td><span class="ing-val">${fmt(qteJour)}</span></td></tr>`;
       }
     });
 
@@ -595,8 +420,7 @@ function lancerAtelier(){
 
   document.getElementById('atelier-contenu').innerHTML = html;
   document.getElementById('mode-atelier').classList.add('visible');
-  if (document.documentElement.requestFullscreen)
-    document.documentElement.requestFullscreen().catch(()=>{});
+  if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(()=>{});
   document.getElementById('mode-atelier').scrollTop = 0;
 }
 
@@ -605,7 +429,6 @@ function quitterAtelier(){
   if (document.exitFullscreen) document.exitFullscreen().catch(()=>{});
 }
 
-// ─── init ───────────────────────────────────────────────────────
 (async () => {
   profilCourant = await exigerRole(['gerant','boulanger','patissier','apprenti']);
   if (!profilCourant) return;
