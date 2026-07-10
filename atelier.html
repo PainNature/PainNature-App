@@ -5,143 +5,175 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Pain Nature — Mode Atelier</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#a8763f">
+<meta name="theme-color" content="#546054">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/shared.css">
 <style>
-/* ===== ÉCRAN DE SÉLECTION ===== */
+
+/* ===== ÉCRAN SÉLECTION ===== */
 .topbar{
-  background:var(--wheat); color:#fff; padding:0 1.2rem; height:54px;
+  background:var(--sauge); color:#fff; padding:0 1.2rem; height:54px;
   display:flex; align-items:center; justify-content:space-between;
-  box-shadow:0 2px 8px rgba(0,0,0,.2); position:sticky; top:0; z-index:10;
+  box-shadow:0 2px 8px rgba(0,0,0,.25); position:sticky; top:0; z-index:10;
 }
 .topbar .marque{font-weight:800; font-size:1rem; display:flex; align-items:center; gap:.6rem;}
 .topbar .retour{color:#fff; text-decoration:none; font-size:1.3rem; opacity:.85;}
-main{max-width:700px; margin:1.2rem auto 3rem; padding:0 1.2rem;}
+main{max-width:720px; margin:1.2rem auto 4rem; padding:0 1.2rem;}
 
-.bar-jour{display:flex; align-items:center; gap:10px; margin-bottom:1rem;}
+.bar-jour{display:flex; align-items:center; gap:10px; margin-bottom:1.2rem;}
 .nav-jour{background:none; border:1.5px solid var(--border-strong); border-radius:var(--r); width:38px; height:38px; font-size:1.2rem; cursor:pointer; color:var(--text-muted);}
-.date-input{padding:9px 12px; border:1.5px solid var(--border-strong); border-radius:var(--r); font-family:var(--mono); font-size:.9rem; flex:1;}
+.date-input{padding:9px 12px; border:1.5px solid var(--border-strong); border-radius:var(--r); font-family:var(--mono); font-size:.9rem; flex:1; background:#fff;}
 
+/* Bloc levains sélection */
+.levains-resume{
+  background:var(--wheat-light); border:1.5px solid var(--wheat);
+  border-radius:var(--r-lg); padding:14px 16px; margin-bottom:1rem;
+}
+.levains-resume-titre{
+  font-weight:800; font-size:.82rem; color:var(--wheat); font-family:var(--mono);
+  text-transform:uppercase; letter-spacing:.05em; margin-bottom:10px;
+}
+.levain-pills{display:flex; flex-wrap:wrap; gap:8px;}
+.levain-pill{
+  background:#fff; border:1.5px solid var(--wheat); border-radius:var(--r-lg);
+  padding:8px 14px; font-size:.85rem;
+}
+.levain-pill-nom{font-weight:700; color:var(--wheat);}
+.levain-pill-detail{font-family:var(--mono); font-size:.78rem; color:var(--text-light); margin-top:2px;}
+
+/* Cartes sélection */
 .selection-card{
   display:flex; align-items:center; gap:12px; padding:14px 16px;
   background:var(--surface); border:1.5px solid var(--border); border-radius:var(--r-lg);
-  margin-bottom:8px; cursor:grab; user-select:none;
+  margin-bottom:8px; cursor:grab; user-select:none; touch-action:none;
 }
 .selection-card.selected{border-color:var(--wheat); background:var(--wheat-light);}
-.selection-card.dragging{opacity:.4;}
-.selection-card.drag-over{border-color:var(--sauge); border-style:dashed;}
+.selection-card.dragging{opacity:.35;}
+.selection-card.drag-over{border-color:var(--sauge); border-style:dashed; background:rgba(84,96,84,.05);}
 .card-ordre{
   width:32px; height:32px; border-radius:50%; background:var(--wheat); color:#fff;
-  font-weight:800; font-size:.9rem; font-family:var(--mono); display:flex;
-  align-items:center; justify-content:center; flex-shrink:0;
+  font-weight:800; font-size:.9rem; font-family:var(--mono);
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
 }
-.card-ordre.vide{background:var(--border-strong); color:#fff;}
-.card-info{flex:1;}
+.card-ordre.vide{background:var(--border-strong);}
+.card-info{flex:1; min-width:0;}
 .card-nom{font-weight:700; font-size:.95rem;}
 .card-meta{font-size:.75rem; color:var(--text-light); font-family:var(--mono); margin-top:2px;}
-.card-handle{font-size:1.2rem; color:var(--text-light); cursor:grab; padding:0 4px;}
-.card-check{width:24px; height:24px; accent-color:var(--wheat);}
+.card-formats{display:flex; flex-wrap:wrap; gap:4px; margin-top:5px;}
+.fmt-badge{
+  font-family:var(--mono); font-size:.72rem; font-weight:700;
+  background:var(--sauge); color:#fff; border-radius:var(--r); padding:2px 7px;
+}
+.card-handle{font-size:1.2rem; color:var(--border-strong); cursor:grab; padding:0 4px; flex-shrink:0;}
 
 .btn-lancer{
-  width:100%; padding:16px; margin-top:1.5rem; font-size:1.1rem; font-weight:800;
-  background:var(--wheat); color:#fff; border:none; border-radius:var(--r-lg);
-  cursor:pointer; box-shadow:0 4px 12px rgba(168,118,63,.35);
+  width:100%; padding:16px; margin-top:1.2rem; font-size:1.05rem; font-weight:800;
+  background:var(--sauge); color:#fff; border:none; border-radius:var(--r-lg);
+  cursor:pointer; box-shadow:0 4px 12px rgba(84,96,84,.3);
 }
 .btn-lancer:disabled{opacity:.4; cursor:not-allowed;}
-.vide{text-align:center; padding:2rem; color:var(--text-light);}
+.vide{text-align:center; padding:2rem; color:var(--text-light); font-size:.9rem;}
 
 /* ===== MODE ATELIER PLEIN ÉCRAN ===== */
 #mode-atelier{
-  display:none; position:fixed; inset:0; background:#fff; z-index:1000;
-  overflow-y:auto; padding:0;
+  display:none; position:fixed; inset:0; background:#fff;
+  z-index:1000; overflow-y:auto;
 }
 #mode-atelier.visible{display:block;}
 
-.atelier-header{
-  background:var(--sauge); color:#fff; padding:12px 20px;
+.atelier-topbar{
+  background:var(--sauge); color:#fff; padding:0 20px; height:52px;
   display:flex; align-items:center; justify-content:space-between;
-  position:sticky; top:0; z-index:10;
+  position:sticky; top:0; z-index:10; box-shadow:0 2px 6px rgba(0,0,0,.2);
 }
-.atelier-titre{font-weight:800; font-size:1rem; font-family:var(--mono);}
-.atelier-progression{font-size:.8rem; opacity:.8; font-family:var(--mono);}
+.atelier-topbar-titre{font-weight:800; font-size:.95rem; font-family:var(--mono);}
+.atelier-topbar-date{font-size:.78rem; opacity:.75;}
 .btn-quitter{
-  background:rgba(255,255,255,.2); border:1px solid rgba(255,255,255,.4);
-  color:#fff; padding:8px 16px; border-radius:var(--r); font-weight:700;
+  background:rgba(255,255,255,.2); border:1.5px solid rgba(255,255,255,.5);
+  color:#fff; padding:7px 16px; border-radius:var(--r); font-weight:700;
   font-size:.85rem; cursor:pointer;
 }
 
-.recette-atelier{
-  border-bottom:3px solid var(--border); padding:28px 24px 32px;
-}
-.recette-atelier:last-child{border-bottom:none;}
-
-.ra-nom{
-  font-size:2rem; font-weight:800; color:var(--sauge); margin-bottom:6px;
-  line-height:1.2;
-}
-.ra-meta{
-  display:flex; gap:16px; flex-wrap:wrap; margin-bottom:20px;
-  font-family:var(--mono); font-size:.85rem; color:var(--text-light);
-}
-.ra-meta-item{display:flex; flex-direction:column; gap:2px;}
-.ra-meta-label{font-size:.65rem; text-transform:uppercase; letter-spacing:.05em; color:var(--text-light);}
-.ra-meta-val{font-size:1.1rem; font-weight:800; color:var(--text); font-family:var(--mono);}
-
-.ra-ingredients{width:100%; border-collapse:collapse;}
-.ra-ingredients th{
-  text-align:left; font-size:.7rem; text-transform:uppercase; letter-spacing:.05em;
-  color:var(--text-light); padding:8px 0; border-bottom:2px solid var(--border);
-  font-family:var(--mono);
-}
-.ra-ingredients th:last-child{text-align:right;}
-.ra-ingredients td{
-  padding:10px 0; border-bottom:1px solid var(--border);
-  font-size:1.05rem; vertical-align:middle;
-}
-.ra-ingredients td:last-child{text-align:right;}
-.ra-ing-nom{font-weight:600; color:var(--text);}
-.ra-ing-base{font-size:.8rem; color:var(--text-light); font-family:var(--mono);}
-.ra-ing-jour{font-size:1.4rem; font-weight:800; color:var(--sauge); font-family:var(--mono);}
-.ra-ing-unite{font-size:.75rem; color:var(--text-light); font-family:var(--mono);}
-
-/* Empois : encadré doré */
-.ra-empois-header{
-  background:var(--wheat-light); color:var(--wheat); font-size:.72rem;
-  font-weight:800; text-transform:uppercase; letter-spacing:.06em;
-  padding:6px 10px; border-radius:var(--r) var(--r) 0 0; margin-top:8px;
-  font-family:var(--mono);
-}
-.ra-ing-empois td{background:var(--wheat-light); padding:8px 10px;}
-.ra-ing-empois td:first-child{border-radius:0 0 0 var(--r);}
-.ra-ing-empois td:last-child{border-radius:0 0 var(--r) 0;}
-.ra-ing-empois .ra-ing-jour{color:var(--wheat);}
-
-.ra-separator{
-  margin:28px 0 0; padding:14px 0 0; border-top:2px dashed var(--border);
-  font-size:.75rem; font-family:var(--mono); color:var(--text-light);
-  text-transform:uppercase; letter-spacing:.05em; text-align:center;
-}
-
 /* Bloc levains atelier */
-.atelier-levains{
-  padding:24px 24px 28px; border-bottom:3px solid var(--border);
-  background:var(--wheat-light);
+.section-levains{
+  background:var(--wheat-light); border-bottom:3px solid var(--wheat);
+  padding:22px 20px 24px;
 }
-.atelier-levains-titre{
-  font-size:1.5rem; font-weight:800; color:var(--wheat); margin-bottom:16px;
+.section-levains-titre{
+  font-size:1.4rem; font-weight:800; color:var(--wheat); margin-bottom:14px;
 }
-.levain-card{
+.levain-bloc{
   background:#fff; border:1.5px solid var(--wheat); border-radius:var(--r-lg);
-  padding:16px 20px; margin-bottom:12px;
+  padding:16px 18px; margin-bottom:10px;
 }
-.levain-card-nom{font-weight:800; font-size:1.1rem; color:var(--wheat); margin-bottom:10px;}
-.levain-table{width:100%; border-collapse:collapse;}
-.levain-table td{padding:6px 0; font-size:1rem; border-bottom:1px solid var(--border);}
-.levain-table td:last-child{text-align:right; font-family:var(--mono); font-weight:800; font-size:1.2rem; color:var(--sauge);}
-.levain-table tr:last-child td{border-bottom:none;}
-.levain-label{color:var(--text-light); font-size:.8rem;}
-.levain-souche-detail{font-size:.78rem; color:var(--text-light); font-family:var(--mono); margin-top:4px;}
+.levain-bloc:last-child{margin-bottom:0;}
+.levain-bloc-nom{
+  font-weight:800; font-size:1.05rem; color:var(--wheat); margin-bottom:10px;
+  border-bottom:1px solid var(--border); padding-bottom:8px;
+}
+.levain-ligne{
+  display:flex; justify-content:space-between; align-items:center;
+  padding:7px 0; border-bottom:1px solid var(--border);
+}
+.levain-ligne:last-child{border-bottom:none;}
+.levain-ligne-label{font-size:.95rem; color:var(--text);}
+.levain-ligne-sous{font-size:.72rem; color:var(--text-light); font-family:var(--mono);}
+.levain-ligne-val{
+  font-family:var(--mono); font-weight:800; font-size:1.3rem; color:var(--sauge);
+}
+
+/* Bloc recette atelier */
+.section-recette{
+  padding:24px 20px 28px; border-bottom:3px solid var(--border);
+}
+.section-recette:last-child{border-bottom:none;}
+.recette-nom{
+  font-size:1.9rem; font-weight:800; color:var(--sauge);
+  line-height:1.2; margin-bottom:10px;
+}
+.recette-formats{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px;}
+.recette-fmt-pill{
+  background:var(--sauge); color:#fff; font-family:var(--mono);
+  font-weight:800; font-size:1rem; border-radius:var(--r-lg);
+  padding:6px 14px; display:flex; flex-direction:column; align-items:center; gap:1px;
+}
+.recette-fmt-pill .fp-poids{font-size:.7rem; opacity:.8; font-weight:500;}
+.recette-fmt-pill .fp-nb{font-size:1.1rem;}
+.recette-meta{
+  display:flex; flex-wrap:wrap; gap:12px; margin-bottom:18px;
+  padding:12px 14px; background:var(--surface); border-radius:var(--r-lg);
+}
+.recette-meta-item{display:flex; flex-direction:column; gap:2px;}
+.rmi-label{font-size:.62rem; text-transform:uppercase; letter-spacing:.05em; color:var(--text-light); font-family:var(--mono);}
+.rmi-val{font-size:1rem; font-weight:800; color:var(--text); font-family:var(--mono);}
+
+.ing-table{width:100%; border-collapse:collapse;}
+.ing-table th{
+  text-align:left; padding:8px 0; font-size:.68rem; text-transform:uppercase;
+  letter-spacing:.05em; color:var(--text-light); font-family:var(--mono);
+  border-bottom:2px solid var(--border);
+}
+.ing-table th:last-child{text-align:right;}
+.ing-table td{padding:10px 0; border-bottom:1px solid var(--border); vertical-align:middle; font-size:1rem;}
+.ing-table td:last-child{text-align:right;}
+.ing-nom{font-weight:600;}
+.ing-val{font-family:var(--mono); font-weight:800; font-size:1.35rem; color:var(--sauge);}
+.ing-base{font-size:.75rem; color:var(--text-light); font-family:var(--mono);}
+
+/* Empois */
+.empois-header{
+  background:var(--wheat-light); color:var(--wheat); font-size:.7rem;
+  font-weight:800; text-transform:uppercase; letter-spacing:.06em;
+  padding:5px 10px; font-family:var(--mono); margin-top:6px;
+}
+.ing-empois td{background:var(--wheat-light);}
+.ing-empois .ing-val{color:var(--wheat);}
+
+.section-separator{
+  text-align:center; padding:18px 0; font-size:.72rem; font-family:var(--mono);
+  color:var(--text-light); text-transform:uppercase; letter-spacing:.06em;
+  border-top:2px dashed var(--border);
+}
 </style>
 </head>
 <body>
@@ -153,11 +185,20 @@ main{max-width:700px; margin:1.2rem auto 3rem; padding:0 1.2rem;}
 <main>
   <div class="bar-jour">
     <button class="nav-jour" onclick="changerJour(-1)">‹</button>
-    <input type="date" id="date-jour" class="date-input" onchange="chargerRecettes()">
+    <input type="date" id="date-jour" class="date-input" onchange="chargerDonnees()">
     <button class="nav-jour" onclick="changerJour(1)">›</button>
   </div>
 
+  <!-- Levains visibles en permanence -->
+  <div id="bloc-levains-selection" style="display:none;">
+    <div class="levains-resume">
+      <div class="levains-resume-titre">🌾 Levains du jour</div>
+      <div class="levain-pills" id="levains-pills"></div>
+    </div>
+  </div>
+
   <div id="liste-selection"><div class="vide">Chargement…</div></div>
+
   <button class="btn-lancer" id="btn-lancer" disabled onclick="lancerAtelier()">
     🧑‍🍳 Lancer le mode atelier
   </button>
@@ -165,9 +206,11 @@ main{max-width:700px; margin:1.2rem auto 3rem; padding:0 1.2rem;}
 
 <!-- Mode atelier plein écran -->
 <div id="mode-atelier">
-  <div class="atelier-header">
-    <span class="atelier-titre">🧑‍🍳 ATELIER — <span id="atelier-date"></span></span>
-    <span class="atelier-progression" id="atelier-progression"></span>
+  <div class="atelier-topbar">
+    <div>
+      <div class="atelier-topbar-titre">🧑‍🍳 ATELIER PAIN NATURE</div>
+      <div class="atelier-topbar-date" id="atelier-date-affiche"></div>
+    </div>
     <button class="btn-quitter" onclick="quitterAtelier()">✕ Quitter</button>
   </div>
   <div id="atelier-contenu"></div>
@@ -177,321 +220,356 @@ main{max-width:700px; margin:1.2rem auto 3rem; padding:0 1.2rem;}
 <script src="js/supabase-client.js"></script>
 <script>
 let profilCourant = null;
-let toutesRecettes = [];
-let tousIngredients = {};
-let tousFormats = {};
-let planJour = {};
-let recettesSelectionnees = []; // dans l'ordre choisi par le boulanger
+let toutesRecettes   = [];
+let tousIngredients  = {};  // recette_id → [ingredients]
+let tousFormats      = {};  // recette_id → [formats]
+let planJour         = {};  // "recetteId|formatId|varianteId" → nb_pieces
+let donneesLevains   = [];  // résultat get_besoins_levains
+let recettesSelectionnees = [];
 
-function dateAujourdhui() { return new Date().toISOString().slice(0, 10); }
-function fmt(n) { return Math.round(n).toLocaleString('fr-FR'); }
+// ─── utilitaires ───────────────────────────────────────────────
+function dateAujourdhui(){ return new Date().toISOString().slice(0,10); }
+function fmt(n){ return Math.round(n).toLocaleString('fr-FR'); }
 
-function changerJour(delta) {
-  const input = document.getElementById('date-jour');
-  const d = new Date(input.value);
+function changerJour(delta){
+  const el = document.getElementById('date-jour');
+  const d  = new Date(el.value);
   d.setDate(d.getDate() + delta);
-  input.value = d.toISOString().slice(0, 10);
-  chargerRecettes();
+  el.value = d.toISOString().slice(0,10);
+  chargerDonnees();
 }
 
-async function chargerRecettes() {
+// ─── chargement principal ───────────────────────────────────────
+async function chargerDonnees(){
   const date = document.getElementById('date-jour').value;
   document.getElementById('liste-selection').innerHTML = '<div class="vide">Chargement…</div>';
   document.getElementById('btn-lancer').disabled = true;
+  document.getElementById('bloc-levains-selection').style.display = 'none';
   recettesSelectionnees = [];
 
-  const [{ data: recs }, { data: ings }, { data: plan }, { data: fmts }] = await Promise.all([
-    sb.from('recettes').select('id, nom, metier, famille, poids_piece_g, poids_cuit_g').eq('actif', true),
+  const [
+    { data: recs },
+    { data: ings },
+    { data: plan },
+    { data: fmts },
+    { data: levains }
+  ] = await Promise.all([
+    sb.from('recettes').select('id,nom,metier,poids_piece_g,poids_cuit_g').eq('actif', true),
     sb.from('recette_ingredients').select('*').order('ordre'),
     sb.from('production_jour').select('*').eq('date_prod', date),
-    sb.from('recette_formats').select('*')
+    sb.from('recette_formats').select('*'),
+    sb.rpc('get_besoins_levains', { p_date: date })
   ]);
 
-  toutesRecettes = recs || [];
-  tousFormats = {};
-  (fmts || []).forEach(f => { (tousFormats[f.recette_id] = tousFormats[f.recette_id] || []).push(f); });
+  toutesRecettes  = recs  || [];
   tousIngredients = {};
-  (ings || []).forEach(i => { (tousIngredients[i.recette_id] = tousIngredients[i.recette_id] || []).push(i); });
+  (ings  || []).forEach(i => {
+    (tousIngredients[i.recette_id] = tousIngredients[i.recette_id] || []).push(i);
+  });
+  tousFormats = {};
+  (fmts  || []).forEach(f => {
+    (tousFormats[f.recette_id] = tousFormats[f.recette_id] || []).push(f);
+  });
   planJour = {};
-  (plan || []).forEach(p => {
-    const cle = `${p.recette_id}|${p.format_id || ''}|${p.variante_id || ''}`;
+  (plan  || []).forEach(p => {
+    const cle = `${p.recette_id}|${p.format_id||''}|${p.variante_id||''}`;
     planJour[cle] = (planJour[cle] || 0) + p.nb_pieces;
   });
+  donneesLevains = (levains || []).filter(l => Number(l.besoin_g) > 0);
 
-  // Filtre : seulement les recettes qui ont une production saisie ce jour
-  const recettesAvecProd = toutesRecettes.filter(r => {
-    return Object.keys(planJour).some(cle => cle.startsWith(r.id + '|'));
-  });
+  // Afficher les levains dans le panneau de sélection
+  afficherLevainsSelection();
 
-  if (recettesAvecProd.length === 0) {
+  // Filtrer recettes ayant une production saisie
+  const recettesAvecProd = toutesRecettes.filter(r =>
+    Object.keys(planJour).some(k => k.startsWith(r.id + '|'))
+  );
+
+  if (!recettesAvecProd.length){
     document.getElementById('liste-selection').innerHTML = '<div class="vide">Aucune production saisie pour ce jour.</div>';
     return;
   }
-
-  renderSelection(recettesAvecProd);
+  renderCartesSel(recettesAvecProd);
 }
 
-function getPiecesTotal(recetteId) {
+// ─── levains panneau sélection ──────────────────────────────────
+function afficherLevainsSelection(){
+  const bloc = document.getElementById('bloc-levains-selection');
+  const pills = document.getElementById('levains-pills');
+  if (!donneesLevains.length){ bloc.style.display='none'; return; }
+
+  pills.innerHTML = donneesLevains.map(l => {
+    const info = calcLevain(l);
+    return `<div class="levain-pill">
+      <div class="levain-pill-nom">${l.nom}</div>
+      <div class="levain-pill-detail">Besoin ${fmt(l.besoin_g)} g · Souche ${fmt(info.souche)} g</div>
+      <div class="levain-pill-detail">Farine ${fmt(info.farine)} g · Eau ${fmt(info.eau)} g</div>
+    </div>`;
+  }).join('');
+  bloc.style.display = 'block';
+}
+
+function calcLevain(l){
+  const besoin = Number(l.besoin_g);
+  const isDur  = l.type === 'dur';
+  const souche = isDur ? Math.round((besoin + 100) / 7) : Math.round(besoin / 9);
+  const farine = Math.round(souche * 4 + 250);
+  const eau    = isDur ? Math.round(souche * 2 + 150) : Math.round(souche * 4 + 250);
+  return { souche, farine, eau };
+}
+
+// ─── cartes sélection ───────────────────────────────────────────
+function getPiecesTotal(recetteId){
   return Object.entries(planJour)
-    .filter(([cle]) => cle.startsWith(recetteId + '|'))
-    .reduce((s, [, n]) => s + n, 0);
+    .filter(([k]) => k.startsWith(recetteId + '|'))
+    .reduce((s,[,n]) => s + n, 0);
 }
 
-function getPateTotal(recette) {
+function getPateTotal(recette){
   const formats = tousFormats[recette.id] || [];
   let total = 0;
   Object.entries(planJour).forEach(([cle, nb]) => {
     if (!cle.startsWith(recette.id + '|')) return;
     const formatId = cle.split('|')[1];
-    const fmt_obj = formats.find(f => f.id === formatId);
-    const poids = fmt_obj?.poids_g || recette.poids_piece_g || 0;
+    const f = formats.find(f => f.id === formatId);
+    const poids = f?.poids_g || recette.poids_piece_g || 0;
     total += nb * poids;
   });
   return total;
 }
 
-// ===== SÉLECTION AVEC DRAG & DROP =====
+function getDetailFormats(recette){
+  const formats = tousFormats[recette.id] || [];
+  const lignes  = [];
+  Object.entries(planJour).forEach(([cle, nb]) => {
+    if (!cle.startsWith(recette.id + '|') || !nb) return;
+    const formatId  = cle.split('|')[1];
+    const f         = formats.find(f => f.id === formatId);
+    if (!f) return;
+    const label = f.poids_g
+      ? (f.poids_g >= 1000 ? (f.poids_g/1000).toFixed(1)+' kg' : f.poids_g+' g')
+      : f.label;
+    lignes.push({ label, nb });
+  });
+  return lignes;
+}
+
 let dragSrc = null;
 
-function renderSelection(recettes) {
+function renderCartesSel(recettes){
   const conteneur = document.getElementById('liste-selection');
-  conteneur.innerHTML = recettes.map((r, i) => {
-    const pieces = getPiecesTotal(r.id);
-    const pate = (getPateTotal(r) / 1000).toFixed(2);
-    return `
-      <div class="selection-card" id="sc-${r.id}" draggable="true"
-           ondragstart="onDragStart(event,'${r.id}')"
-           ondragover="onDragOver(event,'${r.id}')"
-           ondrop="onDrop(event,'${r.id}')"
-           ondragend="onDragEnd(event)"
-           onclick="toggleSelection('${r.id}')">
-        <div class="card-ordre vide" id="ordre-${r.id}">—</div>
-        <div class="card-info">
-          <div class="card-nom">${r.nom}</div>
-          <div class="card-meta">${pieces} pces · ${pate} kg de pâte</div>
-        </div>
-        <span class="card-handle">⠿</span>
-      </div>`;
+  conteneur.innerHTML = recettes.map(r => {
+    const pieces  = getPiecesTotal(r.id);
+    const pateKg  = (getPateTotal(r)/1000).toFixed(2);
+    const fmts    = getDetailFormats(r);
+    const fmtHtml = fmts.length
+      ? `<div class="card-formats">${fmts.map(f=>`<span class="fmt-badge">${f.label} × ${f.nb}</span>`).join('')}</div>`
+      : '';
+    return `<div class="selection-card" id="sc-${r.id}"
+        draggable="true"
+        ondragstart="onDragStart(event,'${r.id}')"
+        ondragover="onDragOver(event,'${r.id}')"
+        ondrop="onDrop(event,'${r.id}')"
+        ondragend="onDragEnd()"
+        onclick="toggleSel('${r.id}')">
+      <div class="card-ordre vide" id="ordre-${r.id}">—</div>
+      <div class="card-info">
+        <div class="card-nom">${r.nom}</div>
+        <div class="card-meta">${pieces} pces · ${pateKg} kg pâte</div>
+        ${fmtHtml}
+      </div>
+      <span class="card-handle">⠿</span>
+    </div>`;
   }).join('');
-
-  // Stocke la liste dans l'ordre courant
-  conteneur.dataset.recettes = JSON.stringify(recettes.map(r => r.id));
+  conteneur.dataset.ordre = JSON.stringify(recettes.map(r => r.id));
 }
 
-function toggleSelection(recetteId) {
-  const idx = recettesSelectionnees.indexOf(recetteId);
-  if (idx === -1) {
-    recettesSelectionnees.push(recetteId);
-  } else {
-    recettesSelectionnees.splice(idx, 1);
-  }
-  majAffichageSelection();
+function toggleSel(id){
+  const idx = recettesSelectionnees.indexOf(id);
+  if (idx === -1) recettesSelectionnees.push(id);
+  else            recettesSelectionnees.splice(idx,1);
+  majOrdreVisuel();
 }
 
-function majAffichageSelection() {
-  // Met à jour les numéros d'ordre + classes visuelles
-  const toutes = JSON.parse(document.getElementById('liste-selection').dataset.recettes || '[]');
-  toutes.forEach(id => {
-    const card = document.getElementById('sc-' + id);
-    const ordre = document.getElementById('ordre-' + id);
-    if (!card || !ordre) return;
+function majOrdreVisuel(){
+  const ids = JSON.parse(document.getElementById('liste-selection').dataset.ordre || '[]');
+  ids.forEach(id => {
+    const card  = document.getElementById('sc-'+id);
+    const badge = document.getElementById('ordre-'+id);
+    if (!card || !badge) return;
     const pos = recettesSelectionnees.indexOf(id);
-    if (pos !== -1) {
+    if (pos !== -1){
       card.classList.add('selected');
-      ordre.textContent = pos + 1;
-      ordre.classList.remove('vide');
+      badge.textContent = pos + 1;
+      badge.classList.remove('vide');
     } else {
       card.classList.remove('selected');
-      ordre.textContent = '—';
-      ordre.classList.add('vide');
+      badge.textContent = '—';
+      badge.classList.add('vide');
     }
   });
-  document.getElementById('btn-lancer').disabled = recettesSelectionnees.length === 0;
+  document.getElementById('btn-lancer').disabled = !recettesSelectionnees.length;
 }
 
-// Drag & drop pour réordonner les cartes
-function onDragStart(e, id) {
+// drag & drop
+function onDragStart(e, id){
   dragSrc = id;
-  document.getElementById('sc-' + id).classList.add('dragging');
+  document.getElementById('sc-'+id).classList.add('dragging');
   e.dataTransfer.effectAllowed = 'move';
 }
-function onDragOver(e, id) {
+function onDragOver(e, id){
   e.preventDefault();
-  if (id !== dragSrc) document.getElementById('sc-' + id).classList.add('drag-over');
+  if (id !== dragSrc) document.getElementById('sc-'+id).classList.add('drag-over');
 }
-function onDrop(e, targetId) {
+function onDrop(e, targetId){
   e.preventDefault();
   if (!dragSrc || dragSrc === targetId) return;
-  const conteneur = document.getElementById('liste-selection');
-  const srcCard = document.getElementById('sc-' + dragSrc);
-  const tgtCard = document.getElementById('sc-' + targetId);
-  // Insère la carte source avant ou après la cible
-  const cards = [...conteneur.querySelectorAll('.selection-card')];
-  const srcIdx = cards.indexOf(srcCard);
-  const tgtIdx = cards.indexOf(tgtCard);
-  if (srcIdx < tgtIdx) conteneur.insertBefore(srcCard, tgtCard.nextSibling);
-  else conteneur.insertBefore(srcCard, tgtCard);
-  // Met à jour l'ordre stocké
-  const newOrder = [...conteneur.querySelectorAll('.selection-card')].map(c => c.id.replace('sc-', ''));
-  conteneur.dataset.recettes = JSON.stringify(newOrder);
-  // Réordonne la sélection si les deux sont sélectionnés
-  const srcInSel = recettesSelectionnees.indexOf(dragSrc);
-  const tgtInSel = recettesSelectionnees.indexOf(targetId);
-  if (srcInSel !== -1 && tgtInSel !== -1) {
-    recettesSelectionnees.splice(srcInSel, 1);
-    recettesSelectionnees.splice(tgtInSel, 0, dragSrc);
+  const cont = document.getElementById('liste-selection');
+  const src  = document.getElementById('sc-'+dragSrc);
+  const tgt  = document.getElementById('sc-'+targetId);
+  const cards = [...cont.querySelectorAll('.selection-card')];
+  if (cards.indexOf(src) < cards.indexOf(tgt)) cont.insertBefore(src, tgt.nextSibling);
+  else cont.insertBefore(src, tgt);
+  cont.dataset.ordre = JSON.stringify([...cont.querySelectorAll('.selection-card')].map(c => c.id.replace('sc-','')));
+  // réordonner la sélection
+  const si = recettesSelectionnees.indexOf(dragSrc);
+  const ti = recettesSelectionnees.indexOf(targetId);
+  if (si !== -1 && ti !== -1){
+    recettesSelectionnees.splice(si,1);
+    recettesSelectionnees.splice(ti,0,dragSrc);
   }
-  majAffichageSelection();
+  majOrdreVisuel();
 }
-function onDragEnd(e) {
-  document.querySelectorAll('.selection-card').forEach(c => {
-    c.classList.remove('dragging', 'drag-over');
-  });
+function onDragEnd(){
+  document.querySelectorAll('.selection-card').forEach(c => c.classList.remove('dragging','drag-over'));
   dragSrc = null;
 }
 
-// ===== MODE ATELIER =====
-async function lancerAtelier() {
-  if (recettesSelectionnees.length === 0) return;
+// ─── MODE ATELIER ───────────────────────────────────────────────
+function lancerAtelier(){
+  if (!recettesSelectionnees.length) return;
   const date = document.getElementById('date-jour').value;
-  const dateAffichee = new Date(date).toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' });
-  document.getElementById('atelier-date').textContent = dateAffichee;
-  document.getElementById('atelier-progression').textContent = `${recettesSelectionnees.length} recette${recettesSelectionnees.length > 1 ? 's' : ''}`;
-
-  // Calcul levains via la même RPC que Production
-  const { data: levains } = await sb.rpc('get_besoins_levains', { p_date: date });
+  document.getElementById('atelier-date-affiche').textContent =
+    new Date(date).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
 
   let html = '';
 
-  // Bloc levains en tête si au moins un besoin > 0
-  const levainsFiltres = (levains || []).filter(l => l.besoin_g > 0);
-  if (levainsFiltres.length > 0) {
-    html += `<div class="atelier-levains">
-      <div class="atelier-levains-titre">🌾 Levains à préparer</div>`;
+  // ── Bloc levains toujours en premier ──
+  if (donneesLevains.length > 0){
+    html += `<div class="section-levains">
+      <div class="section-levains-titre">🌾 Levains à préparer en premier</div>`;
 
-    levainsFiltres.forEach(l => {
-      const isDur = l.type === 'dur';
-      const souche = isDur
-        ? Math.round((l.besoin_g + 100) / 7)
-        : Math.round(l.besoin_g / 9);
-      const farine = isDur
-        ? Math.round(souche * 4 + 250)
-        : Math.round(souche * 4 + 250);
-      const eau = isDur
-        ? Math.round(souche * 2 + 150)
-        : Math.round(souche * 4 + 250);
-
-      html += `<div class="levain-card">
-        <div class="levain-card-nom">${l.nom} <span style="font-weight:400; font-size:.8rem; color:var(--text-light);">(${isDur ? 'dur' : 'liquide'})</span></div>
-        <table class="levain-table">
-          <tr>
-            <td>Besoin total<div class="levain-label">quantité à produire</div></td>
-            <td>${Math.round(l.besoin_g)} g</td>
-          </tr>
-          <tr>
-            <td>Souche à prélever<div class="levain-souche-detail">depuis votre levain chef</div></td>
-            <td>${souche} g</td>
-          </tr>
-          <tr>
-            <td>Farine du rafraîchi</td>
-            <td>${farine} g</td>
-          </tr>
-          <tr>
-            <td>Eau du rafraîchi</td>
-            <td>${eau} g</td>
-          </tr>
-        </table>
+    donneesLevains.forEach(l => {
+      const { souche, farine, eau } = calcLevain(l);
+      html += `<div class="levain-bloc">
+        <div class="levain-bloc-nom">${l.nom} <span style="font-weight:400;font-size:.8rem;color:var(--text-light);">(${l.type === 'dur' ? 'levain dur 2:1' : 'levain liquide 1:1'})</span></div>
+        <div class="levain-ligne">
+          <div><div class="levain-ligne-label">Besoin total</div><div class="levain-ligne-sous">quantité à produire</div></div>
+          <div class="levain-ligne-val">${fmt(l.besoin_g)} g</div>
+        </div>
+        <div class="levain-ligne">
+          <div><div class="levain-ligne-label">Souche à prélever</div><div class="levain-ligne-sous">depuis votre levain chef</div></div>
+          <div class="levain-ligne-val">${fmt(souche)} g</div>
+        </div>
+        <div class="levain-ligne">
+          <div class="levain-ligne-label">Farine rafraîchi</div>
+          <div class="levain-ligne-val">${fmt(farine)} g</div>
+        </div>
+        <div class="levain-ligne">
+          <div class="levain-ligne-label">Eau rafraîchi</div>
+          <div class="levain-ligne-val">${fmt(eau)} g</div>
+        </div>
       </div>`;
     });
-
-    html += `</div>`; // fin atelier-levains
+    html += `</div>`;
   }
+
+  // ── Recettes sélectionnées ──
   recettesSelectionnees.forEach((recetteId, index) => {
     const recette = toutesRecettes.find(r => r.id === recetteId);
     if (!recette) return;
 
-    const pieces = getPiecesTotal(recetteId);
-    const pateG = getPateTotal(recette);
-    const pateKg = (pateG / 1000).toFixed(2);
-    const ings = tousIngredients[recetteId] || [];
-    const totalBase = ings.reduce((s, i) => s + Number(i.quantite_base_g), 0);
-    const coef = totalBase > 0 ? Math.ceil((pateG / totalBase) * 10) / 10 : 0;
+    const pateG   = getPateTotal(recette);
+    const pateKg  = (pateG/1000).toFixed(2);
+    const ings    = tousIngredients[recetteId] || [];
+    const totalBase = ings.reduce((s,i) => s + Number(i.quantite_base_g), 0);
+    const coef    = totalBase > 0 ? Math.ceil((pateG / totalBase) * 10) / 10 : 0;
 
-    // Calcul hydratation
-    let totalFarine = 0, totalEau = 0;
+    // hydratation
+    let tFarine=0, tEau=0;
     ings.forEach(i => {
-      const nom = (i.nom_affiche || '').toLowerCase();
-      const qty = Math.round(Number(i.quantite_base_g) * coef);
-      if (nom.includes('farine') || nom.includes('sarrasin') || nom.includes('engrain') || nom.includes('seigle')) totalFarine += qty;
-      if (nom.includes('eau')) totalEau += qty;
+      const n = (i.nom_affiche||'').toLowerCase();
+      const q = Math.round(Number(i.quantite_base_g) * coef);
+      if (n.includes('farine')||n.includes('sarrasin')||n.includes('engrain')||n.includes('seigle')) tFarine += q;
+      if (n.includes('eau')) tEau += q;
     });
-    const hydratation = totalFarine > 0 ? Math.round((totalEau / totalFarine) * 100) : null;
+    const hydratation = tFarine > 0 ? Math.round((tEau/tFarine)*100) : null;
+    const nbBacs = pateG > 0 ? Math.ceil(pateG/6000) : null;
 
-    // Bacs (600g/bac standard sauf si autre)
-    const nbBacs = pateG > 0 ? Math.ceil(pateG / 6000) : null;
-
-    // Détail pièces par format
-    const formats = tousFormats[recette.id] || [];
-    let detailFormats = '';
-    if (formats.length > 0) {
-      const lignesFormats = formats.map(f => {
-        const cle = `${recette.id}|${f.id}|`;
-        const nb = Object.entries(planJour)
-          .filter(([k]) => k.startsWith(cle))
-          .reduce((s, [, n]) => s + n, 0);
-        if (!nb) return '';
-        const label = f.poids_g ? `${f.poids_g >= 1000 ? (f.poids_g/1000).toFixed(1)+'kg' : f.poids_g+'g'}` : f.label;
-        return `<span style="font-family:var(--mono); font-size:.85rem; background:var(--sauge); color:#fff; border-radius:var(--r); padding:3px 8px; white-space:nowrap;">${label} × ${nb}</span>`;
-      }).filter(Boolean);
-      if (lignesFormats.length > 0) {
-        detailFormats = `<div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; margin-bottom:4px;">${lignesFormats.join('')}</div>`;
-      }
+    // ── Détail par format ──
+    const detailFmts = getDetailFormats(recette);
+    let fmtHtml = '';
+    if (detailFmts.length > 0){
+      fmtHtml = `<div class="recette-formats">` +
+        detailFmts.map(f => `<div class="recette-fmt-pill">
+          <span class="fp-poids">${f.label}</span>
+          <span class="fp-nb">${f.nb} pce${f.nb > 1 ? 's' : ''}</span>
+        </div>`).join('') +
+        `</div>`;
+    } else {
+      // recette sans format (pièces globales)
+      const pieces = getPiecesTotal(recetteId);
+      fmtHtml = `<div class="recette-formats">
+        <div class="recette-fmt-pill">
+          <span class="fp-poids">Pièces</span>
+          <span class="fp-nb">${pieces}</span>
+        </div>
+      </div>`;
     }
 
-    if (index > 0) html += `<div class="ra-separator">— suite —</div>`;
+    if (index > 0) html += `<div class="section-separator">— suite —</div>`;
 
-    html += `<div class="recette-atelier">
-      <div class="ra-nom">${recette.nom}</div>
-      ${detailFormats}
-      <div class="ra-meta">
-        <div class="ra-meta-item"><span class="ra-meta-label">Total pièces</span><span class="ra-meta-val">${pieces}</span></div>
-        <div class="ra-meta-item"><span class="ra-meta-label">Pâte</span><span class="ra-meta-val">${pateKg} kg</span></div>
-        <div class="ra-meta-item"><span class="ra-meta-label">Coefficient</span><span class="ra-meta-val">× ${coef}</span></div>
-        ${nbBacs ? `<div class="ra-meta-item"><span class="ra-meta-label">Bacs</span><span class="ra-meta-val">${nbBacs}</span></div>` : ''}
-        ${hydratation ? `<div class="ra-meta-item"><span class="ra-meta-label">Hydratation</span><span class="ra-meta-val">${hydratation}%</span></div>` : ''}
+    html += `<div class="section-recette">
+      <div class="recette-nom">${recette.nom}</div>
+      ${fmtHtml}
+      <div class="recette-meta">
+        <div class="recette-meta-item"><span class="rmi-label">Pâte totale</span><span class="rmi-val">${pateKg} kg</span></div>
+        <div class="recette-meta-item"><span class="rmi-label">Coefficient</span><span class="rmi-val">× ${coef}</span></div>
+        ${nbBacs ? `<div class="recette-meta-item"><span class="rmi-label">Bacs</span><span class="rmi-val">${nbBacs}</span></div>` : ''}
+        ${hydratation ? `<div class="recette-meta-item"><span class="rmi-label">Hydratation</span><span class="rmi-val">${hydratation}%</span></div>` : ''}
       </div>
-      <table class="ra-ingredients">
-        <thead><tr><th>Ingrédient</th><th>Base (g)</th><th>Jour (g)</th></tr></thead>
+      <table class="ing-table">
+        <thead><tr><th>Ingrédient</th><th>Base g</th><th>Jour g</th></tr></thead>
         <tbody>`;
 
     ings.forEach(i => {
       const qteBase = Number(i.quantite_base_g);
       const qteJour = Math.round(qteBase * coef);
 
-      if (i.sous_recette_label && i.recette_source_id && tousIngredients[i.recette_source_id]) {
+      if (i.sous_recette_label && i.recette_source_id && tousIngredients[i.recette_source_id]){
         // Détail empois
         const sousIngs = tousIngredients[i.recette_source_id];
-        const sousTotalBase = sousIngs.reduce((s, si) => s + Number(si.quantite_base_g), 0);
-        html += `<tr><td colspan="3" style="padding:0;">
-          <div class="ra-empois-header">↳ ${i.sous_recette_label} — à préparer en premier</div>
+        const sousTotal = sousIngs.reduce((s,si) => s + Number(si.quantite_base_g), 0);
+        html += `<tr><td colspan="3" style="padding:0 0 4px;">
+          <div class="empois-header">↳ ${i.sous_recette_label} — à préparer en premier</div>
         </td></tr>`;
         sousIngs.forEach(si => {
-          const sousCoef = sousTotalBase > 0 ? qteJour / sousTotalBase : 0;
-          const sousQte = Math.round(Number(si.quantite_base_g) * sousCoef);
-          html += `<tr class="ra-ing-empois">
-            <td class="ra-ing-nom">${si.nom_affiche}</td>
-            <td class="ra-ing-base">${fmt(si.quantite_base_g)}</td>
-            <td><span class="ra-ing-jour">${fmt(sousQte)}</span></td>
+          const sc   = sousTotal > 0 ? qteJour / sousTotal : 0;
+          const sq   = Math.round(Number(si.quantite_base_g) * sc);
+          html += `<tr class="ing-empois">
+            <td class="ing-nom">${si.nom_affiche}</td>
+            <td class="ing-base">${fmt(si.quantite_base_g)}</td>
+            <td><span class="ing-val">${fmt(sq)}</span></td>
           </tr>`;
         });
-        html += `<tr><td colspan="3" style="padding:4px 0 8px; font-size:.75rem; color:var(--text-light); font-family:var(--mono);">
+        html += `<tr><td colspan="3" style="font-size:.75rem; color:var(--text-light); font-family:var(--mono); padding:3px 0 8px;">
           Total ${i.sous_recette_label} : ${fmt(qteJour)} g
         </td></tr>`;
       } else {
         html += `<tr>
-          <td class="ra-ing-nom">${i.nom_affiche}</td>
-          <td class="ra-ing-base">${fmt(qteBase)}</td>
-          <td><span class="ra-ing-jour">${fmt(qteJour)}</span> <span class="ra-ing-unite">g</span></td>
+          <td class="ing-nom">${i.nom_affiche}</td>
+          <td class="ing-base">${fmt(qteBase)}</td>
+          <td><span class="ing-val">${fmt(qteJour)}</span></td>
         </tr>`;
       }
     });
@@ -501,21 +579,22 @@ async function lancerAtelier() {
 
   document.getElementById('atelier-contenu').innerHTML = html;
   document.getElementById('mode-atelier').classList.add('visible');
-  // Plein écran sur iOS/iPad si supporté
-  if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {});
-  window.scrollTo(0, 0);
+  if (document.documentElement.requestFullscreen)
+    document.documentElement.requestFullscreen().catch(()=>{});
+  document.getElementById('mode-atelier').scrollTop = 0;
 }
 
-function quitterAtelier() {
+function quitterAtelier(){
   document.getElementById('mode-atelier').classList.remove('visible');
-  if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
+  if (document.exitFullscreen) document.exitFullscreen().catch(()=>{});
 }
 
+// ─── init ───────────────────────────────────────────────────────
 (async () => {
-  profilCourant = await exigerRole(['gerant', 'boulanger', 'patissier', 'apprenti']);
+  profilCourant = await exigerRole(['gerant','boulanger','patissier','apprenti']);
   if (!profilCourant) return;
   document.getElementById('date-jour').value = dateAujourdhui();
-  await chargerRecettes();
+  await chargerDonnees();
 })();
 </script>
 </body>
