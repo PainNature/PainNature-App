@@ -465,12 +465,12 @@ function lancerAtelier(){
       <div class="section-levains-titre">🌾 Levains à préparer en premier</div>`;
 
     donneesLevains.forEach(l => {
-      const { souche, farine, eau } = calcLevain(l);
+      const { souche, farine, eau, total } = calcLevain(l);
       html += `<div class="levain-bloc">
         <div class="levain-bloc-nom">${l.nom} <span style="font-weight:400;font-size:.8rem;color:var(--text-light);">(${l.type === 'dur' ? 'levain dur 2:1' : 'levain liquide 1:1'})</span></div>
         <div class="levain-ligne">
           <div><div class="levain-ligne-label">Besoin total</div><div class="levain-ligne-sous">quantité à produire</div></div>
-          <div class="levain-ligne-val">${fmt(info.total)} g</div>
+          <div class="levain-ligne-val">${fmt(total)} g</div>
         </div>
         <div class="levain-ligne">
           <div><div class="levain-ligne-label">Souche à prélever</div><div class="levain-ligne-sous">depuis votre levain chef</div></div>
