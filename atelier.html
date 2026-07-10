@@ -267,8 +267,10 @@ async function chargerDonnees(){
     (tousIngredients[i.recette_id] = tousIngredients[i.recette_id] || []).push(i);
   });
   tousFormats = {};
+  formatsParId = {};
   (fmts  || []).forEach(f => {
     (tousFormats[f.recette_id] = tousFormats[f.recette_id] || []).push(f);
+    formatsParId[f.id] = f;
   });
   planJour = {};
   (plan  || []).forEach(p => {
@@ -341,20 +343,29 @@ function getPateTotal(recette){
   return total;
 }
 
+// Index plat : format_id → format (plus fiable que tousFormats[recette_id])
+let formatsParId = {};
+
 function getDetailFormats(recette){
-  const formats = tousFormats[recette.id] || [];
-  const lignes  = [];
+  const lignes = [];
   Object.entries(planJour).forEach(([cle, nb]) => {
-    if (!cle.startsWith(recette.id + '|') || !nb) return;
-    const formatId = cle.split('|')[1];
+    if (!cle.startsWith(recette.id + '|') || nb <= 0) return;
+    const parts    = cle.split('|');
+    const formatId = parts[1];
     if (!formatId) return;
-    const f = formats.find(f => f.id === formatId);
+    const f = formatsParId[formatId];
     if (!f) return;
-    const poidsG = f.poids_g || f.poids_cuit_g || null;
-    const label  = poidsG
+    const poidsG = Number(f.poids_g) || Number(f.poids_cuit_g) || 0;
+    const label  = poidsG > 0
       ? (poidsG >= 1000 ? (poidsG/1000).toFixed(1)+' kg' : poidsG+' g')
-      : (f.label || f.nom || '?');
+      : (f.label || '?');
     lignes.push({ label, nb });
+  });
+  // Trier par poids croissant
+  lignes.sort((a, b) => {
+    const pa = parseFloat(a.label);
+    const pb = parseFloat(b.label);
+    return pa - pb;
   });
   return lignes;
 }
