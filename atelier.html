@@ -453,23 +453,6 @@ function onDragEnd(){
 // ─── MODE ATELIER ───────────────────────────────────────────────
 function lancerAtelier(){
   if (!recettesSelectionnees.length) return;
-  // DEBUG VISIBLE
-  const nbFormats = Object.keys(tousFormats).length;
-  const nbPlan = Object.keys(planJour).length;
-  const nbLevains = donneesLevains.length;
-  const exempleFormat = nbFormats > 0 ? JSON.stringify(Object.values(tousFormats)[0][0]).slice(0,80) : 'vide';
-  const exemplePlan = nbPlan > 0 ? Object.entries(planJour).slice(0,2).map(([k,v])=>`${k}=${v}`).join(' | ') : 'vide';
-  document.getElementById('atelier-contenu').innerHTML = `
-    <div style="padding:20px;font-family:monospace;font-size:14px;background:#f0f0f0;margin:16px;">
-      <b>DEBUG</b><br>
-      tousFormats: ${nbFormats} recettes<br>
-      Exemple format: ${exempleFormat}<br><br>
-      planJour: ${nbPlan} lignes<br>
-      Exemple plan: ${exemplePlan}<br><br>
-      donneesLevains: ${nbLevains} levains<br>
-      ${nbLevains > 0 ? 'Premier levain: ' + donneesLevains[0].nom + ' total_g=' + donneesLevains[0].total_g : ''}
-    </div>`;
-  document.getElementById('mode-atelier').classList.add('visible');
   const date = document.getElementById('date-jour').value;
   document.getElementById('atelier-date-affiche').textContent =
     new Date(date).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
