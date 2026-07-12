@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Pain Nature — Checklist fin de journée</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#546054">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/shared.css">
+<style>
+.topbar{background:#546054;color:#fff;padding:0 1.2rem;height:54px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,.2);position:sticky;top:0;z-index:10;}
+.topbar .marque{font-weight:800;font-size:1rem;display:flex;align-items:center;gap:.6rem;}
+.topbar .retour{color:#fff;text-decoration:none;font-size:1.3rem;opacity:.85;}
+main{max-width:700px;margin:1.2rem auto 5rem;padding:0 1.2rem;}
+
+.bar-top{display:flex;align-items:center;gap:10px;margin-bottom:1.2rem;flex-wrap:wrap;}
+.date-input{padding:9px 12px;border:1.5px solid #ccc;border-radius:8px;font-family:var(--mono);font-size:.9rem;flex:1;min-width:140px;background:#fff;}
+.sel-verificateur{padding:9px 12px;border:1.5px solid #ccc;border-radius:8px;font-size:.88rem;flex:1;min-width:140px;background:#fff;}
+
+.barre-progression{background:#e2e8f0;border-radius:99px;height:10px;margin-bottom:.4rem;overflow:hidden;}
+.barre-progression-inner{height:100%;background:#546054;border-radius:99px;transition:width .4s;}
+.label-progression{font-family:var(--mono);font-size:.78rem;color:#888;margin-bottom:.8rem;}
+
+.categorie{margin-bottom:1.2rem;}
+.categorie-titre{display:flex;align-items:center;gap:8px;background:#546054;color:#fff;padding:10px 16px;border-radius:12px 12px 0 0;font-weight:800;font-size:.88rem;font-family:var(--mono);text-transform:uppercase;letter-spacing:.04em;}
+.cat-icon{font-size:1.1rem;}
+.categorie-body{background:#fafaf9;border:1.5px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px;overflow:hidden;}
+
+.check-item{display:flex;align-items:center;gap:14px;padding:13px 16px;border-bottom:1px solid #e2e8f0;-webkit-tap-highlight-color:transparent;}
+.check-item:last-child{border-bottom:none;}
+.check-item.fait{background:#f0fff4;}
+
+.check-box{width:32px;height:32px;border-radius:8px;border:2.5px solid #ccc;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:#fff;cursor:pointer;transition:all .2s;}
+.check-item.fait .check-box{background:#38a169;border-color:#38a169;}
+.check-tick{color:#fff;font-size:1.1rem;opacity:0;transition:opacity .15s;}
+.check-item.fait .check-tick{opacity:1;}
+
+.check-content{flex:1;min-width:0;}
+.check-label{font-size:.95rem;font-weight:500;color:#1a1a1a;line-height:1.3;cursor:pointer;}
+.check-item.fait .check-label{color:#38a169;text-decoration:line-through;opacity:.7;}
+.check-verif{font-size:.72rem;color:#888;font-family:var(--mono);margin-top:2px;}
+.check-item.fait .check-verif{color:#38a169;}
+
+.freq-badge{
+  display:inline-block;font-size:.65rem;font-family:var(--mono);font-weight:700;
+  padding:2px 7px;border-radius:99px;margin-top:3px;
+}
+.freq-quotidien{background:#e6f4ea;color:#2d6a4f;}
+.freq-besoin{background:#fff3cd;color:#856404;}
+.freq-hebdo{background:#e8f0fe;color:#1a56db;}
+.freq-mensuel{background:#fce8f3;color:#9d174d;}
+
+.check-actions{display:flex;gap:6px;flex-shrink:0;}
+.btn-suppr{background:none;border:none;color:#ccc;font-size:1rem;cursor:pointer;padding:4px;line-height:1;}
+.btn-suppr:hover{color:#e53e3e;}
+
+.btn-ajouter-item{display:none;width:100%;padding:11px 16px;background:none;border:none;border-top:1px dashed #ccc;color:#546054;font-weight:700;font-size:.85rem;cursor:pointer;font-family:inherit;text-align:left;}
+.btn-ajouter-item.gerant-only{display:flex;align-items:center;gap:6px;}
+
+.resume-final{background:#546054;color:#fff;border-radius:12px;padding:20px;margin-top:1.5rem;text-align:center;display:none;}
+.resume-final.visible{display:block;}
+.resume-final-titre{font-size:1.4rem;font-weight:800;margin-bottom:6px;}
+.resume-final-sous{font-size:.88rem;opacity:.85;}
+
+.btn-valider{width:100%;padding:16px;margin-top:1.2rem;font-size:1.05rem;font-weight:800;background:#546054;color:#fff;border:none;border-radius:12px;cursor:pointer;}
+.btn-valider:disabled{opacity:.4;cursor:not-allowed;}
+
+/* Modale */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;align-items:center;justify-content:center;padding:1.2rem;}
+.overlay.visible{display:flex;}
+.modale{background:#fff;border-radius:16px;padding:1.5rem;width:100%;max-width:420px;box-shadow:0 8px 32px rgba(0,0,0,.2);}
+.modale h3{font-size:1.1rem;font-weight:800;margin-bottom:1rem;color:#546054;}
+.field{margin-bottom:1rem;}
+.field label{display:block;font-size:.78rem;font-weight:700;color:#888;margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em;}
+.field input,.field select{width:100%;padding:10px 12px;border:1.5px solid #ccc;border-radius:8px;font-size:.9rem;font-family:inherit;box-sizing:border-box;}
+.modale-actions{display:flex;gap:10px;margin-top:1.2rem;}
+.btn-ghost{flex:1;padding:11px;border:1.5px solid #ccc;background:#fff;border-radius:8px;font-weight:700;cursor:pointer;font-size:.9rem;}
+.btn-primary{flex:1;padding:11px;background:#546054;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:.9rem;}
+
+.freq-options{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;}
+.freq-btn{padding:10px;border:1.5px solid #ccc;border-radius:8px;background:#fff;font-size:.82rem;font-weight:600;cursor:pointer;text-align:center;font-family:inherit;}
+.freq-btn.selected{border-color:#546054;background:#546054;color:#fff;}
+
+.historique-bloc{margin-top:2rem;}
+.historique-titre{font-family:var(--mono);font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;color:#888;margin-bottom:.6rem;}
+.historique-item{background:#fafaf9;border:1.5px solid #e2e8f0;border-radius:12px;padding:12px 16px;margin-bottom:8px;}
+.historique-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+.historique-date{font-weight:700;font-size:.88rem;}
+.historique-verif{font-size:.75rem;color:#888;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="marque"><a href="accueil.html" class="retour">←</a> ✅ CHECKLIST FIN DE JOURNÉE</span>
+</div>
+
+<main>
+  <div class="bar-top">
+    <input type="date" id="date-checklist" class="date-input">
+    <select id="sel-verificateur" class="sel-verificateur">
+      <option value="">Vérifié par…</option>
+    </select>
+  </div>
+
+  <div class="label-progression" id="label-progression">0 / 0 points validés</div>
+  <div class="barre-progression"><div class="barre-progression-inner" id="barre-inner" style="width:0%"></div></div>
+
+  <div id="liste-categories"></div>
+
+  <div class="resume-final" id="resume-final">
+    <div class="resume-final-titre">✅ Checklist complète !</div>
+    <div class="resume-final-sous" id="resume-final-sous"></div>
+  </div>
+
+  <button class="btn-valider" id="btn-valider" onclick="validerChecklist()">💾 Enregistrer la checklist</button>
+
+  <div class="historique-bloc">
+    <div class="historique-titre">Historique récent</div>
+    <div id="historique-liste"><div style="color:#888;font-size:.85rem;">Chargement…</div></div>
+  </div>
+</main>
+
+<!-- Modale ajout point (gérant uniquement) -->
+<div class="overlay" id="overlay-ajout">
+  <div class="modale">
+    <h3>Ajouter un point de contrôle</h3>
+    <div class="field">
+      <label>Catégorie</label>
+      <select id="ajout-categorie"></select>
+    </div>
+    <div class="field">
+      <label>Intitulé</label>
+      <input type="text" id="ajout-label" placeholder="Ex : Vérifier le joint du frigo">
+    </div>
+    <div class="field">
+      <label>Fréquence</label>
+      <div class="freq-options">
+        <button class="freq-btn selected" data-freq="quotidien" onclick="selFreq(this)">📅 Tous les jours</button>
+        <button class="freq-btn" data-freq="besoin" onclick="selFreq(this)">🔄 Autant que besoin</button>
+        <button class="freq-btn" data-freq="hebdo" onclick="selFreq(this)">📆 1 fois par semaine</button>
+        <button class="freq-btn" data-freq="mensuel" onclick="selFreq(this)">🗓️ 1 fois par mois</button>
+      </div>
+    </div>
+    <div class="modale-actions">
+      <button class="btn-ghost" onclick="fermerModaleAjout()">Annuler</button>
+      <button class="btn-primary" onclick="confirmerAjout()">Ajouter</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/supabase-client.js"></script>
+<script>
+let profilCourant = null;
+let estGerant = false;
+let etats = {};
+let freqSelectionnee = 'quotidien';
+
+const FREQ_LABELS = {
+  quotidien: { label: 'Tous les jours',       cls: 'freq-quotidien' },
+  besoin:    { label: 'Autant que besoin',     cls: 'freq-besoin' },
+  hebdo:     { label: '1 fois par semaine',    cls: 'freq-hebdo' },
+  mensuel:   { label: '1 fois par mois',       cls: 'freq-mensuel' }
+};
+
+// Points par défaut (stockés avec fréquence)
+const CATEGORIES_DEFAULT = [
+  {
+    id: 'nettoyage', label: 'Nettoyage', icon: '🧹',
+    items: [
+      { id: 'net_outils',   label: 'Nettoyage des outils et machines',            freq: 'quotidien' },
+      { id: 'net_plans',    label: 'Nettoyage des plans de travail',               freq: 'quotidien' },
+      { id: 'net_etageres', label: 'Nettoyage des étagères et zones de stockage', freq: 'hebdo' },
+      { id: 'net_sols',     label: 'Nettoyage des sols',                           freq: 'quotidien' },
+      { id: 'net_plonge',   label: 'Nettoyage de la plonge',                      freq: 'quotidien' },
+    ]
+  },
+  {
+    id: 'verification', label: 'Vérifications équipements', icon: '🌡️',
+    items: [
+      { id: 'verif_four',   label: 'Vérification réglage du four',                  freq: 'quotidien' },
+      { id: 'verif_froids', label: 'Vérification températures des chambres froides',freq: 'quotidien' },
+      { id: 'verif_pousse', label: 'Vérification réglage de la chambre de pousse', freq: 'quotidien' },
+    ]
+  },
+  {
+    id: 'rangement', label: 'Rangement & stocks', icon: '📦',
+    items: [
+      { id: 'rang_materiel',    label: 'Rangement du matériel aux endroits dédiés',        freq: 'quotidien' },
+      { id: 'rang_epicerie',    label: 'État des stocks épicerie pour le lendemain',        freq: 'quotidien' },
+      { id: 'rang_tablette',    label: 'État de charge de la tablette',                     freq: 'quotidien' },
+      { id: 'rang_balances',    label: 'État de charge des balances',                       freq: 'quotidien' },
+      { id: 'rang_mat_def',     label: 'Signalement matériel manquant ou défectueux',       freq: 'besoin' },
+      { id: 'rang_stock_man',   label: 'Signalement stock manquant',                        freq: 'besoin' },
+      { id: 'rang_non_conf',    label: 'Signalement non-conformité sur production',         freq: 'besoin' },
+    ]
+  }
+];
+
+function getCategories(){
+  const custom = JSON.parse(localStorage.getItem('checklist_custom') || '[]');
+  return CATEGORIES_DEFAULT.map(c => ({
+    ...c,
+    items: [
+      ...c.items,
+      ...custom.filter(p => p.categorieId === c.id)
+    ]
+  }));
+}
+
+function dateAujourdhui(){ return new Date().toISOString().slice(0,10); }
+
+async function init(){
+  profilCourant = await exigerRole(['gerant','boulanger','apprenti']);
+  if (!profilCourant) return;
+  estGerant = profilCourant.role === 'gerant';
+
+  document.getElementById('date-checklist').value = dateAujourdhui();
+
+  // Charger équipe
+  const { data: equipe } = await sb.from('profils').select('id,prenom,nom').eq('actif',true).order('prenom');
+  const sel = document.getElementById('sel-verificateur');
+  (equipe||[]).forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = `${p.prenom||''} ${p.nom}`.trim();
+    sel.appendChild(opt);
+  });
+  if (profilCourant?.id) sel.value = profilCourant.id;
+
+  // Remplir select catégorie modale
+  const selCat = document.getElementById('ajout-categorie');
+  CATEGORIES_DEFAULT.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.id;
+    opt.textContent = c.label;
+    selCat.appendChild(opt);
+  });
+
+  renderChecklist();
+  await chargerHistorique();
+}
+
+function renderChecklist(){
+  const conteneur = document.getElementById('liste-categories');
+  conteneur.innerHTML = '';
+  etats = {};
+
+  getCategories().forEach(cat => {
+    cat.items.forEach(item => {
+      etats[item.id] = { fait: false, verificateur_id: null, verif_nom: null };
+    });
+
+    const div = document.createElement('div');
+    div.className = 'categorie';
+
+    const itemsHtml = cat.items.map(item => renderItem(item, cat.id)).join('');
+    const btnAjout = estGerant
+      ? `<button class="btn-ajouter-item gerant-only" onclick="ouvrirModaleAjout('${cat.id}')">＋ Ajouter un point de contrôle</button>`
+      : '';
+
+    div.innerHTML = `
+      <div class="categorie-titre"><span class="cat-icon">${cat.icon}</span>${cat.label}</div>
+      <div class="categorie-body" id="body-${cat.id}">
+        ${itemsHtml}
+        ${btnAjout}
+      </div>`;
+    conteneur.appendChild(div);
+  });
+
+  majProgression();
+}
+
+function renderItem(item, catId){
+  const freq = FREQ_LABELS[item.freq] || FREQ_LABELS.quotidien;
+  const isCustom = item.id.startsWith('custom_');
+  const btnSuppr = (estGerant && isCustom)
+    ? `<button class="btn-suppr" title="Supprimer" onclick="supprimerItem('${item.id}',event)">🗑</button>`
+    : '';
+
+  return `<div class="check-item" id="item-${item.id}">
+    <div class="check-box" onclick="toggleItem('${item.id}')"><span class="check-tick">✓</span></div>
+    <div class="check-content">
+      <div class="check-label" onclick="toggleItem('${item.id}')">${item.label}</div>
+      <span class="freq-badge ${freq.cls}">${freq.label}</span>
+      <div class="check-verif" id="verif-${item.id}"></div>
+    </div>
+    <div class="check-actions">${btnSuppr}</div>
+  </div>`;
+}
+
+function toggleItem(itemId){
+  const verificateurId = document.getElementById('sel-verificateur').value;
+  const verificateurNom = document.getElementById('sel-verificateur').selectedOptions[0]?.text || '';
+  if (!verificateurId){ alert('Sélectionnez d\'abord le vérificateur.'); return; }
+
+  const actuel = etats[itemId]?.fait || false;
+  etats[itemId] = {
+    fait: !actuel,
+    verificateur_id: !actuel ? verificateurId : null,
+    verif_nom: !actuel ? verificateurNom : null
+  };
+
+  const el = document.getElementById('item-' + itemId);
+  const e = etats[itemId];
+  el.classList.toggle('fait', e.fait);
+  el.querySelector('.check-box').style.background = e.fait ? '#38a169' : '#fff';
+  el.querySelector('.check-box').style.borderColor = e.fait ? '#38a169' : '#ccc';
+  el.querySelector('.check-tick').style.opacity = e.fait ? '1' : '0';
+  el.querySelector('.check-label').style.textDecoration = e.fait ? 'line-through' : '';
+  el.querySelector('.check-label').style.color = e.fait ? '#38a169' : '#1a1a1a';
+  el.querySelector('.check-verif').textContent = e.fait ? '✓ ' + e.verif_nom : '';
+
+  majProgression();
+}
+
+function majProgression(){
+  const tous = Object.keys(etats);
+  const faits = tous.filter(id => etats[id]?.fait);
+  const pct = tous.length > 0 ? Math.round((faits.length/tous.length)*100) : 0;
+  document.getElementById('barre-inner').style.width = pct + '%';
+  document.getElementById('label-progression').textContent = `${faits.length} / ${tous.length} points validés`;
+
+  const resume = document.getElementById('resume-final');
+  if (faits.length === tous.length && tous.length > 0){
+    resume.classList.add('visible');
+    const verif = document.getElementById('sel-verificateur').selectedOptions[0]?.text || '';
+    const date = new Date(document.getElementById('date-checklist').value)
+      .toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+    document.getElementById('resume-final-sous').textContent = `${date} · Vérifié par ${verif}`;
+  } else {
+    resume.classList.remove('visible');
+  }
+}
+
+// ─── Modale ajout (gérant uniquement) ────────────────────────────────────────
+function selFreq(btn){
+  document.querySelectorAll('.freq-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  freqSelectionnee = btn.dataset.freq;
+}
+
+function ouvrirModaleAjout(categorieId){
+  if (!estGerant) return;
+  document.getElementById('ajout-categorie').value = categorieId;
+  document.getElementById('ajout-label').value = '';
+  freqSelectionnee = 'quotidien';
+  document.querySelectorAll('.freq-btn').forEach(b => b.classList.toggle('selected', b.dataset.freq === 'quotidien'));
+  document.getElementById('overlay-ajout').classList.add('visible');
+  setTimeout(() => document.getElementById('ajout-label').focus(), 100);
+}
+
+function fermerModaleAjout(){
+  document.getElementById('overlay-ajout').classList.remove('visible');
+}
+
+function confirmerAjout(){
+  const label = document.getElementById('ajout-label').value.trim();
+  const categorieId = document.getElementById('ajout-categorie').value;
+  if (!label) return;
+
+  const custom = JSON.parse(localStorage.getItem('checklist_custom') || '[]');
+  custom.push({ id: 'custom_' + Date.now(), categorieId, label, freq: freqSelectionnee });
+  localStorage.setItem('checklist_custom', JSON.stringify(custom));
+
+  fermerModaleAjout();
+  renderChecklist();
+}
+
+function supprimerItem(itemId, event){
+  event.stopPropagation();
+  if (!estGerant) return;
+  if (!confirm('Supprimer ce point de contrôle ?')) return;
+  const custom = JSON.parse(localStorage.getItem('checklist_custom') || '[]');
+  localStorage.setItem('checklist_custom', JSON.stringify(custom.filter(p => p.id !== itemId)));
+  renderChecklist();
+}
+
+// ─── Enregistrement ───────────────────────────────────────────────────────────
+async function validerChecklist(){
+  const date = document.getElementById('date-checklist').value;
+  const verificateurId = document.getElementById('sel-verificateur').value;
+  if (!verificateurId){ alert('Sélectionnez le vérificateur.'); return; }
+
+  const tous = Object.keys(etats);
+  const faits = tous.filter(id => etats[id]?.fait).length;
+  const total = tous.length;
+  const pct = Math.round((faits/total)*100);
+  const detail = Object.entries(etats).map(([id, e]) => ({ item_id: id, fait: e.fait, verificateur_id: e.verificateur_id }));
+
+  const { error } = await sb.from('checklist_journee').insert({
+    date_checklist: date, verificateur_id: verificateurId,
+    nb_points_total: total, nb_points_valides: faits,
+    taux_completion_pct: pct, detail
+  });
+
+  if (error) console.warn('Erreur sauvegarde:', error.message);
+  alert(`✅ Checklist enregistrée — ${faits}/${total} points (${pct}%)`);
+  await chargerHistorique();
+}
+
+// ─── Historique ───────────────────────────────────────────────────────────────
+async function chargerHistorique(){
+  const { data } = await sb.from('checklist_journee')
+    .select('date_checklist, nb_points_valides, nb_points_total, taux_completion_pct, profils(prenom, nom)')
+    .order('date_checklist', { ascending: false }).limit(5);
+
+  const conteneur = document.getElementById('historique-liste');
+  if (!data||!data.length){ conteneur.innerHTML = '<div style="color:#888;font-size:.85rem;">Aucune checklist enregistrée.</div>'; return; }
+
+  conteneur.innerHTML = data.map(c => {
+    const dateAff = new Date(c.date_checklist).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'});
+    const verif = c.profils ? `${c.profils.prenom||''} ${c.profils.nom}`.trim() : '—';
+    const couleur = c.taux_completion_pct === 100 ? '#38a169' : c.taux_completion_pct >= 80 ? '#d69e2e' : '#e53e3e';
+    return `<div class="historique-item">
+      <div class="historique-header">
+        <span class="historique-date">${dateAff}</span>
+        <span style="font-family:var(--mono);font-size:.82rem;font-weight:700;color:${couleur}">${c.taux_completion_pct}%</span>
+      </div>
+      <div class="historique-verif">${c.nb_points_valides}/${c.nb_points_total} points · ${verif}</div>
+    </div>`;
+  }).join('');
+}
+
+init();
+</script>
+</body>
+</html>
