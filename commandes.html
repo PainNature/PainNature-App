@@ -981,6 +981,8 @@ function ouvrirModaleCommande(type) {
   typeCommandeCourant = type;
   commandeEnEditionId = null;
   commandeEnEditionClientId = null;
+  commandeEnEditionId = null;
+  commandeEnEditionClientId = null;
   document.getElementById('erreur-commande').classList.remove('visible');
   document.getElementById('form-commande').reset();
   document.getElementById('cmd-date').value = document.getElementById('date-jour').value || dateAujourdhui();
@@ -1016,6 +1018,9 @@ async function confirmerCommande() {
   const heureRetrait = document.getElementById('cmd-heure').value || null;
   const prisParId = document.getElementById('cmd-pris-par').value || null;
   const estRecurrente = !commandeEnEditionId && document.getElementById('cmd-recurrente').checked;
+  // DEBUG temporaire
+  document.getElementById('erreur-commande').textContent = `DEBUG: estRec=${estRecurrente}, cmdEditionId=${commandeEnEditionId}, recChecked=${document.getElementById('cmd-recurrente').checked}`;
+  document.getElementById('erreur-commande').classList.add('visible');
 
   if (!estRecurrente && !dateRetrait) {
     erreur.textContent = 'La date de retrait est obligatoire.';
