@@ -117,42 +117,54 @@ main{max-width:640px; margin:2rem auto; padding:0 1.2rem;}
     .eq('traite', false)
     .or(`destinataire_id.eq.${profil.id},destinataire_id.is.null`);
 
-})();
-  const heure = new Date().getHours();
-  if ((profil.role === 'boulanger' || profil.role === 'patissier') && heure < 7) {
-    const date = new Date().toISOString().slice(0, 10);
-    const { data: commandes } = await sb
-      .from('vue_commandes_jour')
-      .select('*, heure_retrait')
-      .eq('date_retrait', date)
-      .not('heure_retrait', 'is', null)
-      .order('heure_retrait', { ascending: true })
-      .limit(5);
-
-    if (commandes && commandes.length > 0) {
-      const lignes = commandes.map(c => {
-        const nom = c.is_pro ? c.raison_sociale : `${c.prenom || ''} ${c.nom}`.trim();
-        const heure = c.heure_retrait.slice(0, 5);
-        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.15);">
-          <span style="font-weight:600;">${nom}</span>
-          <span style="font-family:var(--mono);font-weight:800;font-size:1rem;">⏰ ${heure}</span>
-        </div>`;
-      }).join('');
-
-      const popup = document.createElement('div');
-      popup.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:flex;align-items:center;justify-content:center;padding:1.2rem;';
-      popup.innerHTML = `<div style="background:#546054;color:#fff;border-radius:16px;padding:1.5rem;width:100%;max-width:400px;box-shadow:0 8px 32px rgba(0,0,0,.3);">
-        <div style="font-weight:800;font-size:1.1rem;margin-bottom:4px;">🌅 Départs du jour</div>
-        <div style="font-size:.78rem;opacity:.75;font-family:var(--mono);margin-bottom:1rem;">${new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})}</div>
-        ${lignes}
-        <div style="display:flex;gap:8px;margin-top:1.2rem;">
-          <button onclick="this.closest('div[style*=fixed]').remove()" style="flex:1;padding:12px;background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.4);color:#fff;border-radius:8px;font-weight:700;cursor:pointer;">Fermer</button>
-          <a href="commandes.html" style="flex:1;padding:12px;background:#fff;color:#546054;border-radius:8px;font-weight:700;cursor:pointer;text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;">Voir tout →</a>
-        </div>
-      </div>`;
-      document.body.appendChild(popup);
+  if (count > 0) {
+    const itemTransmissions = document.getElementById('item-transmissions');
+    if (itemTransmissions) {
+      itemTransmissions.insertAdjacentHTML('beforeend', `<span class="notif-badge">${count > 9 ? '9+' : count}</span>`);
     }
   }
-</script>
+
+  // Popup départs avant 7h (boulanger et pâtissier uniquement)
+  try {
+    const heureActuelle = new Date().getHours();
+    if ((profil.role === 'boulanger' || profil.role === 'patissier') && heureActuelle < 7) {
+      const date = new Date().toISOString().slice(0, 10);
+      const { data: commandes } = await sb
+        .from('vue_commandes_jour')
+        .select('*')
+        .eq('date_retrait', date)
+        .not('heure_retrait', 'is', null)
+        .order('heure_retrait', { ascending: true })
+        .limit(5);
+
+      if (commandes && commandes.length > 0) {
+        const lignes = commandes.map(c => {
+          const nom = c.is_pro ? c.raison_sociale : `${c.prenom || ''} ${c.nom}`.trim();
+          const h = (c.heure_retrait || '').slice(0, 5);
+          return `<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.15);">
+            <span style="font-weight:600;">${nom}</span>
+            <span style="font-family:var(--mono);font-weight:800;font-size:1rem;">⏰ ${h}</span>
+          </div>`;
+        }).join('');
+
+        const popup = document.createElement('div');
+        popup.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:flex;align-items:center;justify-content:center;padding:1.2rem;';
+        popup.innerHTML = `<div style="background:#546054;color:#fff;border-radius:16px;padding:1.5rem;width:100%;max-width:400px;box-shadow:0 8px 32px rgba(0,0,0,.3);">
+          <div style="font-weight:800;font-size:1.1rem;margin-bottom:4px;">🌅 Départs du jour</div>
+          <div style="font-size:.78rem;opacity:.75;font-family:var(--mono);margin-bottom:1rem;">${new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})}</div>
+          ${lignes}
+          <div style="display:flex;gap:8px;margin-top:1.2rem;">
+            <button onclick="this.closest('div[style*=fixed]').remove()" style="flex:1;padding:12px;background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.4);color:#fff;border-radius:8px;font-weight:700;cursor:pointer;">Fermer</button>
+            <a href="commandes.html" style="flex:1;padding:12px;background:#fff;color:#546054;border-radius:8px;font-weight:700;cursor:pointer;text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;">Voir tout →</a>
+          </div>
+        </div>`;
+        document.body.appendChild(popup);
+      }
+    }
+  } catch(e) {
+    console.warn('Popup départs:', e.message);
+  }
+
+})();</script>
 </body>
 </html>
