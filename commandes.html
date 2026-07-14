@@ -277,9 +277,16 @@ main{max-width:920px; margin:1.2rem auto 3rem; padding:0 1.2rem;}
 
       <div class="row2">
         <div class="field"><label>Date de retrait</label><input type="date" id="cmd-date" required></div>
+        <div class="field"><label>Heure de retrait <span style="font-weight:400;color:var(--text-light);font-size:.75rem;">(optionnelle)</span></label><input type="time" id="cmd-heure" step="900"></div>
+      </div>
+      <div class="row2">
         <div class="field">
           <label>Lieu de retrait</label>
           <select id="cmd-lieu"><option value="">—</option></select>
+        </div>
+        <div class="field">
+          <label>Pris par</label>
+          <select id="cmd-pris-par"><option value="">—</option></select>
         </div>
       </div>
 
@@ -489,7 +496,7 @@ async function chargerSynthese() {
 
   const { data: commandesJour, error } = await sb
     .from('vue_commandes_jour')
-    .select('*')
+    .select('*, heure_retrait, pris_par, profils!pris_par(prenom, nom)')
     .eq('date_retrait', date);
 
   if (error) {
@@ -497,8 +504,16 @@ async function chargerSynthese() {
     return;
   }
 
-  const particuliers = (commandesJour || []).filter(c => !c.is_pro);
-  const pros = (commandesJour || []).filter(c => c.is_pro);
+  // Tri par heure de retrait croissante — sans heure en bas
+  const trierParHeure = (arr) => arr.sort((a, b) => {
+    if (!a.heure_retrait && !b.heure_retrait) return 0;
+    if (!a.heure_retrait) return 1;
+    if (!b.heure_retrait) return -1;
+    return a.heure_retrait.localeCompare(b.heure_retrait);
+  });
+
+  const particuliers = trierParHeure((commandesJour || []).filter(c => !c.is_pro));
+  const pros = trierParHeure((commandesJour || []).filter(c => c.is_pro));
 
   const lignesParCommande = await chargerLignesPourCommandes((commandesJour || []).map(c => c.id));
   let totalPieces = 0;
@@ -518,31 +533,28 @@ async function chargerSynthese() {
   document.getElementById('synth-collecte-pro').textContent = `${nbCollectePro} remise${nbCollectePro > 1 ? 's' : ''}`;
   document.getElementById('synth-total-pieces').textContent = totalPieces > 0 ? Math.round(totalPieces) : '—';
 
+  const renderLigne = (c, nomAffiche) => {
+    const heure = c.heure_retrait ? c.heure_retrait.slice(0,5) : null;
+    const prisPar = c.profils ? `${c.profils.prenom || ''} ${c.profils.nom}`.trim() : null;
+    const meta = [c.lieu_retrait || '—', heure ? `⏰ ${heure}` : null, prisPar ? `📋 ${prisPar}` : null].filter(Boolean).join(' · ');
+    return `<div class="synth-client-row" onclick="ouvrirModaleEditionCommande('${c.id}')">
+      <div>
+        <div class="synth-client-nom">${nomAffiche}</div>
+        <div class="synth-client-meta">${meta}</div>
+      </div>
+      <span class="statut-pill statut-${c.statut}" style="margin:0;">${c.collectee ? '✓ Remis' : 'À remettre'}</span>
+    </div>`;
+  };
+
   const conteneurPart = document.getElementById('synth-liste-particuliers');
   conteneurPart.innerHTML = particuliers.length === 0
     ? '<div class="vide">Aucune commande particulier ce jour.</div>'
-    : particuliers.map(c => `
-        <div class="synth-client-row" onclick="ouvrirModaleEditionCommande('${c.id}')">
-          <div>
-            <div class="synth-client-nom">${c.prenom || ''} ${c.nom}</div>
-            <div class="synth-client-meta">${c.lieu_retrait || '—'} · ${labelsStatut[c.statut] || c.statut}</div>
-          </div>
-          <span class="statut-pill statut-${c.statut}" style="margin:0;">${c.collectee ? '✓ Remis' : 'À remettre'}</span>
-        </div>
-      `).join('');
+    : particuliers.map(c => renderLigne(c, `${c.prenom || ''} ${c.nom}`.trim())).join('');
 
   const conteneurPro = document.getElementById('synth-liste-pro');
   conteneurPro.innerHTML = pros.length === 0
     ? '<div class="vide">Aucune commande pro ce jour.</div>'
-    : pros.map(c => `
-        <div class="synth-client-row" onclick="ouvrirModaleEditionCommande('${c.id}')">
-          <div>
-            <div class="synth-client-nom">${c.raison_sociale}</div>
-            <div class="synth-client-meta">${c.lieu_retrait || '—'} · ${labelsStatut[c.statut] || c.statut}</div>
-          </div>
-          <span class="statut-pill statut-${c.statut}" style="margin:0;">${c.collectee ? '✓ Remis' : 'À remettre'}</span>
-        </div>
-      `).join('');
+    : pros.map(c => renderLigne(c, c.raison_sociale)).join('');
 }
 
 function changerJour(delta) {
@@ -568,6 +580,16 @@ async function chargerLieux() {
     if (selectImpPart) selectImpPart.innerHTML = optionsLieux;
     if (selectImpPro) selectImpPro.innerHTML = optionsLieux;
   }
+}
+
+async function chargerEquipe() {
+  const { data } = await sb.from('profils').select('id, prenom, nom').eq('actif', true).order('prenom');
+  const sel = document.getElementById('cmd-pris-par');
+  sel.innerHTML = '<option value="">—</option>' + (data||[]).map(p =>
+    `<option value="${p.id}">${p.prenom || ''} ${p.nom}`.trim() + `</option>`
+  ).join('');
+  // Pré-sélectionner l'utilisateur connecté
+  if (profilCourant?.id) sel.value = profilCourant.id;
 }
 
 async function imprimerCommandes(type) {
@@ -796,7 +818,9 @@ async function ouvrirModaleEditionCommande(commandeId) {
   }
 
   document.getElementById('cmd-date').value = cmd.date_retrait;
+  document.getElementById('cmd-heure').value = cmd.heure_retrait ? cmd.heure_retrait.slice(0,5) : '';
   document.getElementById('cmd-lieu').value = cmd.lieu_retrait_id || '';
+  document.getElementById('cmd-pris-par').value = cmd.pris_par || profilCourant?.id || '';
   document.getElementById('cmd-contenu').value = cmd.contenu || '';
   document.getElementById('cmd-statut').value = cmd.statut;
 
@@ -820,6 +844,8 @@ function ouvrirModaleCommande(type) {
   document.getElementById('erreur-commande').classList.remove('visible');
   document.getElementById('form-commande').reset();
   document.getElementById('cmd-date').value = document.getElementById('date-jour').value || dateAujourdhui();
+  document.getElementById('cmd-heure').value = '';
+  document.getElementById('cmd-pris-par').value = profilCourant?.id || '';
   document.getElementById('champs-particulier').style.display = type === 'particulier' ? '' : 'none';
   document.getElementById('champs-pro').style.display = type === 'pro' ? '' : 'none';
   document.getElementById('titre-modale-commande').textContent = type === 'pro' ? 'Nouvelle commande pro' : 'Nouvelle commande';
@@ -884,11 +910,15 @@ async function confirmerCommande() {
       }
     }
 
+    const heureRetrait = document.getElementById('cmd-heure').value || null;
+    const prisParId = document.getElementById('cmd-pris-par').value || null;
+
     let commandeId;
 
     if (commandeEnEditionId) {
       const { error: errMaj } = await sb.from('commandes').update({
-        client_id: clientId, date_retrait: dateRetrait, contenu, statut, lieu_retrait_id: lieuId
+        client_id: clientId, date_retrait: dateRetrait, contenu, statut,
+        lieu_retrait_id: lieuId, heure_retrait: heureRetrait, pris_par: prisParId
       }).eq('id', commandeEnEditionId);
       if (errMaj) throw errMaj;
       commandeId = commandeEnEditionId;
@@ -899,7 +929,8 @@ async function confirmerCommande() {
       if (errSuppr) throw errSuppr;
     } else {
       const { data: nouvelleCommande, error: errCmd } = await sb.from('commandes').insert({
-        client_id: clientId, date_retrait: dateRetrait, contenu, statut, lieu_retrait_id: lieuId
+        client_id: clientId, date_retrait: dateRetrait, contenu, statut,
+        lieu_retrait_id: lieuId, heure_retrait: heureRetrait, pris_par: prisParId
       }).select().single();
       if (errCmd) throw errCmd;
       commandeId = nouvelleCommande.id;
@@ -1020,6 +1051,7 @@ async function supprimerClientPro(id) {
   document.getElementById('date-jour-synthese').value = aujourdhui;
 
   await chargerLieux();
+  await chargerEquipe();
   await chargerClientsPro();
   await chargerCatalogueProduits();
   await chargerSynthese();
