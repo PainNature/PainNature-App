@@ -1,1 +1,1217 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Pain Nature — Commandes</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#6b3a1f">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/shared.css">
+<style>
+.topbar{
+  background:var(--wheat); color:#fff; padding:0 1.2rem; height:54px;
+  display:flex; align-items:center; justify-content:space-between;
+  box-shadow:0 2px 8px rgba(0,0,0,.2); position:sticky; top:0; z-index:10;
+}
+.topbar .marque{font-weight:800; font-size:1rem; display:flex; align-items:center; gap:.6rem;}
+.topbar .retour{color:#fff; text-decoration:none; font-size:1.3rem; opacity:.85;}
+.topbar .deco{
+  background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3);
+  color:#fff; padding:6px 13px; border-radius:var(--r); font-size:.82rem; font-weight:600; cursor:pointer;
+}
+main{max-width:920px; margin:1.2rem auto 3rem; padding:0 1.2rem;}
 
+.tabs{display:flex; gap:8px; margin-bottom:1.2rem;}
+.tab-btn{
+  flex:1; padding:11px; border:1.5px solid var(--border); background:var(--surface);
+  border-radius:var(--r); font-weight:700; font-size:.85rem; cursor:pointer; color:var(--text-muted);
+}
+.tab-btn.active{background:var(--wheat); color:#fff; border-color:var(--wheat);}
+.tab-panel{display:none;}
+
+.synthese-cards{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px; margin-bottom:1.2rem;}
+.synthese-card{background:var(--surface); border:1.5px solid var(--border); border-radius:var(--r-lg); padding:.9rem 1rem; text-align:center; box-shadow:var(--shadow);}
+.synthese-card .sc-label{font-family:var(--mono); font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; color:var(--text-light); font-weight:700;}
+.synthese-card .sc-valeur{font-family:var(--mono); font-size:1.5rem; font-weight:800; color:var(--wheat); margin-top:2px;}
+.synthese-card .sc-sous{font-size:.72rem; color:var(--text-light); margin-top:2px;}
+.synth-client-row{display:flex; justify-content:space-between; align-items:center; padding:9px 16px; border-bottom:1px solid var(--border); font-size:.85rem; cursor:pointer;}
+.synth-client-row:last-child{border-bottom:none;}
+.synth-client-row:hover{background:var(--surface2);}
+.synth-client-nom{font-weight:600;}
+.synth-client-meta{font-size:.75rem; color:var(--text-light); font-family:var(--mono);}
+.tab-panel.active{display:block;}
+
+.bar-jour{
+  display:flex; align-items:center; gap:10px; margin-bottom:1.1rem;
+}
+.bar-jour input[type=date]{
+  flex:1; padding:11px 12px; border:2px solid var(--border-strong); border-radius:var(--r);
+  font-size:.95rem; background:var(--surface);
+}
+.bar-jour .nav-jour{
+  width:40px; height:40px; border-radius:var(--r); border:1.5px solid var(--border-strong);
+  background:var(--surface); font-size:1.1rem; cursor:pointer; flex-shrink:0;
+}
+
+.section-titre{
+  font-size:.95rem; font-weight:700; color:var(--wheat); margin:1.3rem 0 .6rem;
+}
+
+.commande-card{
+  padding:14px 16px; border-bottom:1px solid var(--border);
+  display:flex; justify-content:space-between; gap:12px;
+}
+.commande-card:last-child{border-bottom:none;}
+.commande-nom{font-weight:700; font-size:.95rem;}
+.commande-meta{font-size:.78rem; color:var(--text-light); font-family:var(--mono); margin-top:1px;}
+.commande-contenu{font-size:.88rem; color:var(--text-muted); margin-top:5px;}
+.lieu-pill{
+  display:inline-block; padding:2px 10px; border-radius:14px; font-size:.7rem; font-weight:700;
+  text-transform:uppercase; letter-spacing:.03em; margin-right:6px;
+}
+.lieu-boutique{background:var(--blue-light); color:var(--blue);}
+.lieu-marche{background:var(--green-light); color:var(--green);}
+.lieu-livraison{background:var(--wheat-light); color:var(--wheat);}
+.statut-pill{
+  display:inline-block; padding:2px 10px; border-radius:14px; font-size:.7rem; font-weight:700;
+}
+.statut-todo{background:var(--red-light); color:var(--red);}
+.statut-pending{background:#fff4d6; color:#8a6300;}
+.statut-validated{background:var(--green-light); color:var(--green);}
+.commande-actions{display:flex; flex-direction:column; gap:6px; flex-shrink:0;}
+.btn-icon{
+  width:32px; height:32px; border-radius:50%; border:1.5px solid var(--border);
+  background:var(--surface); cursor:pointer; font-size:.9rem;
+}
+
+.btn-remise{
+  font-size:.72rem; padding:5px 11px; border-radius:14px; border:1.5px solid var(--green);
+  background:var(--surface); color:var(--green); cursor:pointer; font-weight:700; margin-top:6px;
+}
+.btn-remise.remis{background:var(--green); color:#fff;}
+.pdf-link{
+  display:inline-flex; align-items:center; gap:5px; font-size:.78rem; color:var(--wheat);
+  text-decoration:none; margin-top:6px; font-weight:600;
+}
+.upload-pdf-zone{margin-top:6px;}
+.upload-pdf-zone input[type=file]{font-size:.78rem;}
+
+.vide{text-align:center; padding:2rem; color:var(--text-light); font-size:.9rem;}
+
+.btn-nouvelle{width:100%; padding:13px; margin-bottom:1rem;}
+
+/* Modale */
+.overlay{display:none; position:fixed; inset:0; background:rgba(20,12,6,.55); align-items:center; justify-content:center; z-index:50; padding:1.2rem; overflow-y:auto;}
+.overlay.visible{display:flex;}
+.modale{background:var(--surface); border-radius:var(--r-lg); padding:1.6rem; width:100%; max-width:480px; box-shadow:0 20px 50px rgba(0,0,0,.3); margin:auto;}
+.modale h3{color:var(--wheat); margin-bottom:1.1rem; font-size:1.1rem;}
+.field{margin-bottom:1rem;}
+.field label{display:block; font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--text-light); margin-bottom:.4rem; font-family:var(--mono);}
+.field input, .field select, .field textarea{
+  width:100%; padding:11px 12px; font-size:.95rem; border:2px solid var(--border-strong);
+  border-radius:var(--r); background:var(--surface2); color:var(--text); font-family:inherit;
+}
+.field textarea{resize:vertical; min-height:70px;}
+.field input:focus, .field select:focus, .field textarea:focus{outline:none; border-color:var(--wheat); background:#fff;}
+.row2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+.modale-actions{display:flex; gap:10px; margin-top:1.3rem;}
+.modale-actions .btn{flex:1;}
+
+.jour-btn{
+  display:flex;align-items:center;gap:5px;padding:7px 12px;
+  border:1.5px solid var(--border-strong);border-radius:var(--r);
+  cursor:pointer;font-size:.85rem;font-weight:600;background:#fff;
+  transition:all .15s;
+}
+.jour-btn input{accent-color:var(--wheat);}
+.jour-btn:has(input:checked){background:var(--wheat);color:#fff;border-color:var(--wheat);}
+
+.banniere-reconduction{
+  background:var(--wheat);color:#fff;border-radius:var(--r-lg);
+  padding:14px 16px;margin-bottom:1rem;display:flex;
+  align-items:center;justify-content:space-between;gap:12px;
+  flex-wrap:wrap;
+}
+.banniere-reconduction-texte{font-weight:700;font-size:.9rem;}
+.banniere-reconduction-sous{font-size:.78rem;opacity:.85;margin-top:2px;}
+.btn-reconduire{
+  background:#fff;color:var(--wheat);border:none;border-radius:var(--r);
+  padding:9px 16px;font-weight:800;font-size:.85rem;cursor:pointer;white-space:nowrap;
+}
+.msg-erreur-modale{display:none; background:var(--red-light); color:var(--red); padding:.6rem .8rem; border-radius:var(--r); font-size:.82rem; font-weight:600; margin-bottom:.9rem;}
+.msg-erreur-modale.visible{display:block;}
+
+.gestion-clients-pro{margin-top:1.5rem;}
+.client-pro-item{display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-bottom:1px solid var(--border);}
+.client-pro-item:last-child{border-bottom:none;}
+.client-pro-nom{font-weight:600; font-size:.9rem;}
+.lien-gestion{font-size:.82rem; color:var(--wheat); text-decoration:underline; cursor:pointer; background:none; border:none; font-family:inherit; padding:0; margin-top:.6rem;}
+@media print {
+  body * { visibility: hidden; }
+  #zone-impression-commandes, #zone-impression-commandes * { visibility: visible; }
+  #zone-impression-commandes {
+    position: absolute; top: 0; left: 0; width: 100%;
+    padding: 10mm; font-size: 11px;
+  }
+  .pi-titre { font-size: 16px; font-weight: 800; color: #000; border-bottom: 2px solid #000; padding-bottom: 4px; margin-bottom: 8px; }
+  .pi-groupe-titre { font-size: 11px; font-weight: 800; text-transform: uppercase; background: #ddd; padding: 4px 8px; margin-top: 10px; }
+  .pi-commande { padding: 6px 8px; border-bottom: 1px solid #ccc; page-break-inside: avoid; }
+  .pi-nom { font-weight: 700; font-size: 12px; }
+  .pi-lignes { margin: 3px 0 0 14px; font-size: 10.5px; }
+  .pi-statut { font-size: 9px; text-transform: uppercase; color: #555; font-weight: 700; }
+}
+#zone-impression-commandes { display: none; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="marque"><a href="accueil.html" class="retour">←</a> 🌾 COMMANDES</span>
+  <button class="deco" onclick="deconnexion()">Déconnexion</button>
+</div>
+
+<main>
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="synthese" onclick="changerTab('synthese')">📊 Synthèse</button>
+    <button class="tab-btn" data-tab="particuliers" onclick="changerTab('particuliers')">Particuliers</button>
+    <button class="tab-btn" data-tab="pro" onclick="changerTab('pro')">Professionnels</button>
+  </div>
+
+  <!-- ===== ONGLET SYNTHÈSE ===== -->
+  <div class="tab-panel active" id="panel-synthese">
+    <div class="bar-jour">
+      <button class="nav-jour" onclick="changerJourSynthese(-1)">‹</button>
+      <input type="date" id="date-jour-synthese" onchange="chargerSynthese()">
+      <button class="nav-jour" onclick="changerJourSynthese(1)">›</button>
+    </div>
+
+    <!-- Bannière reconduction fin de mois -->
+  <div id="banniere-reconduction" class="banniere-reconduction" style="display:none;">
+    <div>
+      <div class="banniere-reconduction-texte">🔁 Commandes récurrentes à reconduire</div>
+      <div class="banniere-reconduction-sous" id="banniere-reconduction-sous"></div>
+    </div>
+    <button class="btn-reconduire" onclick="reconduireMoisSuivant()">Reconduire →</button>
+  </div>
+
+  <div class="synthese-cards">
+      <div class="synthese-card">
+        <div class="sc-label">Particuliers</div>
+        <div class="sc-valeur" id="synth-nb-particuliers">—</div>
+        <div class="sc-sous" id="synth-collecte-particuliers"></div>
+      </div>
+      <div class="synthese-card">
+        <div class="sc-label">Professionnels</div>
+        <div class="sc-valeur" id="synth-nb-pro">—</div>
+        <div class="sc-sous" id="synth-collecte-pro"></div>
+      </div>
+      <div class="synthese-card">
+        <div class="sc-label">Total produits</div>
+        <div class="sc-valeur" id="synth-total-pieces">—</div>
+        <div class="sc-sous">pièces commandées</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:1rem;">
+      <div style="padding:10px 16px; font-weight:700; font-size:.85rem; background:var(--wheat-light); color:var(--wheat);">Clients particuliers du jour</div>
+      <div id="synth-liste-particuliers"><div class="vide">Chargement…</div></div>
+    </div>
+
+    <div class="card">
+      <div style="padding:10px 16px; font-weight:700; font-size:.85rem; background:var(--wheat-light); color:var(--wheat);">Clients professionnels du jour</div>
+      <div id="synth-liste-pro"><div class="vide">Chargement…</div></div>
+    </div>
+  </div>
+
+  <!-- ===== ONGLET PARTICULIERS ===== -->
+  <div class="tab-panel" id="panel-particuliers">
+    <div class="bar-jour">
+      <button class="nav-jour" onclick="changerJour(-1)">‹</button>
+      <input type="date" id="date-jour" onchange="chargerCommandesJour()">
+      <button class="nav-jour" onclick="changerJour(1)">›</button>
+    </div>
+
+    <button class="btn btn-primary btn-nouvelle" onclick="ouvrirModaleCommande('particulier')">+ Nouvelle commande</button>
+
+    <div style="display:flex; gap:8px; margin-bottom:1rem; align-items:center; flex-wrap:wrap;">
+      <select id="filtre-lieu-impression-part" style="padding:9px 12px; border:1.5px solid var(--border-strong); border-radius:var(--r); font-size:.85rem; background:#fff;">
+        <option value="">Tous les points de retrait</option>
+      </select>
+      <button class="btn btn-ghost" onclick="imprimerCommandes('particulier')">🖨️ Imprimer</button>
+    </div>
+
+    <div class="card">
+      <div id="liste-commandes-particuliers"><div class="vide">Chargement…</div></div>
+    </div>
+  </div>
+
+  <!-- ===== ONGLET PRO ===== -->
+  <div class="tab-panel" id="panel-pro">
+    <div class="bar-jour">
+      <button class="nav-jour" onclick="changerJour(-1)">‹</button>
+      <input type="date" id="date-jour-pro" onchange="chargerCommandesJourPro()">
+      <button class="nav-jour" onclick="changerJour(1)">›</button>
+    </div>
+
+    <button class="btn btn-primary btn-nouvelle" onclick="ouvrirModaleCommande('pro')">+ Nouvelle commande pro</button>
+
+    <div style="display:flex; gap:8px; margin-bottom:1rem; align-items:center; flex-wrap:wrap;">
+      <select id="filtre-lieu-impression-pro" style="padding:9px 12px; border:1.5px solid var(--border-strong); border-radius:var(--r); font-size:.85rem; background:#fff;">
+        <option value="">Tous les points de retrait</option>
+      </select>
+      <button class="btn btn-ghost" onclick="imprimerCommandes('pro')">🖨️ Imprimer</button>
+    </div>
+
+    <div class="card">
+      <div id="liste-commandes-pro"><div class="vide">Chargement…</div></div>
+    </div>
+
+    <div class="card gestion-clients-pro">
+      <div style="padding:14px 16px 0;">
+        <strong style="font-size:.9rem;">Clients professionnels</strong>
+      </div>
+      <div id="liste-clients-pro" style="padding:0 0 8px;"></div>
+      <div style="padding:8px 16px 14px;">
+        <button class="lien-gestion" onclick="ouvrirModaleClientPro()">+ Ajouter un client pro</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div id="zone-impression-commandes"></div>
+
+<!-- ===== MODALE NOUVELLE COMMANDE ===== -->
+<div class="overlay" id="overlay-commande">
+  <div class="modale">
+    <h3 id="titre-modale-commande">Nouvelle commande</h3>
+    <div class="msg-erreur-modale" id="erreur-commande"></div>
+    <form id="form-commande" onsubmit="return false;">
+      <input type="hidden" id="cmd-type">
+
+      <!-- Champs particulier -->
+      <div id="champs-particulier">
+        <div class="row2">
+          <div class="field"><label>Prénom</label><input type="text" id="cmd-prenom"></div>
+          <div class="field"><label>Nom</label><input type="text" id="cmd-nom" required></div>
+        </div>
+        <div class="field"><label>Téléphone</label><input type="tel" id="cmd-tel"></div>
+      </div>
+
+      <!-- Champs pro -->
+      <div id="champs-pro" style="display:none;">
+        <div class="field">
+          <label>Client professionnel</label>
+          <select id="cmd-client-pro"></select>
+        </div>
+      </div>
+
+      <div class="row2">
+        <div class="field"><label>Date de retrait</label><input type="date" id="cmd-date" required></div>
+        <div class="field"><label>Heure de retrait <span style="font-weight:400;color:var(--text-light);font-size:.75rem;">(optionnelle)</span></label><input type="time" id="cmd-heure" step="900"></div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Lieu de retrait</label>
+          <select id="cmd-lieu"><option value="">—</option></select>
+        </div>
+        <div class="field">
+          <label>Pris par</label>
+          <select id="cmd-pris-par"><option value="">—</option></select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Produits (depuis le catalogue)</label>
+        <div id="lignes-produits-ajoutees" style="margin-bottom:10px;"></div>
+        <div style="background:var(--surface2); border:1.5px dashed var(--border-strong); border-radius:var(--r); padding:10px;">
+          <div style="margin-bottom:8px;">
+            <select id="prod-recette" onchange="majOptionsFormatVariante()" style="width:100%; padding:9px 10px; border:1.5px solid var(--border-strong); border-radius:var(--r); font-size:.85rem; background:#fff;">
+              <option value="">Choisir un produit…</option>
+            </select>
+          </div>
+          <div style="margin-bottom:8px;">
+            <select id="prod-format-variante" style="width:100%; padding:9px 10px; border:1.5px solid var(--border-strong); border-radius:var(--r); font-size:.85rem; background:#fff; display:none;"></select>
+          </div>
+          <div style="display:flex; gap:6px; margin-bottom:8px;">
+            <input type="number" id="prod-quantite" min="1" placeholder="Quantité" style="flex:2; padding:9px 8px; border:1.5px solid var(--border-strong); border-radius:var(--r); font-family:var(--mono);">
+            <select id="prod-unite" style="flex:1; padding:9px 4px; border:1.5px solid var(--border-strong); border-radius:var(--r); font-size:.8rem; background:#fff;">
+              <option value="pieces">pces</option>
+              <option value="grammes">g</option>
+            </select>
+          </div>
+          <button type="button" class="btn btn-primary" style="width:100%; padding:10px;" onclick="ajouterLigneProduit()">+ Ajouter ce produit à la commande</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Contenu additionnel (texte libre, optionnel)</label>
+        <textarea id="cmd-contenu" placeholder="ex : demande spéciale du client…"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Statut</label>
+        <select id="cmd-statut">
+          <option value="todo">À faire valider</option>
+          <option value="pending">En attente</option>
+          <option value="validated">Validée</option>
+        </select>
+      </div>
+
+      <!-- Récurrence -->
+      <div class="field" style="background:var(--wheat-light);border:1.5px solid var(--wheat);border-radius:var(--r-lg);padding:12px 14px;margin-top:4px;">
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin-bottom:0;">
+          <input type="checkbox" id="cmd-recurrente" onchange="toggleRecurrence()" style="width:20px;height:20px;accent-color:var(--wheat);">
+          <span style="font-weight:700;color:var(--wheat);">🔁 Commande récurrente</span>
+        </label>
+        <div id="bloc-recurrence" style="display:none;margin-top:12px;">
+          <div class="field" style="margin-bottom:10px;">
+            <label>Fréquence</label>
+            <select id="cmd-freq" onchange="toggleJours()">
+              <option value="quotidien">Tous les jours (mar → sam)</option>
+              <option value="hebdo">1 fois par semaine</option>
+            </select>
+          </div>
+          <div id="bloc-jours-hebdo" style="display:none;">
+            <label style="font-size:.78rem;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:.04em;">Jour de la semaine</label>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">
+              <label class="jour-btn"><input type="radio" name="cmd-jour" value="2"> Mar</label>
+              <label class="jour-btn"><input type="radio" name="cmd-jour" value="3"> Mer</label>
+              <label class="jour-btn"><input type="radio" name="cmd-jour" value="4"> Jeu</label>
+              <label class="jour-btn"><input type="radio" name="cmd-jour" value="5"> Ven</label>
+              <label class="jour-btn"><input type="radio" name="cmd-jour" value="6"> Sam</label>
+            </div>
+          </div>
+          <div style="font-size:.78rem;color:var(--text-light);margin-top:8px;">
+            Les occurrences seront générées jusqu'à la fin du mois en cours.
+          </div>
+        </div>
+      </div>
+    </form>
+    <div class="modale-actions">
+      <button class="btn btn-ghost" onclick="fermerModaleCommande()">Annuler</button>
+      <button class="btn btn-primary" id="btn-confirmer-commande" onclick="confirmerCommande()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODALE CLIENT PRO ===== -->
+<div class="overlay" id="overlay-client-pro">
+  <div class="modale">
+    <h3>Ajouter un client professionnel</h3>
+    <div class="msg-erreur-modale" id="erreur-client-pro"></div>
+    <form id="form-client-pro" onsubmit="return false;">
+      <div class="field"><label>Raison sociale</label><input type="text" id="cp-raison-sociale" required placeholder="ex : Colibri Beaulieu"></div>
+      <div class="field"><label>Contact (nom)</label><input type="text" id="cp-nom"></div>
+      <div class="field"><label>Téléphone</label><input type="tel" id="cp-tel"></div>
+    </form>
+    <div class="modale-actions">
+      <button class="btn btn-ghost" onclick="fermerModaleClientPro()">Annuler</button>
+      <button class="btn btn-primary" onclick="confirmerClientPro()">Ajouter</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/supabase-client.js"></script>
+<script>
+let profilCourant = null;
+let lieuxRetrait = [];
+let clientsPro = [];
+let toutesRecettesCatalogue = [];
+let tousFormatsCatalogue = [];
+let toutesVariantesCatalogue = [];
+let lignesProduitsCourantes = []; // lignes en cours d'ajout pour la commande ouverte
+
+const labelsStatut = { todo: 'À faire valider', pending: 'En attente', validated: 'Validée' };
+const labelsMetierCatalogue = { B: 'Boulangerie', P: 'Pâtisserie', V: 'Viennoiserie', GV: 'Gâteaux de voyage', T: 'Traiteur' };
+const labelsFamilleCatalogue = {
+  baguettes: 'Baguettes', bles_levain: 'Blés au levain',
+  autres_cereales_levain: 'Autres céréales au levain', pains_sucres: 'Pains sucrés'
+};
+
+async function chargerCatalogueProduits() {
+  const { data: recs } = await sb.from('recettes').select('id, nom, metier, famille, poids_piece_g').eq('actif', true);
+  toutesRecettesCatalogue = recs || [];
+  const { data: fmts } = await sb.from('recette_formats').select('*').order('ordre');
+  tousFormatsCatalogue = fmts || [];
+  const { data: vars } = await sb.from('recette_variantes').select('*').order('ordre');
+  toutesVariantesCatalogue = vars || [];
+
+  // Groupe par métier puis famille pour l'affichage <optgroup>
+  const groupes = {};
+  toutesRecettesCatalogue.forEach(r => {
+    const cle = r.metier === 'B' && r.famille
+      ? `${labelsMetierCatalogue[r.metier]} — ${labelsFamilleCatalogue[r.famille] || r.famille}`
+      : labelsMetierCatalogue[r.metier] || r.metier;
+    (groupes[cle] = groupes[cle] || []).push(r);
+  });
+
+  const select = document.getElementById('prod-recette');
+  select.innerHTML = '<option value="">Choisir un produit…</option>' +
+    Object.entries(groupes).map(([groupe, recettes]) => `
+      <optgroup label="${groupe}">
+        ${recettes.sort((a, b) => a.nom.localeCompare(b.nom)).map(r => `<option value="${r.id}">${r.nom}</option>`).join('')}
+      </optgroup>
+    `).join('');
+}
+
+function majOptionsFormatVariante() {
+  const recetteId = document.getElementById('prod-recette').value;
+  const selectFV = document.getElementById('prod-format-variante');
+
+  const formats = tousFormatsCatalogue.filter(f => f.recette_id === recetteId);
+  const variantes = toutesVariantesCatalogue.filter(v => v.recette_id === recetteId);
+
+  if (formats.length > 0) {
+    selectFV.innerHTML = formats.map(f => {
+      const labelAffiche = f.poids_cuit_g ? `${Math.round(f.poids_cuit_g)}g` : f.label;
+      return `<option value="format:${f.id}">${labelAffiche}</option>`;
+    }).join('');
+    selectFV.style.display = '';
+  } else if (variantes.length > 0) {
+    selectFV.innerHTML = `<option value="">Nature</option>` + variantes.map(v => `<option value="variante:${v.id}">${v.nom}</option>`).join('');
+    selectFV.style.display = '';
+  } else {
+    selectFV.innerHTML = '';
+    selectFV.style.display = 'none';
+  }
+}
+
+function ajouterLigneProduit() {
+  const recetteId = document.getElementById('prod-recette').value;
+  const fvValeur = document.getElementById('prod-format-variante').value;
+  const quantite = parseFloat(document.getElementById('prod-quantite').value);
+  const unite = document.getElementById('prod-unite').value;
+
+  if (!recetteId) { alert('Choisissez un produit.'); return; }
+  if (!quantite || quantite <= 0) { alert('Renseignez une quantité valide.'); return; }
+
+  let formatId = null, varianteId = null;
+  if (fvValeur.startsWith('format:')) formatId = fvValeur.replace('format:', '');
+  else if (fvValeur.startsWith('variante:')) varianteId = fvValeur.replace('variante:', '');
+
+  const qtePieces = unite === 'pieces' ? quantite : null;
+  const qteG = unite === 'grammes' ? quantite : null;
+
+  lignesProduitsCourantes.push({
+    recette_id: recetteId, format_id: formatId, variante_id: varianteId,
+    quantite: qtePieces, quantite_g: qteG,
+    libelle: construireLibelleLigne(recetteId, formatId, varianteId, qtePieces, qteG)
+  });
+
+  document.getElementById('prod-recette').value = '';
+  document.getElementById('prod-format-variante').innerHTML = '';
+  document.getElementById('prod-format-variante').style.display = 'none';
+  document.getElementById('prod-quantite').value = '';
+
+  renderLignesProduitsAjoutees();
+}
+
+function supprimerLigneProduit(index) {
+  lignesProduitsCourantes.splice(index, 1);
+  renderLignesProduitsAjoutees();
+}
+
+function renderLignesProduitsAjoutees() {
+  const zone = document.getElementById('lignes-produits-ajoutees');
+  if (lignesProduitsCourantes.length === 0) { zone.innerHTML = ''; return; }
+  zone.innerHTML = lignesProduitsCourantes.map((l, i) => `
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 10px; background:var(--surface2); border-radius:var(--r); margin-bottom:4px; font-size:.85rem;">
+      <span>${l.libelle}</span>
+      <button type="button" class="btn-icon" onclick="supprimerLigneProduit(${i})" style="width:26px;height:26px;">✕</button>
+    </div>
+  `).join('');
+}
+
+function classeLieuPill(nomLieu) {
+  if (nomLieu === 'Marché') return 'lieu-marche';
+  if (nomLieu === 'Livraison') return 'lieu-livraison';
+  return 'lieu-boutique';
+}
+
+function dateAujourdhui() {
+  const d = new Date();
+  return d.toISOString().slice(0, 10);
+}
+
+function changerTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+  if (tab === 'pro') chargerCommandesJourPro();
+  if (tab === 'particuliers') chargerCommandesJour();
+  if (tab === 'synthese') chargerSynthese();
+}
+
+function changerJourSynthese(delta) {
+  const input = document.getElementById('date-jour-synthese');
+  const d = new Date(input.value);
+  d.setDate(d.getDate() + delta);
+  input.value = d.toISOString().slice(0, 10);
+  chargerSynthese();
+}
+
+async function chargerSynthese() {
+  const date = document.getElementById('date-jour-synthese').value;
+
+  const { data: commandesJour, error } = await sb
+    .from('vue_commandes_jour')
+    .select('*')
+    .eq('date_retrait', date);
+
+  if (error) {
+    document.getElementById('synth-liste-particuliers').innerHTML = `<div class="vide">Erreur : ${error.message}</div>`;
+    return;
+  }
+
+  // Tri par heure de retrait croissante — sans heure en bas
+  const trierParHeure = (arr) => [...arr].sort((a, b) => {
+    if (!a.heure_retrait && !b.heure_retrait) return 0;
+    if (!a.heure_retrait) return 1;
+    if (!b.heure_retrait) return -1;
+    return a.heure_retrait.localeCompare(b.heure_retrait);
+  });
+
+  const particuliers = trierParHeure((commandesJour || []).filter(c => !c.is_pro));
+  const pros = trierParHeure((commandesJour || []).filter(c => c.is_pro));
+
+  const lignesParCommande = await chargerLignesPourCommandes((commandesJour || []).map(c => c.id));
+  let totalPieces = 0;
+  Object.values(lignesParCommande).forEach(lignes => {
+    lignes.forEach(l => {
+      const match = l.match(/^([\d.,]+)\s*pces/);
+      if (match) totalPieces += parseFloat(match[1].replace(',', '.'));
+    });
+  });
+
+  const nbCollecteParticuliers = particuliers.filter(c => c.collectee).length;
+  const nbCollectePro = pros.filter(c => c.collectee).length;
+
+  document.getElementById('synth-nb-particuliers').textContent = particuliers.length;
+  document.getElementById('synth-collecte-particuliers').textContent = `${nbCollecteParticuliers} remise${nbCollecteParticuliers > 1 ? 's' : ''}`;
+  document.getElementById('synth-nb-pro').textContent = pros.length;
+  document.getElementById('synth-collecte-pro').textContent = `${nbCollectePro} remise${nbCollectePro > 1 ? 's' : ''}`;
+  document.getElementById('synth-total-pieces').textContent = totalPieces > 0 ? Math.round(totalPieces) : '—';
+
+  const renderLigne = (c, nomAffiche) => {
+    const heure = c.heure_retrait ? c.heure_retrait.slice(0, 5) : null;
+    const prisPar = c.pris_par_nom || null;
+    const meta = [c.lieu_retrait || '—', heure ? `⏰ ${heure}` : null, prisPar ? `📋 ${prisPar}` : null].filter(Boolean).join(' · ');
+    return `<div class="synth-client-row" onclick="ouvrirModaleEditionCommande('${c.id}')">
+      <div>
+        <div class="synth-client-nom">${nomAffiche}</div>
+        <div class="synth-client-meta">${meta}</div>
+      </div>
+      <span class="statut-pill statut-${c.statut}" style="margin:0;">${c.collectee ? '✓ Remis' : 'À remettre'}</span>
+    </div>`;
+  };
+
+  document.getElementById('synth-liste-particuliers').innerHTML = particuliers.length === 0
+    ? '<div class="vide">Aucune commande particulier ce jour.</div>'
+    : particuliers.map(c => renderLigne(c, `${c.prenom || ''} ${c.nom}`.trim())).join('');
+
+  document.getElementById('synth-liste-pro').innerHTML = pros.length === 0
+    ? '<div class="vide">Aucune commande pro ce jour.</div>'
+    : pros.map(c => renderLigne(c, c.raison_sociale)).join('');
+
+  // Vérifier si on approche de la fin du mois pour les récurrences
+  await verifierBanniereReconduction();
+}
+
+function changerJour(delta) {
+  const inputActif = document.getElementById('panel-pro').classList.contains('active') ? 'date-jour-pro' : 'date-jour';
+  const input = document.getElementById(inputActif);
+  const d = new Date(input.value);
+  d.setDate(d.getDate() + delta);
+  input.value = d.toISOString().slice(0, 10);
+  if (inputActif === 'date-jour-pro') chargerCommandesJourPro();
+  else chargerCommandesJour();
+}
+
+async function chargerLieux() {
+  const { data, error } = await sb.from('lieux_retrait').select('*').eq('actif', true);
+  if (!error) {
+    lieuxRetrait = data;
+    const select = document.getElementById('cmd-lieu');
+    select.innerHTML = '<option value="">—</option>' + data.map(l => `<option value="${l.id}">${l.nom}</option>`).join('');
+
+    const optionsLieux = '<option value="">Tous les points de retrait</option>' + data.map(l => `<option value="${l.id}">${l.nom}</option>`).join('');
+    const selectImpPart = document.getElementById('filtre-lieu-impression-part');
+    const selectImpPro = document.getElementById('filtre-lieu-impression-pro');
+    if (selectImpPart) selectImpPart.innerHTML = optionsLieux;
+    if (selectImpPro) selectImpPro.innerHTML = optionsLieux;
+  }
+}
+
+async function chargerEquipe() {
+  const { data } = await sb.from('profils').select('id, prenom, nom').eq('actif', true).order('prenom');
+  const sel = document.getElementById('cmd-pris-par');
+  sel.innerHTML = '<option value="">—</option>' + (data||[]).map(p =>
+    `<option value="${p.id}">${p.prenom || ''} ${p.nom}`.trim() + `</option>`
+  ).join('');
+  // Pré-sélectionner l'utilisateur connecté
+  if (profilCourant?.id) sel.value = profilCourant.id;
+}
+
+async function imprimerCommandes(type) {
+  const date = type === 'pro' ? document.getElementById('date-jour-pro').value : document.getElementById('date-jour').value;
+  const lieuFiltre = type === 'pro'
+    ? document.getElementById('filtre-lieu-impression-pro').value
+    : document.getElementById('filtre-lieu-impression-part').value;
+
+  let requete = sb.from('vue_commandes_jour').select('*').eq('date_retrait', date).eq('is_pro', type === 'pro');
+  const { data, error } = await requete;
+  if (error) { alert('Erreur : ' + error.message); return; }
+
+  let commandes = data || [];
+  if (lieuFiltre) {
+    const nomLieu = lieuxRetrait.find(l => l.id === lieuFiltre)?.nom;
+    commandes = commandes.filter(c => c.lieu_retrait === nomLieu);
+  }
+
+  if (commandes.length === 0) { alert('Aucune commande à imprimer pour ce filtre.'); return; }
+
+  const lignesParCommande = await chargerLignesPourCommandes(commandes.map(c => c.id));
+
+  // Groupe par lieu de retrait pour une lecture plus pratique en boutique
+  const parLieu = {};
+  commandes.forEach(c => {
+    const cle = c.lieu_retrait || 'Non précisé';
+    (parLieu[cle] = parLieu[cle] || []).push(c);
+  });
+
+  const dateAffichee = new Date(date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+  const titreFiltre = lieuFiltre ? ` — ${lieuxRetrait.find(l => l.id === lieuFiltre)?.nom}` : '';
+
+  let html = `<div class="pi-titre">Commandes ${type === 'pro' ? 'professionnelles' : 'particuliers'} — ${dateAffichee}${titreFiltre}</div>`;
+
+  Object.entries(parLieu).forEach(([lieu, liste]) => {
+    html += `<div class="pi-groupe-titre">${lieu}</div>`;
+    liste.forEach(c => {
+      const nomAffiche = type === 'pro' ? c.raison_sociale : `${c.prenom || ''} ${c.nom}`;
+      const lignes = lignesParCommande[c.id] || [];
+      html += `
+        <div class="pi-commande">
+          <div class="pi-nom">${nomAffiche} <span class="pi-statut">[${labelsStatut[c.statut] || c.statut}]</span></div>
+          ${lignes.length > 0 ? `<ul class="pi-lignes">${lignes.map(l => `<li>${l}</li>`).join('')}</ul>` : ''}
+          ${c.contenu ? `<div class="pi-lignes" style="font-style:italic;">${c.contenu}</div>` : ''}
+        </div>`;
+    });
+  });
+
+  document.getElementById('zone-impression-commandes').innerHTML = html;
+  window.print();
+}
+
+async function chargerClientsPro() {
+  const { data, error } = await sb.from('clients').select('*').eq('is_pro', true).order('raison_sociale');
+  if (!error) {
+    clientsPro = data;
+    document.getElementById('cmd-client-pro').innerHTML = data.map(c => `<option value="${c.id}">${c.raison_sociale}</option>`).join('');
+    document.getElementById('liste-clients-pro').innerHTML = data.length
+      ? data.map(c => `
+          <div class="client-pro-item">
+            <span class="client-pro-nom">${c.raison_sociale}</span>
+            <button class="btn-icon" title="Supprimer" onclick="supprimerClientPro('${c.id}')">🗑️</button>
+          </div>`).join('')
+      : '<div class="vide">Aucun client pro enregistré.</div>';
+  }
+}
+
+async function chargerLignesPourCommandes(commandeIds) {
+  if (commandeIds.length === 0) return {};
+  const { data } = await sb
+    .from('commande_lignes')
+    .select('commande_id, quantite, quantite_g, recette_id, format_id, variante_id, recettes(nom), recette_formats(label, poids_cuit_g), recette_variantes(nom)')
+    .in('commande_id', commandeIds);
+
+  const parCommande = {};
+  (data || []).forEach(l => {
+    if (!parCommande[l.commande_id]) parCommande[l.commande_id] = [];
+    let libelle = l.recettes?.nom || '?';
+    if (l.recette_formats) {
+      const poids = l.recette_formats.poids_cuit_g ? Math.round(l.recette_formats.poids_cuit_g) + 'g' : l.recette_formats.label;
+      libelle += ` (${poids})`;
+    } else if (l.recette_variantes) {
+      libelle += ` (${l.recette_variantes.nom})`;
+    }
+    const qte = l.quantite ? `${l.quantite} pces` : `${l.quantite_g} g`;
+    parCommande[l.commande_id].push(`${qte} — ${libelle}`);
+  });
+  return parCommande;
+}
+
+function formatDetailCommande(c, lignesParCommande) {
+  const lignes = lignesParCommande[c.id] || [];
+  let html = '';
+  if (lignes.length > 0) {
+    html += `<ul style="margin:4px 0 0 0; padding-left:18px; font-size:.85rem;">${lignes.map(l => `<li>${l}</li>`).join('')}</ul>`;
+  }
+  if (c.contenu) {
+    html += `<div class="commande-contenu" style="${lignes.length > 0 ? 'margin-top:4px; font-style:italic;' : ''}">${c.contenu}</div>`;
+  }
+  if (lignes.length === 0 && !c.contenu) {
+    html = `<div class="commande-contenu" style="opacity:.5;">Aucun produit renseigné</div>`;
+  }
+  return html;
+}
+
+async function chargerCommandesJour() {
+  const date = document.getElementById('date-jour').value;
+  const { data, error } = await sb
+    .from('vue_commandes_jour')
+    .select('*')
+    .eq('date_retrait', date)
+    .eq('is_pro', false)
+    .order('nom');
+
+  const conteneur = document.getElementById('liste-commandes-particuliers');
+  if (error) { conteneur.innerHTML = `<div class="vide">Erreur : ${error.message}</div>`; return; }
+  if (!data || data.length === 0) { conteneur.innerHTML = '<div class="vide">Aucune commande pour ce jour.</div>'; return; }
+
+  const lignesParCommande = await chargerLignesPourCommandes(data.map(c => c.id));
+
+  conteneur.innerHTML = data.map(c => `
+    <div class="commande-card">
+      <div>
+        <div class="commande-nom">${c.prenom || ''} ${c.nom}</div>
+        <div class="commande-meta">${c.telephone || ''}</div>
+        <div style="margin-top:6px;">
+          ${c.lieu_retrait ? `<span class="lieu-pill ${classeLieuPill(c.lieu_retrait)}">${c.lieu_retrait}</span>` : ''}
+          <span class="statut-pill statut-${c.statut}">${labelsStatut[c.statut] || c.statut}</span>
+        </div>
+        ${formatDetailCommande(c, lignesParCommande)}
+        <button class="btn-remise ${c.collectee ? 'remis' : ''}" onclick="basculerRemise('${c.id}', ${!c.collectee})">
+          ${c.collectee ? '✓ Remise au client' : 'Marquer comme remise'}
+        </button>
+      </div>
+      <div class="commande-actions">
+        <button class="btn-icon" title="Modifier" onclick="ouvrirModaleEditionCommande('${c.id}')">✏️</button>
+        <button class="btn-icon" title="Supprimer" onclick="supprimerCommande('${c.id}')">🗑️</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function chargerCommandesJourPro() {
+  const date = document.getElementById('date-jour-pro').value;
+  const { data, error } = await sb
+    .from('vue_commandes_jour')
+    .select('*')
+    .eq('date_retrait', date)
+    .eq('is_pro', true)
+    .order('raison_sociale');
+
+  const conteneur = document.getElementById('liste-commandes-pro');
+  if (error) { conteneur.innerHTML = `<div class="vide">Erreur : ${error.message}</div>`; return; }
+  if (!data || data.length === 0) { conteneur.innerHTML = '<div class="vide">Aucune commande pro pour ce jour.</div>'; return; }
+
+  const lignesParCommande = await chargerLignesPourCommandes(data.map(c => c.id));
+
+  conteneur.innerHTML = data.map(c => `
+    <div class="commande-card">
+      <div>
+        <div class="commande-nom">${c.raison_sociale}</div>
+        <div style="margin-top:6px;">
+          ${c.lieu_retrait ? `<span class="lieu-pill ${classeLieuPill(c.lieu_retrait)}">${c.lieu_retrait}</span>` : ''}
+          <span class="statut-pill statut-${c.statut}">${labelsStatut[c.statut] || c.statut}</span>
+        </div>
+        ${formatDetailCommande(c, lignesParCommande)}
+        <button class="btn-remise ${c.collectee ? 'remis' : ''}" onclick="basculerRemise('${c.id}', ${!c.collectee})">
+          ${c.collectee ? '✓ Remise au client' : 'Marquer comme remise'}
+        </button>
+        <div>
+          ${c.bon_commande_path
+            ? `<a class="pdf-link" href="#" onclick="ouvrirBonCommande('${c.bon_commande_path}'); return false;">📄 Voir le bon de commande</a>`
+            : `<div class="upload-pdf-zone"><input type="file" accept="application/pdf" onchange="uploaderBonCommande('${c.id}', this.files[0])"></div>`
+          }
+        </div>
+      </div>
+      <div class="commande-actions">
+        <button class="btn-icon" title="Modifier" onclick="ouvrirModaleEditionCommande('${c.id}')">✏️</button>
+        <button class="btn-icon" title="Supprimer" onclick="supprimerCommande('${c.id}')">🗑️</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+let typeCommandeCourant = 'particulier';
+let commandeEnEditionId = null;
+let commandeEnEditionClientId = null;
+
+function construireLibelleLigne(recetteId, formatId, varianteId, quantite, quantiteG) {
+  const recette = toutesRecettesCatalogue.find(r => r.id === recetteId);
+  let labelFV = '';
+  if (formatId) {
+    const f = tousFormatsCatalogue.find(f => f.id === formatId);
+    labelFV = ' — ' + (f?.poids_cuit_g ? `${Math.round(f.poids_cuit_g)}g` : f?.label);
+  } else if (varianteId) {
+    labelFV = ' — ' + (toutesVariantesCatalogue.find(v => v.id === varianteId)?.nom || '');
+  }
+  const qte = quantite ? `${quantite} pces` : `${quantiteG} g`;
+  return `${recette?.nom || '?'}${labelFV} — ${qte}`;
+}
+
+async function ouvrirModaleEditionCommande(commandeId) {
+  const { data: cmd, error } = await sb
+    .from('commandes')
+    .select('*, clients(*)')
+    .eq('id', commandeId)
+    .single();
+  if (error) { alert('Erreur : ' + error.message); return; }
+
+  const estPro = cmd.clients?.is_pro || false;
+  typeCommandeCourant = estPro ? 'pro' : 'particulier';
+  commandeEnEditionId = commandeId;
+  commandeEnEditionClientId = cmd.client_id;
+
+  document.getElementById('erreur-commande').classList.remove('visible');
+  document.getElementById('champs-particulier').style.display = estPro ? 'none' : '';
+  document.getElementById('champs-pro').style.display = estPro ? '' : 'none';
+  document.getElementById('titre-modale-commande').textContent = 'Modifier la commande';
+
+  if (estPro) {
+    document.getElementById('cmd-client-pro').value = cmd.client_id;
+  } else {
+    document.getElementById('cmd-nom').value = cmd.clients?.nom || '';
+    document.getElementById('cmd-prenom').value = cmd.clients?.prenom || '';
+    document.getElementById('cmd-tel').value = cmd.clients?.telephone || '';
+  }
+
+  document.getElementById('cmd-date').value = cmd.date_retrait;
+  document.getElementById('cmd-heure').value = cmd.heure_retrait ? cmd.heure_retrait.slice(0,5) : '';
+  document.getElementById('cmd-lieu').value = cmd.lieu_retrait_id || '';
+  document.getElementById('cmd-pris-par').value = cmd.pris_par || profilCourant?.id || '';
+  document.getElementById('cmd-contenu').value = cmd.contenu || '';
+  document.getElementById('cmd-statut').value = cmd.statut;
+
+  const { data: lignesRaw } = await sb.from('commande_lignes').select('*').eq('commande_id', commandeId);
+  lignesProduitsCourantes = (lignesRaw || []).map(l => ({
+    recette_id: l.recette_id, format_id: l.format_id, variante_id: l.variante_id,
+    quantite: l.quantite, quantite_g: l.quantite_g,
+    libelle: construireLibelleLigne(l.recette_id, l.format_id, l.variante_id, l.quantite, l.quantite_g)
+  }));
+  renderLignesProduitsAjoutees();
+
+  document.getElementById('prod-format-variante').style.display = 'none';
+  document.getElementById('btn-confirmer-commande').textContent = 'Enregistrer les modifications';
+  document.getElementById('overlay-commande').classList.add('visible');
+}
+
+// ─── RÉCURRENCE ───────────────────────────────────────────────────────────────
+
+function toggleRecurrence() {
+  const actif = document.getElementById('cmd-recurrente').checked;
+  document.getElementById('bloc-recurrence').style.display = actif ? '' : 'none';
+}
+
+function toggleJours() {
+  const freq = document.getElementById('cmd-freq').value;
+  document.getElementById('bloc-jours-hebdo').style.display = freq === 'hebdo' ? '' : 'none';
+}
+
+async function verifierBanniereReconduction() {
+  // Afficher la bannière si on est dans les 3 derniers jours du mois
+  const maintenant = new Date();
+  const finMois = new Date(maintenant.getFullYear(), maintenant.getMonth() + 1, 0);
+  const joursRestants = finMois.getDate() - maintenant.getDate();
+  if (joursRestants > 3) return;
+
+  const { count } = await sb.from('commandes_recurrentes').select('id', { count: 'exact', head: true }).eq('actif', true);
+  if (!count || count === 0) return;
+
+  document.getElementById('banniere-reconduction-sous').textContent =
+    `${count} commande${count > 1 ? 's' : ''} récurrente${count > 1 ? 's' : ''} — fin du mois dans ${joursRestants} jour${joursRestants > 1 ? 's' : ''}`;
+  document.getElementById('banniere-reconduction').style.display = 'flex';
+}
+
+async function reconduireMoisSuivant() {
+  const btn = document.querySelector('.btn-reconduire');
+  btn.textContent = 'En cours…';
+  btn.disabled = true;
+  const { data, error } = await sb.rpc('reconduire_recurrences_mois_suivant');
+  if (error) { alert('Erreur : ' + error.message); btn.textContent = 'Reconduire →'; btn.disabled = false; return; }
+  document.getElementById('banniere-reconduction').style.display = 'none';
+  alert(`✅ ${data} commande${data > 1 ? 's' : ''} générée${data > 1 ? 's' : ''} pour le mois prochain.`);
+}
+
+async function creerRecurrence(clientId, lieuId, heureRetrait, prisParId, contenu, lignesProduits) {
+  const freq = document.getElementById('cmd-freq').value;
+  let jours;
+  if (freq === 'quotidien') {
+    jours = [2, 3, 4, 5, 6]; // mar à sam
+  } else {
+    const jourSelectionne = document.querySelector('input[name="cmd-jour"]:checked')?.value;
+    if (!jourSelectionne) { alert('Sélectionnez le jour de la semaine pour la récurrence.'); return null; }
+    jours = [parseInt(jourSelectionne)];
+  }
+
+  // Créer le modèle de récurrence
+  const { data: rec, error: errRec } = await sb.from('commandes_recurrentes').insert({
+    client_id: clientId, lieu_retrait_id: lieuId, heure_retrait: heureRetrait,
+    pris_par: prisParId, contenu, frequence: freq, jours_semaine: jours
+  }).select().single();
+  if (errRec) throw errRec;
+
+  // Enregistrer les lignes produits du modèle
+  if (lignesProduits.length > 0) {
+    const lignesRec = lignesProduits.map(l => ({
+      recurrence_id: rec.id, recette_id: l.recette_id,
+      format_id: l.format_id || null, variante_id: l.variante_id || null,
+      quantite: l.quantite || null, quantite_g: l.quantite_g || null
+    }));
+    const { error: errLignes } = await sb.from('commande_recurrente_lignes').insert(lignesRec);
+    if (errLignes) throw errLignes;
+  }
+
+  // Générer les occurrences jusqu'à fin du mois
+  const { data: nbCreees, error: errGen } = await sb.rpc('generer_occurrences_recurrentes', {
+    p_recurrence_id: rec.id
+  });
+  if (errGen) throw errGen;
+
+  return { recurrence: rec, nbCreees };
+}
+
+function ouvrirModaleCommande(type) {
+  typeCommandeCourant = type;
+  commandeEnEditionId = null;
+  commandeEnEditionClientId = null;
+  document.getElementById('erreur-commande').classList.remove('visible');
+  document.getElementById('form-commande').reset();
+  document.getElementById('cmd-date').value = document.getElementById('date-jour').value || dateAujourdhui();
+  document.getElementById('cmd-heure').value = '';
+  document.getElementById('cmd-pris-par').value = profilCourant?.id || '';
+  document.getElementById('cmd-recurrente').checked = false;
+  document.getElementById('bloc-recurrence').style.display = 'none';
+  document.getElementById('bloc-jours-hebdo').style.display = 'none';
+  document.getElementById('champs-particulier').style.display = type === 'particulier' ? '' : 'none';
+  document.getElementById('champs-pro').style.display = type === 'pro' ? '' : 'none';
+  document.getElementById('titre-modale-commande').textContent = type === 'pro' ? 'Nouvelle commande pro' : 'Nouvelle commande';
+  document.getElementById('btn-confirmer-commande').textContent = 'Enregistrer';
+  lignesProduitsCourantes = [];
+  renderLignesProduitsAjoutees();
+  document.getElementById('prod-format-variante').style.display = 'none';
+  document.getElementById('overlay-commande').classList.add('visible');
+}
+function fermerModaleCommande() {
+  document.getElementById('overlay-commande').classList.remove('visible');
+  commandeEnEditionId = null;
+  commandeEnEditionClientId = null;
+}
+
+async function confirmerCommande() {
+  const erreur = document.getElementById('erreur-commande');
+  const btn = document.getElementById('btn-confirmer-commande');
+  erreur.classList.remove('visible');
+
+  const dateRetrait = document.getElementById('cmd-date').value;
+  const lieuId = document.getElementById('cmd-lieu').value || null;
+  const contenu = document.getElementById('cmd-contenu').value.trim();
+  const statut = document.getElementById('cmd-statut').value;
+
+  if (!dateRetrait) {
+    erreur.textContent = 'La date de retrait est obligatoire.';
+    erreur.classList.add('visible');
+    return;
+  }
+
+  btn.disabled = true; btn.textContent = commandeEnEditionId ? 'Enregistrement…' : 'Enregistrement…';
+
+  try {
+    let clientId;
+
+    if (typeCommandeCourant === 'pro') {
+      clientId = document.getElementById('cmd-client-pro').value;
+      if (!clientId) throw new Error('Sélectionnez un client professionnel.');
+    } else {
+      const nom = document.getElementById('cmd-nom').value.trim();
+      const prenom = document.getElementById('cmd-prenom').value.trim();
+      const tel = document.getElementById('cmd-tel').value.trim();
+      if (!nom) throw new Error('Le nom du client est obligatoire.');
+
+      if (commandeEnEditionId && commandeEnEditionClientId) {
+        // Modification : on met à jour la fiche client existante plutôt
+        // que d'en créer une nouvelle à chaque édition.
+        const { error: errMajClient } = await sb.from('clients')
+          .update({ nom, prenom, telephone: tel })
+          .eq('id', commandeEnEditionClientId);
+        if (errMajClient) throw errMajClient;
+        clientId = commandeEnEditionClientId;
+      } else {
+        const { data: client, error: errClient } = await sb
+          .from('clients')
+          .insert({ nom, prenom, telephone: tel, is_pro: false })
+          .select()
+          .single();
+        if (errClient) throw errClient;
+        clientId = client.id;
+      }
+    }
+
+    const heureRetrait = document.getElementById('cmd-heure').value || null;
+    const prisParId = document.getElementById('cmd-pris-par').value || null;
+
+    let commandeId;
+
+    if (commandeEnEditionId) {
+      const { error: errMaj } = await sb.from('commandes').update({
+        client_id: clientId, date_retrait: dateRetrait, contenu, statut,
+        lieu_retrait_id: lieuId, heure_retrait: heureRetrait, pris_par: prisParId
+      }).eq('id', commandeEnEditionId);
+      if (errMaj) throw errMaj;
+      commandeId = commandeEnEditionId;
+
+      // Remplace entièrement les lignes produits par la liste actuelle
+      // (plus simple et plus sûr qu'un diff ligne par ligne).
+      const { error: errSuppr } = await sb.from('commande_lignes').delete().eq('commande_id', commandeId);
+      if (errSuppr) throw errSuppr;
+    } else {
+      const { data: nouvelleCommande, error: errCmd } = await sb.from('commandes').insert({
+        client_id: clientId, date_retrait: dateRetrait, contenu, statut,
+        lieu_retrait_id: lieuId, heure_retrait: heureRetrait, pris_par: prisParId
+      }).select().single();
+      if (errCmd) throw errCmd;
+      commandeId = nouvelleCommande.id;
+    }
+
+    if (lignesProduitsCourantes.length > 0) {
+      const lignesAInserer = lignesProduitsCourantes.map(l => ({
+        commande_id: commandeId,
+        recette_id: l.recette_id,
+        format_id: l.format_id,
+        variante_id: l.variante_id,
+        quantite: l.quantite,
+        quantite_g: l.quantite_g
+      }));
+      const { error: errLignes } = await sb.from('commande_lignes').insert(lignesAInserer);
+      if (errLignes) throw errLignes;
+    }
+
+    // Si récurrence cochée et nouvelle commande (pas une édition)
+    if (!commandeEnEditionId && document.getElementById('cmd-recurrente').checked) {
+      const result = await creerRecurrence(
+        clientId, lieuId, heureRetrait, prisParId, contenu, lignesProduitsCourantes
+      );
+      if (result) {
+        fermerModaleCommande();
+        if (typeCommandeCourant === 'pro') await chargerCommandesJourPro();
+        else await chargerCommandesJour();
+        await chargerSynthese();
+        alert(`✅ Récurrence créée — ${result.nbCreees} commande${result.nbCreees > 1 ? 's' : ''} générée${result.nbCreees > 1 ? 's' : ''} jusqu'à fin du mois.`);
+        return;
+      }
+      return; // creerRecurrence a affiché l'erreur
+    }
+
+    fermerModaleCommande();
+    if (typeCommandeCourant === 'pro') await chargerCommandesJourPro();
+    else await chargerCommandesJour();
+
+  } catch (err) {
+    erreur.textContent = err.message || 'Erreur lors de l\'enregistrement.';
+    erreur.classList.add('visible');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Enregistrer';
+  }
+}
+
+async function supprimerCommande(id) {
+  if (!confirm('Supprimer cette commande ?')) return;
+  const { error } = await sb.from('commandes').delete().eq('id', id);
+  if (error) { alert('Erreur : ' + error.message); return; }
+  await chargerCommandesJour();
+  await chargerCommandesJourPro();
+}
+
+async function basculerRemise(id, nouvelleValeur) {
+  const champs = nouvelleValeur
+    ? { collectee: true, remise_le: new Date().toISOString() }
+    : { collectee: false, remise_le: null };
+
+  const { error } = await sb.from('commandes').update(champs).eq('id', id);
+  if (error) { alert('Erreur : ' + error.message); return; }
+  await chargerCommandesJour();
+  await chargerCommandesJourPro();
+}
+
+async function uploaderBonCommande(commandeId, fichier) {
+  if (!fichier) return;
+  if (fichier.type !== 'application/pdf') { alert('Seuls les fichiers PDF sont acceptés.'); return; }
+  if (fichier.size > 10 * 1024 * 1024) { alert('Fichier trop volumineux (max 10 Mo).'); return; }
+
+  const chemin = `${commandeId}/${Date.now()}-${fichier.name}`;
+
+  const { error: errUpload } = await sb.storage.from('bons-commande').upload(chemin, fichier, {
+    cacheControl: '3600', upsert: false
+  });
+  if (errUpload) { alert('Erreur upload : ' + errUpload.message); return; }
+
+  const { error: errMaj } = await sb.from('commandes').update({ bon_commande_path: chemin }).eq('id', commandeId);
+  if (errMaj) { alert('Erreur enregistrement : ' + errMaj.message); return; }
+
+  await chargerCommandesJourPro();
+}
+
+async function ouvrirBonCommande(chemin) {
+  const { data, error } = await sb.storage.from('bons-commande').createSignedUrl(chemin, 60);
+  if (error) { alert('Erreur : ' + error.message); return; }
+  window.open(data.signedUrl, '_blank');
+}
+
+function ouvrirModaleClientPro() {
+  document.getElementById('erreur-client-pro').classList.remove('visible');
+  document.getElementById('form-client-pro').reset();
+  document.getElementById('overlay-client-pro').classList.add('visible');
+}
+function fermerModaleClientPro() {
+  document.getElementById('overlay-client-pro').classList.remove('visible');
+}
+
+async function confirmerClientPro() {
+  const raisonSociale = document.getElementById('cp-raison-sociale').value.trim();
+  const nom = document.getElementById('cp-nom').value.trim();
+  const tel = document.getElementById('cp-tel').value.trim();
+  const erreur = document.getElementById('erreur-client-pro');
+
+  if (!raisonSociale) {
+    erreur.textContent = 'La raison sociale est obligatoire.';
+    erreur.classList.add('visible');
+    return;
+  }
+
+  const { error } = await sb.from('clients').insert({
+    raison_sociale: raisonSociale, nom, telephone: tel, is_pro: true
+  });
+  if (error) { erreur.textContent = error.message; erreur.classList.add('visible'); return; }
+
+  fermerModaleClientPro();
+  await chargerClientsPro();
+}
+
+async function supprimerClientPro(id) {
+  if (!confirm('Supprimer ce client professionnel ? Ses commandes passées resteront visibles.')) return;
+  const { error } = await sb.from('clients').delete().eq('id', id);
+  if (error) { alert('Erreur : ' + error.message); return; }
+  await chargerClientsPro();
+}
+
+(async () => {
+  profilCourant = await exigerConnexion();
+  if (!profilCourant) return;
+
+  const aujourdhui = dateAujourdhui();
+  document.getElementById('date-jour').value = aujourdhui;
+  document.getElementById('date-jour-pro').value = aujourdhui;
+  document.getElementById('date-jour-synthese').value = aujourdhui;
+
+  await chargerLieux();
+  await chargerEquipe();
+  await chargerClientsPro();
+  await chargerCatalogueProduits();
+  await chargerSynthese();
+})();
+</script>
+</body>
+</html>
