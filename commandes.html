@@ -496,7 +496,7 @@ async function chargerSynthese() {
 
   const { data: commandesJour, error } = await sb
     .from('vue_commandes_jour')
-    .select('*, heure_retrait, pris_par, profils!pris_par(prenom, nom)')
+    .select('*')
     .eq('date_retrait', date);
 
   if (error) {
@@ -505,7 +505,7 @@ async function chargerSynthese() {
   }
 
   // Tri par heure de retrait croissante — sans heure en bas
-  const trierParHeure = (arr) => arr.sort((a, b) => {
+  const trierParHeure = (arr) => [...arr].sort((a, b) => {
     if (!a.heure_retrait && !b.heure_retrait) return 0;
     if (!a.heure_retrait) return 1;
     if (!b.heure_retrait) return -1;
@@ -534,8 +534,8 @@ async function chargerSynthese() {
   document.getElementById('synth-total-pieces').textContent = totalPieces > 0 ? Math.round(totalPieces) : '—';
 
   const renderLigne = (c, nomAffiche) => {
-    const heure = c.heure_retrait ? c.heure_retrait.slice(0,5) : null;
-    const prisPar = c.profils ? `${c.profils.prenom || ''} ${c.profils.nom}`.trim() : null;
+    const heure = c.heure_retrait ? c.heure_retrait.slice(0, 5) : null;
+    const prisPar = c.pris_par_nom || null;
     const meta = [c.lieu_retrait || '—', heure ? `⏰ ${heure}` : null, prisPar ? `📋 ${prisPar}` : null].filter(Boolean).join(' · ');
     return `<div class="synth-client-row" onclick="ouvrirModaleEditionCommande('${c.id}')">
       <div>
@@ -546,13 +546,11 @@ async function chargerSynthese() {
     </div>`;
   };
 
-  const conteneurPart = document.getElementById('synth-liste-particuliers');
-  conteneurPart.innerHTML = particuliers.length === 0
+  document.getElementById('synth-liste-particuliers').innerHTML = particuliers.length === 0
     ? '<div class="vide">Aucune commande particulier ce jour.</div>'
     : particuliers.map(c => renderLigne(c, `${c.prenom || ''} ${c.nom}`.trim())).join('');
 
-  const conteneurPro = document.getElementById('synth-liste-pro');
-  conteneurPro.innerHTML = pros.length === 0
+  document.getElementById('synth-liste-pro').innerHTML = pros.length === 0
     ? '<div class="vide">Aucune commande pro ce jour.</div>'
     : pros.map(c => renderLigne(c, c.raison_sociale)).join('');
 }
