@@ -940,21 +940,23 @@ async function creerRecurrence(clientId, lieuId, heureRetrait, prisParId, conten
   const freq = document.getElementById('cmd-freq').value;
   let jours;
   if (freq === 'quotidien') {
-    jours = [2, 3, 4, 5, 6]; // mar à sam
+    jours = [2, 3, 4, 5, 6];
   } else {
     const jourSelectionne = document.querySelector('input[name="cmd-jour"]:checked')?.value;
     if (!jourSelectionne) { alert('Sélectionnez le jour de la semaine pour la récurrence.'); return null; }
     jours = [parseInt(jourSelectionne)];
   }
 
-  // Créer le modèle de récurrence
+  alert(`DEBUG étape 1 — freq: ${freq}, jours: ${JSON.stringify(jours)}, clientId: ${clientId}`);
+
   const { data: rec, error: errRec } = await sb.from('commandes_recurrentes').insert({
     client_id: clientId, lieu_retrait_id: lieuId, heure_retrait: heureRetrait,
     pris_par: prisParId, contenu, frequence: freq, jours_semaine: jours
   }).select().single();
-  if (errRec) throw errRec;
 
-  // Enregistrer les lignes produits du modèle
+  if (errRec) { alert(`ERREUR insert récurrence : ${errRec.message}`); return null; }
+  alert(`DEBUG étape 2 — récurrence créée id: ${rec.id}`);
+
   if (lignesProduits.length > 0) {
     const lignesRec = lignesProduits.map(l => ({
       recurrence_id: rec.id, recette_id: l.recette_id,
@@ -962,14 +964,15 @@ async function creerRecurrence(clientId, lieuId, heureRetrait, prisParId, conten
       quantite: l.quantite || null, quantite_g: l.quantite_g || null
     }));
     const { error: errLignes } = await sb.from('commande_recurrente_lignes').insert(lignesRec);
-    if (errLignes) throw errLignes;
+    if (errLignes) { alert(`ERREUR lignes : ${errLignes.message}`); return null; }
   }
 
-  // Générer les occurrences jusqu'à fin du mois
+  alert(`DEBUG étape 3 — appel RPC generer_occurrences_recurrentes`);
   const { data: nbCreees, error: errGen } = await sb.rpc('generer_occurrences_recurrentes', {
     p_recurrence_id: rec.id
   });
-  if (errGen) throw errGen;
+  if (errGen) { alert(`ERREUR RPC : ${errGen.message}`); return null; }
+  alert(`DEBUG étape 4 — ${nbCreees} occurrences créées`);
 
   return { recurrence: rec, nbCreees };
 }
