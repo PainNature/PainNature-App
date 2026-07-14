@@ -1010,17 +1010,59 @@ async function confirmerCommande() {
   const lieuId = document.getElementById('cmd-lieu').value || null;
   const contenu = document.getElementById('cmd-contenu').value.trim();
   const statut = document.getElementById('cmd-statut').value;
+  const heureRetrait = document.getElementById('cmd-heure').value || null;
+  const prisParId = document.getElementById('cmd-pris-par').value || null;
+  const estRecurrente = !commandeEnEditionId && document.getElementById('cmd-recurrente').checked;
 
-  if (!dateRetrait) {
+  // Si récurrente : pas besoin de date fixe — on gère séparément
+  if (!estRecurrente && !dateRetrait) {
     erreur.textContent = 'La date de retrait est obligatoire.';
     erreur.classList.add('visible');
     return;
   }
 
-  btn.disabled = true; btn.textContent = commandeEnEditionId ? 'Enregistrement…' : 'Enregistrement…';
+  btn.disabled = true; btn.textContent = 'Enregistrement…';
 
   try {
     let clientId;
+
+    if (typeCommandeCourant === 'pro') {
+      clientId = document.getElementById('cmd-client-pro').value;
+      if (!clientId) throw new Error('Sélectionnez un client professionnel.');
+    } else {
+      const nom = document.getElementById('cmd-nom').value.trim();
+      const prenom = document.getElementById('cmd-prenom').value.trim();
+      const tel = document.getElementById('cmd-tel').value.trim();
+      if (!nom) throw new Error('Le nom du client est obligatoire.');
+
+      if (commandeEnEditionId && commandeEnEditionClientId) {
+        const { error: errMajClient } = await sb.from('clients')
+          .update({ nom, prenom, telephone: tel })
+          .eq('id', commandeEnEditionClientId);
+        if (errMajClient) throw errMajClient;
+        clientId = commandeEnEditionClientId;
+      } else {
+        const { data: client, error: errClient } = await sb
+          .from('clients')
+          .insert({ nom, prenom, telephone: tel, is_pro: false })
+          .select().single();
+        if (errClient) throw errClient;
+        clientId = client.id;
+      }
+    }
+
+    // ── Cas récurrence : créer le modèle et générer les occurrences ──
+    if (estRecurrente) {
+      const result = await creerRecurrence(clientId, lieuId, heureRetrait, prisParId, contenu, lignesProduitsCourantes);
+      if (result) {
+        fermerModaleCommande();
+        if (typeCommandeCourant === 'pro') await chargerCommandesJourPro();
+        else await chargerCommandesJour();
+        await chargerSynthese();
+        alert(`✅ Récurrence créée — ${result.nbCreees} commande${result.nbCreees > 1 ? 's' : ''} générée${result.nbCreees > 1 ? 's' : ''} jusqu'à fin du mois.`);
+      }
+      return;
+    }
 
     if (typeCommandeCourant === 'pro') {
       clientId = document.getElementById('cmd-client-pro').value;
@@ -1049,9 +1091,6 @@ async function confirmerCommande() {
         clientId = client.id;
       }
     }
-
-    const heureRetrait = document.getElementById('cmd-heure').value || null;
-    const prisParId = document.getElementById('cmd-pris-par').value || null;
 
     let commandeId;
 
@@ -1087,22 +1126,6 @@ async function confirmerCommande() {
       }));
       const { error: errLignes } = await sb.from('commande_lignes').insert(lignesAInserer);
       if (errLignes) throw errLignes;
-    }
-
-    // Si récurrence cochée et nouvelle commande (pas une édition)
-    if (!commandeEnEditionId && document.getElementById('cmd-recurrente').checked) {
-      const result = await creerRecurrence(
-        clientId, lieuId, heureRetrait, prisParId, contenu, lignesProduitsCourantes
-      );
-      if (result) {
-        fermerModaleCommande();
-        if (typeCommandeCourant === 'pro') await chargerCommandesJourPro();
-        else await chargerCommandesJour();
-        await chargerSynthese();
-        alert(`✅ Récurrence créée — ${result.nbCreees} commande${result.nbCreees > 1 ? 's' : ''} générée${result.nbCreees > 1 ? 's' : ''} jusqu'à fin du mois.`);
-        return;
-      }
-      return; // creerRecurrence a affiché l'erreur
     }
 
     fermerModaleCommande();
