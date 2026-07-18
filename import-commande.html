@@ -71,10 +71,7 @@ main{max-width:700px;margin:1.2rem auto 4rem;padding:0 1.2rem;}
 <main>
   <!-- Zone d'upload -->
   <div class="zone-upload" id="zone-upload"
-       onclick="document.getElementById('input-pdf').click()"
-       ondragover="e=>{e.preventDefault();this.classList.add('dragover')}"
-       ondragleave="this.classList.remove('dragover')"
-       ondrop="onDrop(event)">
+       onclick="document.getElementById('input-pdf').click()">
     <div class="zone-upload-icon">📄</div>
     <div class="zone-upload-texte">Déposer le bon de commande PDF ici</div>
     <div class="zone-upload-sous">ou cliquer pour choisir un fichier</div>
@@ -165,6 +162,35 @@ function onDrop(e) {
   const file = e.dataTransfer.files[0];
   if (file && file.type === 'application/pdf') traiterPDF(file);
 }
+
+// Event listeners sur la zone d'upload
+document.addEventListener('DOMContentLoaded', () => {
+  const zone = document.getElementById('zone-upload');
+
+  zone.addEventListener('dragover', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    zone.classList.add('dragover');
+  });
+
+  zone.addEventListener('dragleave', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    zone.classList.remove('dragover');
+  });
+
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    zone.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file && file.type === 'application/pdf') traiterPDF(file);
+  });
+
+  // Empêcher le navigateur d'ouvrir le PDF si on rate la zone
+  document.body.addEventListener('dragover', e => e.preventDefault());
+  document.body.addEventListener('drop', e => e.preventDefault());
+});
 
 // ─── Extraction PDF (côté client via PDF.js) ─────────────────────────────────
 async function traiterPDF(file) {
