@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Pain Nature — Import commande PDF</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#546054">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/shared.css">
+<style>
+.topbar{background:#546054;color:#fff;padding:0 1.2rem;height:54px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,.2);position:sticky;top:0;z-index:10;}
+.topbar .marque{font-weight:800;font-size:1rem;display:flex;align-items:center;gap:.6rem;}
+.topbar .retour{color:#fff;text-decoration:none;font-size:1.3rem;opacity:.85;}
+main{max-width:700px;margin:1.2rem auto 4rem;padding:0 1.2rem;}
+
+/* Zone d'upload */
+.zone-upload{
+  border:2.5px dashed var(--border-strong);border-radius:var(--r-lg);
+  padding:2.5rem;text-align:center;cursor:pointer;transition:all .2s;
+  background:var(--surface);margin-bottom:1.2rem;
+}
+.zone-upload:hover,.zone-upload.dragover{border-color:var(--sauge);background:rgba(84,96,84,.05);}
+.zone-upload-icon{font-size:2.5rem;margin-bottom:.5rem;}
+.zone-upload-texte{font-weight:700;font-size:.95rem;color:var(--text);}
+.zone-upload-sous{font-size:.8rem;color:var(--text-light);margin-top:4px;}
+#input-pdf{display:none;}
+
+/* Aperçu du bon */
+.apercu-bon{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r-lg);padding:16px;margin-bottom:1rem;}
+.apercu-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;flex-wrap:wrap;gap:8px;}
+.apercu-client{font-weight:800;font-size:1rem;color:var(--sauge);}
+.apercu-meta{font-family:var(--mono);font-size:.78rem;color:var(--text-light);}
+.apercu-badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;}
+.badge{padding:3px 10px;border-radius:99px;font-size:.72rem;font-weight:700;font-family:var(--mono);}
+.badge-client{background:var(--sauge);color:#fff;}
+.badge-cmd{background:var(--wheat-light);color:var(--wheat);}
+
+/* Date retrait */
+.date-retrait-bloc{background:var(--wheat-light);border:1.5px solid var(--wheat);border-radius:var(--r-lg);padding:12px 16px;margin-bottom:1rem;display:flex;align-items:center;gap:12px;}
+.date-retrait-label{font-weight:700;font-size:.88rem;color:var(--wheat);flex-shrink:0;}
+.date-retrait-input{padding:9px 12px;border:1.5px solid var(--wheat);border-radius:var(--r);font-family:var(--mono);font-size:.9rem;flex:1;background:#fff;}
+
+/* Lignes produits */
+.lignes-titre{font-family:var(--mono);font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;color:var(--text-light);margin-bottom:.5rem;}
+.ligne-produit{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r-lg);margin-bottom:6px;}
+.ligne-produit.non-reconnu{border-color:#e53e3e;background:#fff5f5;}
+.ligne-produit.reconnu{border-color:#38a169;background:#f0fff4;}
+.lp-code{font-family:var(--mono);font-size:.7rem;color:var(--text-light);width:70px;flex-shrink:0;}
+.lp-designation{font-size:.82rem;color:var(--text-light);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.lp-qte{font-family:var(--mono);font-weight:800;font-size:1rem;color:var(--sauge);width:32px;text-align:right;flex-shrink:0;}
+.lp-recette{font-weight:700;font-size:.88rem;flex:1;min-width:0;}
+.lp-recette select{width:100%;padding:6px 8px;border:1px solid var(--border-strong);border-radius:var(--r);font-size:.82rem;background:#fff;}
+.lp-badge-ok{color:#38a169;font-size:1.1rem;flex-shrink:0;}
+.lp-badge-ko{color:#e53e3e;font-size:1.1rem;flex-shrink:0;}
+.nb-non-reconnus{background:#fff3cd;border:1px solid #ffc107;border-radius:var(--r);padding:8px 14px;font-size:.85rem;font-weight:600;margin-bottom:1rem;}
+
+.btn-importer{width:100%;padding:16px;font-size:1.05rem;font-weight:800;background:#546054;color:#fff;border:none;border-radius:var(--r-lg);cursor:pointer;margin-top:1rem;}
+.btn-importer:disabled{opacity:.4;cursor:not-allowed;}
+.msg-succes{background:#f0fff4;border:1.5px solid #38a169;border-radius:var(--r-lg);padding:16px;text-align:center;display:none;margin-top:1rem;}
+.msg-succes.visible{display:block;}
+.msg-succes-titre{font-weight:800;font-size:1.1rem;color:#38a169;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="marque"><a href="accueil.html" class="retour">←</a> 📥 IMPORT COMMANDE PDF</span>
+</div>
+
+<main>
+  <!-- Zone d'upload -->
+  <div class="zone-upload" id="zone-upload"
+       onclick="document.getElementById('input-pdf').click()"
+       ondragover="e=>{e.preventDefault();this.classList.add('dragover')}"
+       ondragleave="this.classList.remove('dragover')"
+       ondrop="onDrop(event)">
+    <div class="zone-upload-icon">📄</div>
+    <div class="zone-upload-texte">Déposer le bon de commande PDF ici</div>
+    <div class="zone-upload-sous">ou cliquer pour choisir un fichier</div>
+  </div>
+  <input type="file" id="input-pdf" accept=".pdf" onchange="traiterPDF(this.files[0])">
+
+  <div id="contenu-import" style="display:none;">
+    <!-- Aperçu client / commande -->
+    <div class="apercu-bon">
+      <div class="apercu-header">
+        <div>
+          <div class="apercu-client" id="ap-client"></div>
+          <div class="apercu-meta" id="ap-meta"></div>
+        </div>
+        <div class="apercu-badges">
+          <span class="badge badge-client" id="ap-badge-client"></span>
+          <span class="badge badge-cmd" id="ap-badge-cmd"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Date de retrait (saisie manuelle) -->
+    <div class="date-retrait-bloc">
+      <span class="date-retrait-label">📅 Date de retrait</span>
+      <input type="date" id="date-retrait" class="date-retrait-input">
+      <input type="time" id="heure-retrait" step="900" style="padding:9px 12px;border:1.5px solid var(--wheat);border-radius:var(--r);font-family:var(--mono);font-size:.88rem;background:#fff;" placeholder="Heure">
+    </div>
+
+    <!-- Lignes produits -->
+    <div class="lignes-titre">Produits — <span id="nb-lignes"></span></div>
+    <div id="nb-non-reconnus-bloc" class="nb-non-reconnus" style="display:none;"></div>
+    <div id="liste-lignes"></div>
+
+    <div class="msg-succes" id="msg-succes">
+      <div class="msg-succes-titre">✅ Commande importée !</div>
+      <div id="msg-succes-detail" style="margin-top:4px;font-size:.88rem;color:#2d6a4f;"></div>
+    </div>
+
+    <button class="btn-importer" id="btn-importer" onclick="importerCommande()">
+      💾 Enregistrer la commande
+    </button>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<!-- PDF.js pour extraction côté client -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="js/supabase-client.js"></script>
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+let profilCourant = null;
+let donneesExtraites = null;  // { client, noCommande, articles }
+let mapping = {};             // code_article → { recette_id, variante_id, nom }
+let toutesRecettes = [];
+let clientsPro = [];
+
+// ─── Chargement initial ──────────────────────────────────────────────────────
+(async () => {
+  profilCourant = await exigerRole(['gerant','boulanger','patissier','vendeur']);
+  if (!profilCourant) return;
+
+  // Charger le mapping existant
+  const { data: mappingData } = await sb.from('mapping_produits_fournisseur')
+    .select('code_article_externe, recette_id, variante_id, recettes(nom), recette_variantes(nom)')
+    .eq('actif', true);
+  (mappingData || []).forEach(m => {
+    mapping[m.code_article_externe] = {
+      recette_id: m.recette_id,
+      variante_id: m.variante_id,
+      nom: m.recettes?.nom + (m.recette_variantes ? ` (${m.recette_variantes.nom})` : '')
+    };
+  });
+
+  // Charger toutes les recettes pour le sélecteur
+  const { data: recs } = await sb.from('recettes').select('id, nom, metier').eq('actif', true).order('nom');
+  toutesRecettes = recs || [];
+
+  // Charger les clients pro
+  const { data: clients } = await sb.from('clients').select('id, raison_sociale').eq('is_pro', true).order('raison_sociale');
+  clientsPro = clients || [];
+})();
+
+// ─── Drag & drop ─────────────────────────────────────────────────────────────
+function onDrop(e) {
+  e.preventDefault();
+  document.getElementById('zone-upload').classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type === 'application/pdf') traiterPDF(file);
+}
+
+// ─── Extraction PDF (côté client via PDF.js) ─────────────────────────────────
+async function traiterPDF(file) {
+  document.getElementById('zone-upload').innerHTML = `
+    <div class="zone-upload-icon">⏳</div>
+    <div class="zone-upload-texte">Analyse du PDF…</div>`;
+
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  const page = await pdf.getPage(1);
+  const content = await page.getTextContent();
+  const texte = content.items.map(i => i.str).join(' ');
+
+  // Détecter le client
+  let clientNom, clientType;
+  if (/ANGOULINS/i.test(texte)) {
+    clientNom = 'Colibri Angoulins';
+    clientType = 'angoulins';
+  } else if (/PUILBOREAU/i.test(texte)) {
+    clientNom = 'Colibri Puilboreau';
+    clientType = 'puilboreau';
+  } else {
+    clientNom = 'Client inconnu';
+    clientType = null;
+  }
+
+  // Numéro de commande
+  let noCommande = null;
+  const m1 = texte.match(/(?:N[o°]\s*Commande\s*)?(\d{4,6})\s+\d{2}\/\d{2}\/\d{4}/);
+  const m2 = texte.match(/Cde\s+0*(\d+)/);
+  if (m1) noCommande = m1[1];
+  else if (m2) noCommande = m2[1];
+
+  // Extraire les articles — deux patterns selon le format
+  const articles = [];
+  // Format 1 : code(13) FR DESIGNATION prix€ qte total
+  const re1 = /(\d{13})\s+FR\s+(.+?)\s+([\d,]+)\s*[€ÄA]\s+(\d+)\s+([\d,]+)/g;
+  let match;
+  while ((match = re1.exec(texte)) !== null) {
+    articles.push({
+      code: match[1],
+      designation: match[2].trim(),
+      quantite: parseInt(match[4])
+    });
+  }
+  // Format 2 : code(13) code(13) FR DESIGNATION qte,000 prix total
+  if (articles.length === 0) {
+    const re2 = /(\d{13})\s+\1\s+FR\s+(.+?)\s+([\d,\.]+)\s+([\d\.]+)\s+([\d\.]+)/g;
+    while ((match = re2.exec(texte)) !== null) {
+      articles.push({
+        code: match[1],
+        designation: match[2].trim(),
+        quantite: Math.round(parseFloat(match[3].replace(',','.')))
+      });
+    }
+  }
+
+  donneesExtraites = { clientNom, clientType, noCommande, articles };
+  afficherApercu();
+}
+
+// ─── Affichage de l'aperçu ───────────────────────────────────────────────────
+function afficherApercu() {
+  const { clientNom, noCommande, articles } = donneesExtraites;
+
+  document.getElementById('ap-client').textContent = clientNom;
+  document.getElementById('ap-badge-client').textContent = clientNom;
+  document.getElementById('ap-badge-cmd').textContent = noCommande ? `Bon n°${noCommande}` : 'N° inconnu';
+  document.getElementById('ap-meta').textContent = `${articles.length} article(s) détecté(s)`;
+  document.getElementById('nb-lignes').textContent = `${articles.length} articles`;
+
+  // Demain par défaut pour la date de retrait
+  const demain = new Date();
+  demain.setDate(demain.getDate() + 1);
+  document.getElementById('date-retrait').value = demain.toISOString().slice(0,10);
+
+  // Résoudre chaque article via le mapping
+  let nbNonReconnus = 0;
+  const lignesHtml = articles.map((a, i) => {
+    const m = mapping[a.code];
+    if (m) {
+      return `<div class="ligne-produit reconnu">
+        <span class="lp-code">${a.code.slice(-4)}</span>
+        <span class="lp-designation" title="${a.designation}">${a.designation}</span>
+        <span class="lp-qte">${a.quantite}</span>
+        <span class="lp-recette">${m.nom}</span>
+        <span class="lp-badge-ok">✓</span>
+      </div>`;
+    } else {
+      nbNonReconnus++;
+      const options = toutesRecettes.map(r =>
+        `<option value="${r.id}">${r.nom}</option>`
+      ).join('');
+      return `<div class="ligne-produit non-reconnu">
+        <span class="lp-code">${a.code.slice(-4)}</span>
+        <span class="lp-designation" title="${a.designation}">${a.designation}</span>
+        <span class="lp-qte">${a.quantite}</span>
+        <div class="lp-recette">
+          <select id="assoc-${i}" onchange="memoriserAssociation('${a.code}','${a.designation}',this.value)">
+            <option value="">— Associer à une recette —</option>
+            ${options}
+          </select>
+        </div>
+        <span class="lp-badge-ko">⚠️</span>
+      </div>`;
+    }
+  }).join('');
+
+  document.getElementById('liste-lignes').innerHTML = lignesHtml;
+
+  const blocNR = document.getElementById('nb-non-reconnus-bloc');
+  if (nbNonReconnus > 0) {
+    blocNR.style.display = 'block';
+    blocNR.textContent = `⚠️ ${nbNonReconnus} produit${nbNonReconnus > 1 ? 's' : ''} non reconnu${nbNonReconnus > 1 ? 's' : ''} — associez-les avant d'importer.`;
+  } else {
+    blocNR.style.display = 'none';
+  }
+
+  document.getElementById('contenu-import').style.display = 'block';
+  document.getElementById('zone-upload').innerHTML = `
+    <div class="zone-upload-icon">✅</div>
+    <div class="zone-upload-texte">PDF analysé — ${donneesExtraites.articles.length} articles</div>
+    <div class="zone-upload-sous">Cliquer pour changer de fichier</div>`;
+}
+
+// ─── Mémorisation apprentissage ───────────────────────────────────────────────
+async function memoriserAssociation(code, designation, recetteId) {
+  if (!recetteId) return;
+  // Sauvegarder dans le mapping pour la prochaine fois
+  const { error } = await sb.from('mapping_produits_fournisseur').upsert({
+    code_article_externe: code,
+    designation_externe: designation,
+    recette_id: recetteId,
+    client_pro_id: null,
+    actif: true
+  }, { onConflict: 'client_pro_id,code_article_externe' });
+
+  if (!error) {
+    // Mettre à jour le mapping local
+    const rec = toutesRecettes.find(r => r.id === recetteId);
+    mapping[code] = { recette_id: recetteId, variante_id: null, nom: rec?.nom || '?' };
+    // Mettre à jour l'affichage de cette ligne
+    afficherApercu();
+  }
+}
+
+// ─── Import final ─────────────────────────────────────────────────────────────
+async function importerCommande() {
+  const dateRetrait = document.getElementById('date-retrait').value;
+  const heureRetrait = document.getElementById('heure-retrait').value || null;
+  if (!dateRetrait) { alert('Renseignez la date de retrait.'); return; }
+
+  const { clientType, articles } = donneesExtraites;
+
+  // Trouver le client pro correspondant
+  let clientId = null;
+  const clientsPro2 = clientsPro.filter(c =>
+    clientType === 'angoulins'
+      ? /angoulins/i.test(c.raison_sociale)
+      : /puilboreau/i.test(c.raison_sociale)
+  );
+  if (clientsPro2.length > 0) clientId = clientsPro2[0].id;
+
+  if (!clientId) {
+    alert(`Client "${donneesExtraites.clientNom}" introuvable dans la base. Vérifiez qu'il existe dans les clients pro.`);
+    return;
+  }
+
+  // Vérifier que tous les articles sont résolus
+  const nonResolus = articles.filter(a => !mapping[a.code]);
+  if (nonResolus.length > 0) {
+    alert(`${nonResolus.length} produit(s) non associé(s). Associez-les avant d'importer.`);
+    return;
+  }
+
+  const btn = document.getElementById('btn-importer');
+  btn.disabled = true; btn.textContent = 'Import en cours…';
+
+  try {
+    // Créer la commande
+    const { data: cmd, error: errCmd } = await sb.from('commandes').insert({
+      client_id: clientId,
+      date_retrait: dateRetrait,
+      heure_retrait: heureRetrait,
+      statut: 'todo',
+      collectee: false,
+      pris_par: profilCourant.id,
+      contenu: `Import PDF — Bon n°${donneesExtraites.noCommande || '?'}`
+    }).select().single();
+    if (errCmd) throw errCmd;
+
+    // Créer les lignes
+    const lignes = articles.map(a => ({
+      commande_id: cmd.id,
+      recette_id: mapping[a.code].recette_id,
+      variante_id: mapping[a.code].variante_id || null,
+      quantite: a.quantite
+    }));
+    const { error: errLignes } = await sb.from('commande_lignes').insert(lignes);
+    if (errLignes) throw errLignes;
+
+    // Succès
+    document.getElementById('msg-succes').classList.add('visible');
+    document.getElementById('msg-succes-detail').textContent =
+      `${articles.length} produits importés pour ${donneesExtraites.clientNom} — retrait le ${new Date(dateRetrait).toLocaleDateString('fr-FR')}`;
+    btn.textContent = '✅ Importé';
+
+  } catch(err) {
+    alert('Erreur : ' + err.message);
+    btn.disabled = false; btn.textContent = '💾 Enregistrer la commande';
+  }
+}
+</script>
+</body>
+</html>
