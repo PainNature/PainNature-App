@@ -204,14 +204,14 @@ async function traiterPDF(file) {
   const content = await page.getTextContent();
   const texte = content.items.map(i => i.str).join(' ');
 
-  // Détecter le client
+  // Détecter le client depuis le PDF
   let clientNom, clientType;
   if (/ANGOULINS/i.test(texte)) {
     clientNom = 'Colibri Angoulins';
     clientType = 'angoulins';
   } else if (/PUILBOREAU/i.test(texte)) {
-    clientNom = 'Colibri Puilboreau';
-    clientType = 'puilboreau';
+    clientNom = 'Colibri Beaulieu';
+    clientType = 'beaulieu';
   } else {
     clientNom = 'Client inconnu';
     clientType = null;
@@ -350,7 +350,7 @@ async function importerCommande() {
   const clientsPro2 = clientsPro.filter(c =>
     clientType === 'angoulins'
       ? /angoulins/i.test(c.raison_sociale)
-      : /puilboreau/i.test(c.raison_sociale)
+      : /beaulieu/i.test(c.raison_sociale)
   );
   if (clientsPro2.length > 0) clientId = clientsPro2[0].id;
 
