@@ -220,23 +220,29 @@ async function traiterPDF(file) {
     }
 
   // Détecter le type de document
+  const modeCmd = document.getElementById('mode-commande');
+  const modeLiv = document.getElementById('mode-livraison');
+
   if (/MINOTERIE\s+BOURSEAU/i.test(texte)) {
     typePDF = 'livraison';
     document.getElementById('badge-type').innerHTML = '<span class="badge-type badge-type-livraison">📦 Facture Minoterie Bourseau</span>';
-    document.getElementById('mode-commande').style.display = 'none';
-    document.getElementById('mode-livraison').style.display = '';
+    document.getElementById('contenu-import').style.display = 'block';
+    if (modeCmd) modeCmd.style.display = 'none';
+    if (modeLiv) modeLiv.style.display = '';
     traiterFactureBourseau(texte);
   } else if (/BON DE\s+LIVRAISON|BDL\d+/i.test(texte)) {
     typePDF = 'livraison';
     document.getElementById('badge-type').innerHTML = '<span class="badge-type badge-type-livraison">📦 Bon de livraison</span>';
-    document.getElementById('mode-commande').style.display = 'none';
-    document.getElementById('mode-livraison').style.display = '';
+    document.getElementById('contenu-import').style.display = 'block';
+    if (modeCmd) modeCmd.style.display = 'none';
+    if (modeLiv) modeLiv.style.display = '';
     traiterBonLivraison(texte);
   } else {
     typePDF = 'commande';
     document.getElementById('badge-type').innerHTML = '<span class="badge-type badge-type-commande">📋 Bon de commande</span>';
-    document.getElementById('mode-commande').style.display = '';
-    document.getElementById('mode-livraison').style.display = 'none';
+    document.getElementById('contenu-import').style.display = 'block';
+    if (modeCmd) modeCmd.style.display = '';
+    if (modeLiv) modeLiv.style.display = 'none';
     traiterBonCommande(texte);
   }
 
