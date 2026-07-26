@@ -261,7 +261,10 @@ function renderCartesSel(recettes){
       const sorted = [...p.formats].sort((a,b) => (a.poids_g||0)-(b.poids_g||0));
       fmtHtml = `<div class="card-formats">${sorted.map(f=>`<span class="fmt-badge">${f.label} × ${f.nb}</span>`).join('')}</div>`;
     } else if (p.variantes.length > 0){
-      fmtHtml = `<div class="card-formats">${p.variantes.map(v=>`<span class="fmt-badge">${v.nom} × ${v.nb}</span>`).join('')}</div>`;
+      fmtHtml = `<div class="card-formats">${p.variantes.map(v=>{
+        const kg = v.poids_g > 0 ? ' · ' + ((v.nb * v.poids_g)/1000).toFixed(2) + ' kg' : '';
+        return `<span class="fmt-badge">${v.nom} × ${v.nb}${kg}</span>`;
+      }).join('')}</div>`;
     }
 
     return `<div class="selection-card" id="sc-${r.id}"
@@ -379,12 +382,14 @@ function lancerAtelier(){
           <span class="fp-unite">pce${f.nb>1?'s':''}</span>
         </div>`).join('')}</div>`;
     } else if (p.variantes.length > 0){
-      fmtHtml = `<div class="recette-formats">${p.variantes.map(v=>`
-        <div class="recette-fmt-pill">
+      fmtHtml = `<div class="recette-formats">${p.variantes.map(v=>{
+        const pateKg = v.poids_g > 0 ? ((v.nb * v.poids_g) / 1000).toFixed(2) + ' kg' : '';
+        return `<div class="recette-fmt-pill">
           <span class="fp-poids">${v.nom}</span>
-          <span class="fp-nb">${v.nb}</span>
-          <span class="fp-unite">pce${v.nb>1?'s':''}</span>
-        </div>`).join('')}</div>`;
+          <span class="fp-nb">${v.nb} pce${v.nb>1?'s':''}</span>
+          ${pateKg ? `<span class="fp-unite">${pateKg} pâte</span>` : ''}
+        </div>`;
+      }).join('')}</div>`;
     } else {
       fmtHtml = `<div class="recette-formats">
         <div class="recette-fmt-pill">
