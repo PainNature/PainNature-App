@@ -162,7 +162,7 @@ async function chargerDonnees(){
     sb.from('production_jour').select(`
       recette_id, nb_pieces, format_id, variante_id,
       recette_formats(id, label, poids_g, poids_cuit_g),
-      recette_variantes(id, nom)
+      recette_variantes(id, nom, poids_piece_g)
     `).eq('date_prod', date),
     sb.rpc('get_besoins_levains', { p_date: date })
   ]);
@@ -188,7 +188,11 @@ async function chargerDonnees(){
         : f.label;
       planJour[p.recette_id].formats.push({ label, nb, poids_g: poidsG });
     } else if (p.recette_variantes && nb > 0) {
-      planJour[p.recette_id].variantes.push({ nom: p.recette_variantes.nom, nb });
+      planJour[p.recette_id].variantes.push({
+        nom: p.recette_variantes.nom,
+        nb,
+        poids_g: Number(p.recette_variantes.poids_piece_g) || 0
+      });
     }
   });
 
@@ -231,8 +235,14 @@ function afficherLevainsSelection(){
 function getPateTotal(recette){
   const p = planJour[recette.id];
   if (!p) return 0;
-  if (p.formats.length > 0){
+  if (p.formats.length > 0)
     return p.formats.reduce((s, f) => s + f.nb * (f.poids_g || recette.poids_piece_g || 0), 0);
+  if (p.variantes.length > 0) {
+    const nbVariantes = p.variantes.reduce((s, v) => s + v.nb, 0);
+    const nbNature = p.total - nbVariantes;
+    const pateVariantes = p.variantes.reduce((s, v) => s + v.nb * (v.poids_g || recette.poids_piece_g || 0), 0);
+    const pateNature = nbNature * (recette.poids_piece_g || 0);
+    return pateVariantes + pateNature;
   }
   return p.total * (recette.poids_piece_g || 0);
 }
