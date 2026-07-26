@@ -78,6 +78,9 @@ main{max-width:700px;margin:1.2rem auto 4rem;padding:0 1.2rem;}
   </div>
   <input type="file" id="input-pdf" accept=".pdf" onchange="traiterPDF(this.files[0])">
 
+  <!-- Badge type visible dès le début, hors du bloc caché -->
+  <div id="badge-type" style="margin-bottom:.8rem;"></div>
+
   <div id="contenu-import" style="display:none;">
     <!-- Aperçu client / commande -->
     <div class="apercu-bon">
