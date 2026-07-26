@@ -382,53 +382,7 @@ function afficherLivraison(refDoc) {
     <div class="zone-upload-texte">PDF analysé — ${ligneIndex} réceptions</div>
     <div class="zone-upload-sous">Cliquer pour changer de fichier</div>`;
 }
-  if (/ANGOULINS/i.test(texte)) {
-    clientNom = 'Colibri Angoulins';
-    clientType = 'angoulins';
-  } else if (/PUILBOREAU/i.test(texte)) {
-    clientNom = 'Colibri Beaulieu';
-    clientType = 'beaulieu';
-  } else {
-    clientNom = 'Client inconnu';
-    clientType = null;
-  }
 
-  // Numéro de commande
-  let noCommande = null;
-  const m1 = texte.match(/(?:N[o°]\s*Commande\s*)?(\d{4,6})\s+\d{2}\/\d{2}\/\d{4}/);
-  const m2 = texte.match(/Cde\s+0*(\d+)/);
-  if (m1) noCommande = m1[1];
-  else if (m2) noCommande = m2[1];
-
-  // Extraire les articles — deux patterns selon le format
-  const articles = [];
-  // Format 1 : code(13) FR DESIGNATION prix€ qte total
-  const re1 = /(\d{13})\s+FR\s+(.+?)\s+([\d,]+)\s*[€ÄA]\s+(\d+)\s+([\d,]+)/g;
-  let match;
-  while ((match = re1.exec(texte)) !== null) {
-    articles.push({
-      code: match[1],
-      designation: match[2].trim(),
-      quantite: parseInt(match[4])
-    });
-  }
-  // Format 2 : code(13) code(13) FR DESIGNATION qte,000 prix total
-  if (articles.length === 0) {
-    const re2 = /(\d{13})\s+\1\s+FR\s+(.+?)\s+([\d,\.]+)\s+([\d\.]+)\s+([\d\.]+)/g;
-    while ((match = re2.exec(texte)) !== null) {
-      articles.push({
-        code: match[1],
-        designation: match[2].trim(),
-        quantite: Math.round(parseFloat(match[3].replace(',','.')))
-      });
-    }
-  }
-
-  donneesExtraites = { clientNom, clientType, noCommande, articles };
-  afficherApercu();
-}
-
-// ─── Affichage de l'aperçu ───────────────────────────────────────────────────
 // ─── BON DE COMMANDE COLIBRI ─────────────────────────────────────────────────
 function traiterBonCommande(texte) {
   let clientNom, clientType;
