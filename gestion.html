@@ -91,7 +91,7 @@ tr:last-child td{border-bottom:none;}
 
 <main>
   <div class="tabs">
-    <button class="tab-btn active" data-tab="matieres" onclick="changerTab('matieres')">Matières premières</button>
+    <button class="tab-btn active" data-tab="matieres" onclick="changerTab('matieres')" id="tab-matieres">Matières premières</button>
     <button class="tab-btn" data-tab="recettes" onclick="changerTab('recettes')">Recettes & marges</button>
   </div>
 
@@ -790,8 +790,19 @@ async function confirmerAjoutIngredient() {
 }
 
 (async () => {
-  profilCourant = await exigerRole(['gerant']);
+  profilCourant = await exigerRole(['gerant', 'boulanger']);
   if (!profilCourant) return;
+
+  // Boulanger : accès recettes uniquement, pas aux MP ni aux finances
+  if (profilCourant.role === 'boulanger') {
+    const tabMP = document.getElementById('tab-matieres');
+    if (tabMP) tabMP.style.display = 'none';
+    // Basculer directement sur l'onglet recettes
+    changerTab('recettes');
+    // Masquer la colonne prix/marge dans la liste des recettes
+    document.querySelectorAll('.col-finance').forEach(el => el.style.display = 'none');
+  }
+
   await chargerPrixReference();
   await chargerMP();
   await chargerListeRecettes();
