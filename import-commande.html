@@ -204,8 +204,184 @@ async function traiterPDF(file) {
   const content = await page.getTextContent();
   const texte = content.items.map(i => i.str).join(' ');
 
-  // Détecter le client depuis le PDF
-  let clientNom, clientType;
+  // Détecter le type de document
+  if (/MINOTERIE\s+BOURSEAU/i.test(texte)) {
+    typePDF = 'livraison';
+    document.getElementById('badge-type').innerHTML = '<span class="badge-type badge-type-livraison">📦 Facture Minoterie Bourseau</span>';
+    document.getElementById('mode-commande').style.display = 'none';
+    document.getElementById('mode-livraison').style.display = '';
+    traiterFactureBourseau(texte);
+  } else if (/BON DE\s+LIVRAISON|BDL\d+/i.test(texte)) {
+    typePDF = 'livraison';
+    document.getElementById('badge-type').innerHTML = '<span class="badge-type badge-type-livraison">📦 Bon de livraison</span>';
+    document.getElementById('mode-commande').style.display = 'none';
+    document.getElementById('mode-livraison').style.display = '';
+    traiterBonLivraison(texte);
+  } else {
+    typePDF = 'commande';
+    document.getElementById('badge-type').innerHTML = '<span class="badge-type badge-type-commande">📋 Bon de commande</span>';
+    document.getElementById('mode-commande').style.display = '';
+    document.getElementById('mode-livraison').style.display = 'none';
+    traiterBonCommande(texte);
+  }
+}
+
+// ─── FACTURE MINOTERIE BOURSEAU ──────────────────────────────────────────────
+function traiterFactureBourseau(texte) {
+  const fournisseur = 'MINOTERIE BOURSEAU';
+
+  // N° pièce et date
+  const dateM = texte.match(/(\d{2}\/\d{2}\/\d{4})\s+(\d{9})/);
+  const noPiece = dateM ? dateM[2] : '?';
+  const dateDoc = dateM ? dateM[1] : null;
+
+  // N° BDL dans le corps
+  const bdlM = texte.match(/BON DE LIVRAISON N°\s*(\d+)\s+(\d{2}\/\d{2}\/\d{4})/);
+  const noBdl = bdlM ? bdlM[1] : noPiece;
+  const dateLiv = bdlM ? bdlM[2] : dateDoc;
+
+  // Détecter si AVOIR (quantités négatives)
+  const estAvoir = /AVOIR/i.test(texte);
+
+  // Articles : Réf (num) + désignation + Nbre + SAC - 25 KG + poids
+  const articles = [];
+  const re = /(\d{2,3})\s+(FAR[\w.\s-]+?(?:BIO|S25|R2|CYL|BAGATELLE)(?:\s+S25)?(?:\s+\(\d\))?)\s+(\d+)\s+SAC\s+-\s+25\s+KG\s+(-?\d+)/g;
+  let m;
+  while ((m = re.exec(texte)) !== null) {
+    const ref = m[1];
+    const designation = m[2].trim();
+    const poids = Math.abs(parseInt(m[4]));
+    if (poids > 0) {
+      articles.push({
+        code: ref,
+        designation,
+        quantite: poids,
+        lots: [{ num: noBdl, qte: poids }],
+        fournisseur
+      });
+    }
+  }
+
+  donneesExtraites = { type: 'livraison', fournisseur, noBdl, dateLiv, articles, estAvoir };
+  afficherLivraison(estAvoir ? `AVOIR N°${noPiece}` : `Facture N°${noPiece}`);
+}
+
+// ─── BON DE LIVRAISON COUP DE VAGUE ──────────────────────────────────────────
+function traiterBonLivraison(texte) {
+  const fournisseurM = texte.match(/SARL\s+([A-Z\s]+?)(?:\s+LE COUP|\s+Email|\s+\d{5})/);
+  const fournisseur = 'COUP DE VAGUE';
+
+  const noBdlM = texte.match(/N°\s*:\s*(BDL\S+)/);
+  const noBdl = noBdlM ? noBdlM[1] : '?';
+  const dateLivM = texte.match(/Date de livraison\s*:\s*(\d{2}\/\d{2}\/\d{4})/);
+  const dateLiv = dateLivM ? dateLivM[1] : null;
+
+  const lignes = texte.split(/\s{2,}|\n/).map(l => l.trim()).filter(Boolean);
+  const articles = [];
+
+  for (let i = 0; i < lignes.length; i++) {
+    const artM = lignes[i].match(/^(ART\d+)\s+-(.+?)\s+([\d,]+)\s+kg$/);
+    if (artM) {
+      const code = artM[1];
+      const designation = artM[2].trim();
+      const quantite = parseFloat(artM[3].replace(',', '.'));
+      const lots = [];
+      let j = i + 1;
+      while (j < lignes.length) {
+        const l = lignes[j];
+        if (/^ART\d+|^Produits|^Règlement|^Bon pour/.test(l)) break;
+        const lotsM = [...l.matchAll(/(?:lot\s+)?(\d{6,})(?:=(\d+)\s*kg)?/gi)];
+        if (lotsM.length > 0) {
+          lotsM.forEach(m => lots.push({ num: m[1], qte: m[2] ? parseFloat(m[2]) : quantite }));
+        }
+        j++;
+      }
+      if (lots.length === 0) lots.push({ num: '', qte: quantite });
+      articles.push({ code, designation, quantite, lots, fournisseur });
+      i = j - 1;
+    }
+  }
+
+  donneesExtraites = { type: 'livraison', fournisseur, noBdl, dateLiv, articles };
+  afficherLivraison(`N° ${noBdl}`);
+}
+
+// ─── Affichage commun bons de livraison ──────────────────────────────────────
+function afficherLivraison(refDoc) {
+  const { fournisseur, dateLiv, articles } = donneesExtraites;
+  const nbReceptions = articles.reduce((s, a) => s + a.lots.length, 0);
+
+  document.getElementById('ll-fournisseur').textContent = fournisseur;
+  document.getElementById('ll-meta').textContent = `${articles.length} produit(s) · ${nbReceptions} réception(s) à créer`;
+  document.getElementById('ll-badge-bdl').textContent = refDoc;
+  document.getElementById('ll-badge-date').textContent = dateLiv ? `Livraison ${dateLiv}` : 'Date ?';
+  document.getElementById('ll-nb-lignes').textContent = `${nbReceptions} réceptions`;
+
+  if (dateLiv) {
+    const parts = dateLiv.split('/');
+    document.getElementById('ll-date-reception').value = `${parts[2]}-${parts[1]}-${parts[0]}`;
+  } else {
+    document.getElementById('ll-date-reception').value = new Date().toISOString().slice(0,10);
+  }
+
+  const optionsMP = toutesMP.map(m => `<option value="${m.id}">${m.nom}</option>`).join('');
+  let nbNonReconnus = 0;
+  let html = '';
+  let ligneIndex = 0;
+
+  articles.forEach(a => {
+    const cle = `${a.fournisseur.toUpperCase()}|${a.code}`;
+    const mappé = mappingLivraison[cle];
+    a.lots.forEach(lot => {
+      const idx = ligneIndex++;
+      if (mappé && mappé.mp_id) {
+        html += `<div class="ligne-livraison reconnu" id="ll-${idx}">
+          <div class="ll-info">
+            <div class="ll-nom">${a.designation}</div>
+            <div class="ll-lot">Lot ${lot.num || '—'} · <strong>${mappé.nom}</strong></div>
+          </div>
+          <div class="ll-qte">${lot.qte} kg ✓</div>
+          <input type="hidden" id="ll-mp-${idx}" value="${mappé.mp_id}">
+          <input type="hidden" id="ll-lot-${idx}" value="${lot.num}">
+          <input type="hidden" id="ll-qte-${idx}" value="${lot.qte}">
+        </div>`;
+      } else {
+        nbNonReconnus++;
+        html += `<div class="ligne-livraison non-reconnu" id="ll-${idx}">
+          <div class="ll-info">
+            <div class="ll-nom">${a.code} — ${a.designation}</div>
+            <div class="ll-lot">Lot ${lot.num || '—'} · ${lot.qte} kg</div>
+            <div class="ll-mp">
+              <select id="ll-mp-${idx}" onchange="memoriserMPFournisseur('${a.fournisseur}','${a.code}','${a.designation}',this.value)">
+                <option value="">— Associer à une matière première —</option>
+                ${optionsMP}
+              </select>
+            </div>
+          </div>
+          <input type="hidden" id="ll-lot-${idx}" value="${lot.num}">
+          <input type="hidden" id="ll-qte-${idx}" value="${lot.qte}">
+        </div>`;
+      }
+    });
+  });
+
+  document.getElementById('ll-liste-lignes').innerHTML = html;
+  document.getElementById('ll-nb-lignes').textContent = `${ligneIndex} réceptions`;
+
+  const bloc = document.getElementById('ll-nb-non-reconnus-bloc');
+  if (nbNonReconnus > 0) {
+    bloc.style.display = 'block';
+    bloc.textContent = `⚠️ ${nbNonReconnus} produit(s) non reconnu(s) — associez-les avant d'enregistrer.`;
+  } else {
+    bloc.style.display = 'none';
+  }
+
+  document.getElementById('contenu-import').style.display = 'block';
+  document.getElementById('zone-upload').innerHTML = `
+    <div class="zone-upload-icon">✅</div>
+    <div class="zone-upload-texte">PDF analysé — ${ligneIndex} réceptions</div>
+    <div class="zone-upload-sous">Cliquer pour changer de fichier</div>`;
+}
   if (/ANGOULINS/i.test(texte)) {
     clientNom = 'Colibri Angoulins';
     clientType = 'angoulins';
@@ -253,6 +429,87 @@ async function traiterPDF(file) {
 }
 
 // ─── Affichage de l'aperçu ───────────────────────────────────────────────────
+// ─── BON DE COMMANDE COLIBRI ─────────────────────────────────────────────────
+function traiterBonCommande(texte) {
+  let clientNom, clientType;
+  if (/ANGOULINS/i.test(texte)) { clientNom = 'Colibri Angoulins'; clientType = 'angoulins'; }
+  else if (/PUILBOREAU/i.test(texte)) { clientNom = 'Colibri Beaulieu'; clientType = 'beaulieu'; }
+  else { clientNom = 'Client inconnu'; clientType = null; }
+
+  let noCommande = null;
+  const m1 = texte.match(/(?:N[o°]\s*Commande\s*)?(\d{4,6})\s+\d{2}\/\d{2}\/\d{4}/);
+  const m2 = texte.match(/Cde\s+0*(\d+)/);
+  if (m1) noCommande = m1[1];
+  else if (m2) noCommande = m2[1];
+
+  const articles = [];
+  const re1 = /(\d{13})\s+FR\s+(.+?)\s+([\d,]+)\s*[€ÄA]\s+(\d+)\s+([\d,]+)/g;
+  let match;
+  while ((match = re1.exec(texte)) !== null) {
+    articles.push({ code: match[1], designation: match[2].trim(), quantite: parseInt(match[4]) });
+  }
+  if (articles.length === 0) {
+    const re2 = /(\d{13})\s+\1\s+FR\s+(.+?)\s+([\d,\.]+)\s+([\d\.]+)\s+([\d\.]+)/g;
+    while ((match = re2.exec(texte)) !== null) {
+      articles.push({ code: match[1], designation: match[2].trim(), quantite: Math.round(parseFloat(match[3].replace(',','.'))) });
+    }
+  }
+
+  donneesExtraites = { clientNom, clientType, noCommande, articles };
+  afficherApercu();
+}
+
+// ─── Mémorisation apprentissage livraison ────────────────────────────────────
+async function memoriserMPFournisseur(fournisseur, code, designation, mpId) {
+  if (!mpId) return;
+  const mp = toutesMP.find(m => m.id === mpId);
+  await sb.from('mapping_articles_fournisseur').upsert({
+    fournisseur_nom: fournisseur.toUpperCase(),
+    code_article: code, designation, mp_id: mpId, actif: true
+  }, { onConflict: 'fournisseur_nom,code_article' });
+  const cle = `${fournisseur.toUpperCase()}|${code}`;
+  mappingLivraison[cle] = { mp_id: mpId, nom: mp?.nom || designation };
+  // Re-afficher
+  if (donneesExtraites?.type === 'livraison') afficherLivraison(document.getElementById('ll-badge-bdl').textContent);
+}
+
+// ─── Import livraison ────────────────────────────────────────────────────────
+async function importerLivraison() {
+  const dateReception = document.getElementById('ll-date-reception').value;
+  if (!dateReception) { alert('Renseignez la date de réception.'); return; }
+
+  const { fournisseur, noBdl } = donneesExtraites;
+  const btn = document.getElementById('ll-btn-importer');
+  btn.disabled = true; btn.textContent = 'Enregistrement…';
+
+  const lignesEls = document.querySelectorAll('[id^="ll-qte-"]');
+  const receptions = [];
+  let erreur = false;
+
+  lignesEls.forEach((el, i) => {
+    const mpId = document.getElementById(`ll-mp-${i}`)?.value;
+    const lot = document.getElementById(`ll-lot-${i}`)?.value || '';
+    const qte = parseFloat(el.value || 0);
+    if (!mpId) { erreur = true; return; }
+    receptions.push({
+      mp_id: mpId, fournisseur, n_lot: lot || noBdl,
+      n_certificat_bio: 'FR-BIO-09', quantite: qte,
+      unite_quantite: 'kg', date_reception: dateReception,
+      etat_emballage: 'correct', conforme: true
+    });
+  });
+
+  if (erreur) { alert('Certains produits ne sont pas associés.'); btn.disabled = false; btn.textContent = '📦 Enregistrer la réception'; return; }
+
+  const { error } = await sb.from('tracabilite_lots').insert(receptions);
+  if (error) { alert('Erreur : ' + error.message); btn.disabled = false; btn.textContent = '📦 Enregistrer la réception'; return; }
+
+  document.getElementById('ll-msg-succes').classList.add('visible');
+  document.getElementById('ll-msg-succes-detail').textContent =
+    `${receptions.length} réception(s) créée(s) — ${fournisseur} · ${noBdl}`;
+  btn.textContent = '✅ Enregistré';
+}
+
 function afficherApercu() {
   const { clientNom, noCommande, articles } = donneesExtraites;
 
