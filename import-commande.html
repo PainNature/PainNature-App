@@ -439,19 +439,19 @@ async function traiterLivraison_upload(file) {
       let artM;
       while ((artM = artRe.exec(texte)) !== null) {
         articlesRaw.push({ code: artM[1], designation: artM[2].trim(), quantite: parseFloat(artM[3].replace(',','.')), pos: artM.index, fin: artM.index + artM[0].length });      }
-      // Lots stricts : "lot XXXXX" ou "XXXXX=YY kg" uniquement
-      const lotStrictRe = /lot\s+(\d{5,8})|(\d{5,8})=(\d+)\s*kg/gi;
+      // Lots stricts : "lot XXXXX=YYkg" ou "XXXXX=YYkg" ou "lot XXXXX" (sans quantité)
+      const lotStrictRe = /(?:lot\s+)?(\d{5,8})=(\d+)\s*kg|lot\s+(\d{5,8})(?!=)/gi;
       const tousLots = [];
       let lotM;
       while ((lotM = lotStrictRe.exec(texte)) !== null) {
-        if (lotM[1]) tousLots.push({ num: lotM[1], qte: null, pos: lotM.index });
-        else tousLots.push({ num: lotM[2], qte: parseFloat(lotM[3]), pos: lotM.index });
+        if (lotM[1]) tousLots.push({ num: lotM[1], qte: parseFloat(lotM[2]), pos: lotM.index });
+        else tousLots.push({ num: lotM[3], qte: null, pos: lotM.index });
       }
-      // Associer chaque lot à l'article dans la zone entre l'article précédent et suivant
+      // Associer chaque lot à l'article dans la zone entre la fin de l'article et le début du suivant
       articlesRaw.forEach((art, ai) => {
-        const posAvant = ai > 0 ? articlesRaw[ai-1].fin : 0;
-        const posApres = ai + 1 < articlesRaw.length ? articlesRaw[ai+1].pos : texte.length;
-        const lotsArticle = tousLots.filter(l => l.pos > posAvant && l.pos < posApres);
+        const posDebut = art.fin; // après la quantité de CET article
+        const posFin = ai + 1 < articlesRaw.length ? articlesRaw[ai+1].pos : texte.length;
+        const lotsArticle = tousLots.filter(l => l.pos >= posDebut && l.pos < posFin);
         // Dédupliquer les numéros de lot
         const seen = new Set();
         const lotsDedupe = lotsArticle.filter(l => { if (seen.has(l.num)) return false; seen.add(l.num); return true; });
