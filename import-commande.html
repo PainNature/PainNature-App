@@ -397,8 +397,35 @@ async function traiterLivraison_upload(file) {
       let m;
       while ((m = re.exec(texte)) !== null) {
         const poids = Math.abs(parseInt(m[4]));
-        if (poids > 0) articles.push({ code: m[1], designation: m[2].trim(), lots: [{ num: noBdl, qte: poids }], fournisseur });
+        if (poids > 0) articles.push({ code: m[1], designation: m[2].trim(), lots: [{ num: noBdl, qte: poids, dlc: null, unite: 'kg' }], fournisseur });
       }
+
+    } else if (/Oeufs d'Antan|OEUFS D'ANTAN/i.test(texte)) {
+      fournisseur = "LES OEUFS D'ANTAN";
+      const blM = texte.match(/Bon de livraison n°\s*(\d+)/i);
+      noBdl = blM ? blM[1] : '?';
+      const dateM = texte.match(/^(\d{2}\/\d{2}\/\d{4})/m);
+      dateLiv = dateM ? dateM[1] : null;
+      const lignes = texte.split('\n');
+      for (let i = 0; i < lignes.length; i++) {
+        const lotM = lignes[i].match(/N°\s+lot\s+(\S+)/);
+        if (lotM && i+1 < lignes.length) {
+          const artM = lignes[i+1].match(/(A\d+)\s+(.+?)\s+([\d.,]+)\s+€\s*\/\s*Unité\s+(\d+)/);
+          if (artM) {
+            let dlc = null;
+            if (i+2 < lignes.length) {
+              const dlcM = lignes[i+2].match(/DLC\s+(\d{2}\/\d{2}\/\d{2,4})/);
+              if (dlcM) dlc = dlcM[1];
+            }
+            articles.push({
+              code: artM[1], designation: artM[2].trim(),
+              lots: [{ num: lotM[1], qte: parseInt(artM[4]), dlc, unite: 'pièce' }],
+              fournisseur
+            });
+          }
+        }
+      }
+
     } else {
       fournisseur = 'COUP DE VAGUE';
       const noBdlM = texte.match(/N°\s*:\s*(BDL\S+)/);
@@ -451,24 +478,28 @@ async function traiterLivraison_upload(file) {
         if (mp && mp.mp_id) return `<div class="ligne-produit reconnu">
           <div style="flex:1;min-width:0;">
             <div style="font-weight:700;">${a.designation}</div>
-            <div style="font-size:.72rem;color:#2d6a4f;font-family:var(--mono);">Lot ${lot.num||'—'} · <strong>${mp.nom}</strong></div>
+            <div style="font-size:.72rem;color:#2d6a4f;font-family:var(--mono);">Lot ${lot.num||'—'} · <strong>${mp.nom}</strong>${lot.dlc ? ` · DLC ${lot.dlc}` : ''}</div>
           </div>
-          <span class="lp-qte">${lot.qte} kg ✓</span>
+          <span class="lp-qte">${lot.qte} ${lot.unite||'kg'} ✓</span>
           <input type="hidden" id="liv-mp-${i}" value="${mp.mp_id}">
           <input type="hidden" id="liv-lot-${i}" value="${lot.num}">
           <input type="hidden" id="liv-qte-${i}" value="${lot.qte}">
+          <input type="hidden" id="liv-dlc-${i}" value="${lot.dlc||''}">
+          <input type="hidden" id="liv-unite-${i}" value="${lot.unite||'kg'}">
         </div>`;
         nbNR++;
         return `<div class="ligne-produit non-reconnu">
           <div style="flex:1;min-width:0;">
             <div style="font-weight:700;">${a.code} — ${a.designation}</div>
-            <div style="font-size:.72rem;color:var(--text-light);font-family:var(--mono);">Lot ${lot.num||'—'} · ${lot.qte} kg</div>
+            <div style="font-size:.72rem;color:var(--text-light);font-family:var(--mono);">Lot ${lot.num||'—'} · ${lot.qte} ${lot.unite||'kg'}${lot.dlc ? ` · DLC ${lot.dlc}` : ''}</div>
             <select id="liv-mp-${i}" style="margin-top:4px;width:100%;padding:6px;font-size:.82rem;border:1px solid var(--border-strong);border-radius:var(--r);" onchange="memoriserLiv('${a.fournisseur}','${a.code}','${a.designation}',this.value)">
               <option value="">— Associer à une matière —</option>${optMP}
             </select>
           </div>
           <input type="hidden" id="liv-lot-${i}" value="${lot.num}">
           <input type="hidden" id="liv-qte-${i}" value="${lot.qte}">
+          <input type="hidden" id="liv-dlc-${i}" value="${lot.dlc||''}">
+          <input type="hidden" id="liv-unite-${i}" value="${lot.unite||'kg'}">
         </div>`;
       });
     }).join('');
@@ -508,16 +539,28 @@ async function importerLivraison() {
   els.forEach((el, i) => {
     const mpId = document.getElementById(`liv-mp-${i}`)?.value;
     if (!mpId) { erreur = true; return; }
+    const dlcVal = document.getElementById(`liv-dlc-${i}`)?.value || '';
+    const uniteVal = document.getElementById(`liv-unite-${i}`)?.value || 'kg';
+    // Convertir DLC "DD/MM/YY" ou "DD/MM/YYYY" en ISO
+    let dlcIso = null;
+    if (dlcVal) {
+      const p = dlcVal.split('/');
+      if (p.length === 3) {
+        const year = p[2].length === 2 ? '20'+p[2] : p[2];
+        dlcIso = `${year}-${p[1]}-${p[0]}`;
+      }
+    }
     receptions.push({
       mp_id: mpId,
       fournisseur: donneesLivraison.fournisseur,
       n_lot: document.getElementById(`liv-lot-${i}`)?.value || donneesLivraison.noBdl,
-      n_certificat_bio: 'FR-BIO-09',
+      n_certificat_bio: 'FR-BIO-01',
       quantite: parseFloat(el.value || 0),
-      unite_quantite: 'kg',
+      unite_quantite: uniteVal,
       date_reception: dateReception,
       etat_emballage: 'correct',
-      conforme: true
+      conforme: true,
+      ...(dlcIso ? { dlc: dlcIso } : {})
     });
   });
 
