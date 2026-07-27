@@ -448,7 +448,7 @@ async function traiterLivraison_upload(file) {
           const dlcM = apres.match(/DLC\s+(\d{2}\/\d{2}\/\d{2,4})/);
           articles.push({
             code: artM[1], designation: artM[2].trim(),
-            lots: [{ num: lotM[1], qte: parseInt(artM[3]), dlc: dlcM ? dlcM[1] : null, unite: 'pièce' }],
+            lots: [{ num: lotM[1], qte: parseInt(artM[3]), dlc: dlcM ? dlcM[1] : null, unite: 'piece' }],
             fournisseur
           });
         }
