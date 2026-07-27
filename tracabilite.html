@@ -156,20 +156,12 @@ tr:last-child td{border-bottom:none;}
       <button class="btn-periode" onclick="window.print()">🖨️ Imprimer</button>
     </div>
 
-    <!-- Entrées -->
+    <!-- Tableau croisé bio -->
     <div class="card" style="margin-bottom:1rem;">
       <div style="padding:10px 16px; font-weight:700; font-size:.85rem; background:#546054; color:#fff; border-radius:var(--r-lg) var(--r-lg) 0 0;">
-        📥 Entrées — Réceptions matières premières
+        🌱 Matières premières bio — Entrées / Sorties
       </div>
       <div id="liste-entrees"><div class="vide">Choisissez une période et cliquez sur Calculer.</div></div>
-    </div>
-
-    <!-- Sorties -->
-    <div class="card" style="margin-bottom:1rem;">
-      <div style="padding:10px 16px; font-weight:700; font-size:.85rem; background:var(--sauge); color:#fff; border-radius:var(--r-lg) var(--r-lg) 0 0;">
-        📤 Sorties — Matières premières consommées en production
-      </div>
-      <div id="liste-sorties"><div class="vide">—</div></div>
     </div>
 
     <!-- Cumul bio (certificateur) -->
@@ -771,73 +763,66 @@ async function chargerCumuls() {
 }
 
 async function chargerEntrees(debut, fin) {
-  const { data, error } = await sb
+  // Entrées : réceptions bio uniquement
+  const { data: receptions } = await sb
     .from('tracabilite_lots')
-    .select('mp_id, quantite, unite_quantite, date_reception, matieres_premieres(nom, categorie)')
+    .select('mp_id, quantite, unite_quantite, matieres_premieres(nom, bio)')
     .gte('date_reception', debut)
     .lte('date_reception', fin + 'T23:59:59')
     .not('quantite', 'is', null);
 
-  const conteneur = document.getElementById('liste-entrees');
-  if (error) { conteneur.innerHTML = `<div class="vide">Erreur : ${error.message}</div>`; return; }
-  if (!data || data.length === 0) { conteneur.innerHTML = '<div class="vide">Aucune réception sur cette période.</div>'; return; }
+  // Sorties : consommation bio uniquement
+  const { data: sorties } = await sb.rpc('get_besoins_matieres', { p_date_debut: debut, p_date_fin: fin });
 
-  const cumuls = {};
-  data.forEach(l => {
-    const nom = l.matieres_premieres?.nom || '?';
-    const unite = l.unite_quantite || 'kg';
-    const cle = `${nom}|${unite}`;
-    if (!cumuls[cle]) cumuls[cle] = { nom, unite, total: 0, nb: 0 };
-    cumuls[cle].total += Number(l.quantite);
-    cumuls[cle].nb++;
+  // Agréger les entrées bio par matière
+  const entrees = {};
+  (receptions || []).forEach(l => {
+    if (!l.matieres_premieres?.bio) return;
+    const nom = l.matieres_premieres.nom;
+    entrees[nom] = (entrees[nom] || 0) + Number(l.quantite);
   });
 
-  const lignes = Object.values(cumuls).sort((a, b) => a.nom.localeCompare(b.nom));
+  // Agréger les sorties bio par matière
+  const conso = {};
+  (sorties || []).forEach(l => {
+    if (!l.bio) return;
+    const nom = l.nom_matiere || '?';
+    conso[nom] = (conso[nom] || 0) + Number(l.quantite_totale_kg);
+  });
+
+  // Union des noms bio
+  const noms = [...new Set([...Object.keys(entrees), ...Object.keys(conso)])].sort();
+
+  const conteneur = document.getElementById('liste-entrees');
+  if (noms.length === 0) {
+    conteneur.innerHTML = '<div class="vide">Aucune matière bio sur cette période.</div>';
+    return;
+  }
+
   conteneur.innerHTML = `<table style="width:100%;border-collapse:collapse;">
     <thead><tr>
-      <th style="text-align:left;padding:8px 16px;font-size:.75rem;text-transform:uppercase;color:var(--text-light);font-family:var(--mono);border-bottom:2px solid var(--border);">Matière</th>
-      <th style="text-align:right;padding:8px 16px;font-size:.75rem;text-transform:uppercase;color:var(--text-light);font-family:var(--mono);border-bottom:2px solid var(--border);">Reçu</th>
-      <th style="text-align:right;padding:8px 16px;font-size:.75rem;text-transform:uppercase;color:var(--text-light);font-family:var(--mono);border-bottom:2px solid var(--border);">Lots</th>
+      <th style="text-align:left;padding:8px 16px;font-size:.75rem;text-transform:uppercase;color:var(--text-light);font-family:var(--mono);border-bottom:2px solid var(--border);">Matière première bio</th>
+      <th style="text-align:right;padding:8px 16px;font-size:.75rem;text-transform:uppercase;color:var(--text-light);font-family:var(--mono);border-bottom:2px solid var(--border);">📥 Réceptionné</th>
+      <th style="text-align:right;padding:8px 16px;font-size:.75rem;text-transform:uppercase;color:var(--text-light);font-family:var(--mono);border-bottom:2px solid var(--border);">📤 Utilisé</th>
+      <th style="text-align:right;padding:8px 16px;font-size:.75rem;text-transform:uppercase;color:var(--text-light);font-family:var(--mono);border-bottom:2px solid var(--border);">Solde</th>
     </tr></thead>
-    <tbody>${lignes.map((l, i) => `
-      <tr style="background:${i%2===0?'var(--surface)':'#fff'}">
-        <td style="padding:10px 16px;font-weight:600;">${l.nom}</td>
-        <td style="padding:10px 16px;text-align:right;font-family:var(--mono);font-weight:800;color:#546054;">${l.total.toFixed(l.unite==='kg'?2:0)} ${l.unite==='piece'?'pces':'kg'}</td>
-        <td style="padding:10px 16px;text-align:right;font-family:var(--mono);color:var(--text-light);">${l.nb}</td>
-      </tr>`).join('')}
+    <tbody>${noms.map((nom, i) => {
+      const rec = entrees[nom] || 0;
+      const used = conso[nom] || 0;
+      const solde = rec - used;
+      const soldeColor = solde < 0 ? '#e53e3e' : solde > 0 ? '#2d6a4f' : 'var(--text-light)';
+      return `<tr style="background:${i%2===0?'var(--surface)':'#fff'}">
+        <td style="padding:10px 16px;font-weight:600;">${nom}</td>
+        <td style="padding:10px 16px;text-align:right;font-family:var(--mono);color:#546054;">${rec > 0 ? rec.toFixed(2)+' kg' : '—'}</td>
+        <td style="padding:10px 16px;text-align:right;font-family:var(--mono);color:var(--sauge);">${used > 0 ? used.toFixed(2)+' kg' : '—'}</td>
+        <td style="padding:10px 16px;text-align:right;font-family:var(--mono);font-weight:700;color:${soldeColor};">${(rec > 0 || used > 0) ? (solde >= 0 ? '+' : '') + solde.toFixed(2)+' kg' : '—'}</td>
+      </tr>`;
+    }).join('')}
     </tbody></table>`;
 }
 
 async function chargerSorties(debut, fin) {
-  const { data, error } = await sb.rpc('get_besoins_matieres', { p_date_debut: debut, p_date_fin: fin });
-  const conteneur = document.getElementById('liste-sorties');
-  if (error) { conteneur.innerHTML = `<div class="vide">Erreur : ${error.message}</div>`; return; }
-  if (!data || data.length === 0) { conteneur.innerHTML = '<div class="vide">Aucune production sur cette période.</div>'; return; }
-
-  // Agréger par matière (la fonction retourne une ligne par jour × matière)
-  const cumuls = {};
-  data.forEach(l => {
-    const nom = l.nom_matiere || '?';
-    if (!cumuls[nom]) cumuls[nom] = { nom, bio: l.bio, total: 0, jours: new Set() };
-    cumuls[nom].total += Number(l.quantite_totale_kg);
-    if (l.date_prod) cumuls[nom].jours.add(l.date_prod);
-  });
-
-  const lignes = Object.values(cumuls).sort((a, b) => a.nom.localeCompare(b.nom));
-
-  conteneur.innerHTML = `<table style="width:100%;border-collapse:collapse;">
-    <thead><tr>
-      <th style="text-align:left;padding:8px 16px;font-size:.75rem;text-transform:uppercase;color:var(--text-light);font-family:var(--mono);border-bottom:2px solid var(--border);">Matière</th>
-      <th style="text-align:right;padding:8px 16px;font-size:.75rem;text-transform:uppercase;color:var(--text-light);font-family:var(--mono);border-bottom:2px solid var(--border);">Consommé</th>
-      <th style="text-align:right;padding:8px 16px;font-size:.75rem;text-transform:uppercase;color:var(--text-light);font-family:var(--mono);border-bottom:2px solid var(--border);">Jours</th>
-    </tr></thead>
-    <tbody>${lignes.map((l, i) => `
-      <tr style="background:${i%2===0?'var(--surface)':'#fff'}">
-        <td style="padding:10px 16px;font-weight:600;">${l.nom}${l.bio ? ' <span style="font-size:.65rem;background:#e6f4ea;color:#2d6a4f;padding:1px 6px;border-radius:99px;font-weight:700;">BIO</span>' : ''}</td>
-        <td style="padding:10px 16px;text-align:right;font-family:var(--mono);font-weight:800;color:var(--sauge);">${l.total.toFixed(2)} kg</td>
-        <td style="padding:10px 16px;text-align:right;font-family:var(--mono);color:var(--text-light);">${l.jours.size} j</td>
-      </tr>`).join('')}
-    </tbody></table>`;
+  // Vide — fusionné dans chargerEntrees
 }
 
 async function chargerCumulBio(debut, fin) {
