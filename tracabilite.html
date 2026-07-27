@@ -809,14 +809,21 @@ async function chargerEntrees(debut, fin) {
 }
 
 async function chargerSorties(debut, fin) {
-  // Utiliser get_besoins_matieres qui calcule déjà la consommation exacte
   const { data, error } = await sb.rpc('get_besoins_matieres', { p_date_debut: debut, p_date_fin: fin });
   const conteneur = document.getElementById('liste-sorties');
   if (error) { conteneur.innerHTML = `<div class="vide">Erreur : ${error.message}</div>`; return; }
   if (!data || data.length === 0) { conteneur.innerHTML = '<div class="vide">Aucune production sur cette période.</div>'; return; }
 
-  // Trier par nom
-  const lignes = [...data].sort((a, b) => (a.nom || '').localeCompare(b.nom || ''));
+  // Agréger par matière (la fonction retourne une ligne par jour × matière)
+  const cumuls = {};
+  data.forEach(l => {
+    const nom = l.nom_matiere || '?';
+    if (!cumuls[nom]) cumuls[nom] = { nom, bio: l.bio, total: 0, jours: new Set() };
+    cumuls[nom].total += Number(l.quantite_totale_kg);
+    if (l.date_prod) cumuls[nom].jours.add(l.date_prod);
+  });
+
+  const lignes = Object.values(cumuls).sort((a, b) => a.nom.localeCompare(b.nom));
 
   conteneur.innerHTML = `<table style="width:100%;border-collapse:collapse;">
     <thead><tr>
@@ -827,8 +834,8 @@ async function chargerSorties(debut, fin) {
     <tbody>${lignes.map((l, i) => `
       <tr style="background:${i%2===0?'var(--surface)':'#fff'}">
         <td style="padding:10px 16px;font-weight:600;">${l.nom}${l.bio ? ' <span style="font-size:.65rem;background:#e6f4ea;color:#2d6a4f;padding:1px 6px;border-radius:99px;font-weight:700;">BIO</span>' : ''}</td>
-        <td style="padding:10px 16px;text-align:right;font-family:var(--mono);font-weight:800;color:var(--sauge);">${Number(l.quantite_totale_kg).toFixed(2)} kg</td>
-        <td style="padding:10px 16px;text-align:right;font-family:var(--mono);color:var(--text-light);">${l.nb_jours || '—'}</td>
+        <td style="padding:10px 16px;text-align:right;font-family:var(--mono);font-weight:800;color:var(--sauge);">${l.total.toFixed(2)} kg</td>
+        <td style="padding:10px 16px;text-align:right;font-family:var(--mono);color:var(--text-light);">${l.jours.size} j</td>
       </tr>`).join('')}
     </tbody></table>`;
 }
