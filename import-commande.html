@@ -438,22 +438,26 @@ async function traiterLivraison_upload(file) {
       const articlesRaw = [];
       let artM;
       while ((artM = artRe.exec(texte)) !== null) {
-        articlesRaw.push({ code: artM[1], designation: artM[2].trim(), quantite: parseFloat(artM[3].replace(',','.')), pos: artM.index });
+        articlesRaw.push({ code: artM[1], designation: artM[2].trim(), quantite: parseFloat(artM[3].replace(',','.')), pos: artM.index, fin: artM.index + artM[0].length });
       }
-      // Extraire tous les lots avec leurs quantités
-      const lotRe = /lot\s+(\d{6,})(?:=(\d+)\s*kg)?/gi;
+      // Lots stricts : "lot XXXXX" ou "XXXXX=YY kg" uniquement
+      const lotStrictRe = /lot\s+(\d{5,8})|(\d{5,8})=(\d+)\s*kg/gi;
       const tousLots = [];
       let lotM;
-      while ((lotM = lotRe.exec(texte)) !== null) {
-        tousLots.push({ num: lotM[1], qte: lotM[2] ? parseFloat(lotM[2]) : null, pos: lotM.index });
+      while ((lotM = lotStrictRe.exec(texte)) !== null) {
+        if (lotM[1]) tousLots.push({ num: lotM[1], qte: null, pos: lotM.index });
+        else tousLots.push({ num: lotM[2], qte: parseFloat(lotM[3]), pos: lotM.index });
       }
-      // Associer chaque lot à l'article le plus proche
+      // Associer chaque lot à l'article dans la zone entre l'article précédent et suivant
       articlesRaw.forEach((art, ai) => {
-        const posDebut = art.pos;
-        const posFin = ai + 1 < articlesRaw.length ? articlesRaw[ai+1].pos : texte.length;
-        const lotsArticle = tousLots.filter(l => l.pos > posDebut && l.pos < posFin);
-        const lots = lotsArticle.length > 0
-          ? lotsArticle.map(l => ({ num: l.num, qte: l.qte || art.quantite, dlc: null, unite: 'kg' }))
+        const posAvant = ai > 0 ? articlesRaw[ai-1].fin : 0;
+        const posApres = ai + 1 < articlesRaw.length ? articlesRaw[ai+1].pos : texte.length;
+        const lotsArticle = tousLots.filter(l => l.pos > posAvant && l.pos < posApres);
+        // Dédupliquer les numéros de lot
+        const seen = new Set();
+        const lotsDedupe = lotsArticle.filter(l => { if (seen.has(l.num)) return false; seen.add(l.num); return true; });
+        const lots = lotsDedupe.length > 0
+          ? lotsDedupe.map(l => ({ num: l.num, qte: l.qte || art.quantite, dlc: null, unite: 'kg' }))
           : [{ num: '', qte: art.quantite, dlc: null, unite: 'kg' }];
         articles.push({ code: art.code, designation: art.designation, lots, fournisseur });
       });
