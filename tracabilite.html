@@ -149,14 +149,33 @@ tr:last-child td{border-bottom:none;}
       <input type="date" id="cumul-date-debut">
       <span>→</span>
       <input type="date" id="cumul-date-fin">
+      <button class="btn-periode" onclick="definirPeriode('semaine')">Cette semaine</button>
       <button class="btn-periode" onclick="definirPeriode('mois')">Ce mois</button>
-      <button class="btn-periode" onclick="definirPeriode('annee')">Cette année</button>
-      <button class="btn btn-primary" style="padding:8px 16px;" onclick="chargerCumulBio()">Calculer</button>
+      <button class="btn-periode" onclick="definirPeriode('perso')">Personnalisée</button>
+      <button class="btn btn-primary" style="padding:8px 16px;" onclick="chargerCumuls()">Calculer</button>
       <button class="btn-periode" onclick="window.print()">🖨️ Imprimer</button>
     </div>
-    <div class="card">
-      <div style="padding:10px 16px; font-weight:700; font-size:.85rem; background:var(--wheat-light); color:var(--wheat);">Cumul matières premières bio consommées</div>
-      <div id="liste-cumul-bio"><div class="vide">Choisissez une période et cliquez sur Calculer.</div></div>
+
+    <!-- Entrées -->
+    <div class="card" style="margin-bottom:1rem;">
+      <div style="padding:10px 16px; font-weight:700; font-size:.85rem; background:#546054; color:#fff; border-radius:var(--r-lg) var(--r-lg) 0 0;">
+        📥 Entrées — Réceptions matières premières
+      </div>
+      <div id="liste-entrees"><div class="vide">Choisissez une période et cliquez sur Calculer.</div></div>
+    </div>
+
+    <!-- Sorties -->
+    <div class="card" style="margin-bottom:1rem;">
+      <div style="padding:10px 16px; font-weight:700; font-size:.85rem; background:var(--sauge); color:#fff; border-radius:var(--r-lg) var(--r-lg) 0 0;">
+        📤 Sorties — Matières premières consommées en production
+      </div>
+      <div id="liste-sorties"><div class="vide">—</div></div>
+    </div>
+
+    <!-- Cumul bio (certificateur) -->
+    <div class="card" style="margin-bottom:1rem;">
+      <div style="padding:10px 16px; font-weight:700; font-size:.85rem; background:var(--wheat-light); color:var(--wheat);">🌱 Cumul matières premières bio consommées</div>
+      <div id="liste-cumul-bio"><div class="vide">—</div></div>
     </div>
     <div class="card" style="margin-top:1rem;">
       <div style="padding:10px 16px; font-weight:700; font-size:.85rem; background:var(--wheat-light); color:var(--wheat);">Lots bio réceptionnés sur la période</div>
@@ -724,51 +743,119 @@ btn.disabled = true; btn.textContent = 'Enregistrement…';
 
 function definirPeriode(type) {
   const maintenant = new Date();
+  if (type === 'perso') return; // laisser l'utilisateur saisir librement
   let debut;
-  if (type === 'mois') debut = new Date(maintenant.getFullYear(), maintenant.getMonth(), 1);
-  else debut = new Date(maintenant.getFullYear(), 0, 1);
+  if (type === 'semaine') {
+    const jour = maintenant.getDay() || 7;
+    debut = new Date(maintenant);
+    debut.setDate(maintenant.getDate() - jour + 1);
+  } else if (type === 'mois') {
+    debut = new Date(maintenant.getFullYear(), maintenant.getMonth(), 1);
+  } else {
+    debut = new Date(maintenant.getFullYear(), 0, 1);
+  }
   document.getElementById('cumul-date-debut').value = debut.toISOString().slice(0, 10);
   document.getElementById('cumul-date-fin').value = dateAujourdhui();
-  chargerCumulBio();
 }
 
-async function chargerCumulBio() {
+async function chargerCumuls() {
   const debut = document.getElementById('cumul-date-debut').value;
   const fin = document.getElementById('cumul-date-fin').value;
   if (!debut || !fin) { alert('Choisissez une période complète.'); return; }
 
+  await Promise.all([
+    chargerEntrees(debut, fin),
+    chargerSorties(debut, fin),
+    chargerCumulBio(debut, fin)
+  ]);
+}
+
+async function chargerEntrees(debut, fin) {
+  const { data, error } = await sb
+    .from('tracabilite_lots')
+    .select('mp_id, quantite, unite_quantite, date_reception, matieres_premieres(nom, categorie)')
+    .gte('date_reception', debut)
+    .lte('date_reception', fin + 'T23:59:59')
+    .not('quantite', 'is', null);
+
+  const conteneur = document.getElementById('liste-entrees');
+  if (error) { conteneur.innerHTML = `<div class="vide">Erreur : ${error.message}</div>`; return; }
+  if (!data || data.length === 0) { conteneur.innerHTML = '<div class="vide">Aucune réception sur cette période.</div>'; return; }
+
+  const cumuls = {};
+  data.forEach(l => {
+    const nom = l.matieres_premieres?.nom || '?';
+    const unite = l.unite_quantite || 'kg';
+    const cle = `${nom}|${unite}`;
+    if (!cumuls[cle]) cumuls[cle] = { nom, unite, total: 0, nb: 0 };
+    cumuls[cle].total += Number(l.quantite);
+    cumuls[cle].nb++;
+  });
+
+  const lignes = Object.values(cumuls).sort((a, b) => a.nom.localeCompare(b.nom));
+  conteneur.innerHTML = `<table style="width:100%;border-collapse:collapse;">
+    <thead><tr>
+      <th style="text-align:left;padding:8px 16px;font-size:.75rem;text-transform:uppercase;color:var(--text-light);font-family:var(--mono);border-bottom:2px solid var(--border);">Matière</th>
+      <th style="text-align:right;padding:8px 16px;font-size:.75rem;text-transform:uppercase;color:var(--text-light);font-family:var(--mono);border-bottom:2px solid var(--border);">Reçu</th>
+      <th style="text-align:right;padding:8px 16px;font-size:.75rem;text-transform:uppercase;color:var(--text-light);font-family:var(--mono);border-bottom:2px solid var(--border);">Lots</th>
+    </tr></thead>
+    <tbody>${lignes.map((l, i) => `
+      <tr style="background:${i%2===0?'var(--surface)':'#fff'}">
+        <td style="padding:10px 16px;font-weight:600;">${l.nom}</td>
+        <td style="padding:10px 16px;text-align:right;font-family:var(--mono);font-weight:800;color:#546054;">${l.total.toFixed(l.unite==='kg'?2:0)} ${l.unite==='piece'?'pces':'kg'}</td>
+        <td style="padding:10px 16px;text-align:right;font-family:var(--mono);color:var(--text-light);">${l.nb}</td>
+      </tr>`).join('')}
+    </tbody></table>`;
+}
+
+async function chargerSorties(debut, fin) {
+  // Utiliser get_besoins_matieres qui calcule déjà la consommation exacte
+  const { data, error } = await sb.rpc('get_besoins_matieres', { p_date_debut: debut, p_date_fin: fin });
+  const conteneur = document.getElementById('liste-sorties');
+  if (error) { conteneur.innerHTML = `<div class="vide">Erreur : ${error.message}</div>`; return; }
+  if (!data || data.length === 0) { conteneur.innerHTML = '<div class="vide">Aucune production sur cette période.</div>'; return; }
+
+  // Trier par nom
+  const lignes = [...data].sort((a, b) => (a.nom || '').localeCompare(b.nom || ''));
+
+  conteneur.innerHTML = `<table style="width:100%;border-collapse:collapse;">
+    <thead><tr>
+      <th style="text-align:left;padding:8px 16px;font-size:.75rem;text-transform:uppercase;color:var(--text-light);font-family:var(--mono);border-bottom:2px solid var(--border);">Matière</th>
+      <th style="text-align:right;padding:8px 16px;font-size:.75rem;text-transform:uppercase;color:var(--text-light);font-family:var(--mono);border-bottom:2px solid var(--border);">Consommé</th>
+      <th style="text-align:right;padding:8px 16px;font-size:.75rem;text-transform:uppercase;color:var(--text-light);font-family:var(--mono);border-bottom:2px solid var(--border);">Jours</th>
+    </tr></thead>
+    <tbody>${lignes.map((l, i) => `
+      <tr style="background:${i%2===0?'var(--surface)':'#fff'}">
+        <td style="padding:10px 16px;font-weight:600;">${l.nom}${l.bio ? ' <span style="font-size:.65rem;background:#e6f4ea;color:#2d6a4f;padding:1px 6px;border-radius:99px;font-weight:700;">BIO</span>' : ''}</td>
+        <td style="padding:10px 16px;text-align:right;font-family:var(--mono);font-weight:800;color:var(--sauge);">${Number(l.quantite_totale_kg).toFixed(2)} kg</td>
+        <td style="padding:10px 16px;text-align:right;font-family:var(--mono);color:var(--text-light);">${l.nb_jours || '—'}</td>
+      </tr>`).join('')}
+    </tbody></table>`;
+}
+
+async function chargerCumulBio(debut, fin) {
   const { data, error } = await sb.rpc('get_cumul_bio_periode', { p_date_debut: debut, p_date_fin: fin });
   const conteneur = document.getElementById('liste-cumul-bio');
   if (error) { conteneur.innerHTML = `<div class="vide">Erreur : ${error.message}</div>`; return; }
   if (!data || data.length === 0) { conteneur.innerHTML = '<div class="vide">Aucune matière bio utilisée sur cette période.</div>'; return; }
-
   conteneur.innerHTML = data.map(c => `
     <div class="cumul-row">
       <span class="cumul-nom">${c.nom_matiere} <span style="color:var(--text-light); font-size:.78rem;">(${c.fournisseur || '—'})</span></span>
       <span class="cumul-val">${c.quantite_totale_kg} kg</span>
-    </div>
-  `).join('');
+    </div>`).join('');
 
   const { data: lots, error: errLots } = await sb.rpc('get_lots_bio_periode', { p_date_debut: debut, p_date_fin: fin });
   const conteneurLots = document.getElementById('liste-lots-bio-periode');
-  if (errLots) { conteneurLots.innerHTML = `<div class="vide">Erreur : ${errLots.message}</div>`; return; }
-  if (!lots || lots.length === 0) { conteneurLots.innerHTML = '<div class="vide">Aucun lot bio réceptionné sur cette période.</div>'; return; }
-
-  conteneurLots.innerHTML = `
-    <table>
-      <thead><tr><th>Matière</th><th>N° lot</th><th>Fournisseur</th><th>Date</th><th>Certificat bio</th></tr></thead>
-      <tbody>
-        ${lots.map(l => `
-          <tr>
-            <td>${l.mp_nom}</td>
-            <td style="font-family:var(--mono);">${l.n_lot}</td>
-            <td>${l.fournisseur}</td>
-            <td>${new Date(l.date_reception).toLocaleDateString('fr-FR')}</td>
-            <td>${l.n_certificat_bio || '—'}</td>
-          </tr>
-        `).join('')}
-      </tbody>
-    </table>`;
+  if (errLots || !lots || !lots.length) { conteneurLots.innerHTML = '<div class="vide">Aucun lot bio réceptionné sur cette période.</div>'; return; }
+  conteneurLots.innerHTML = `<table>
+    <thead><tr><th>Matière</th><th>N° lot</th><th>Fournisseur</th><th>Date</th><th>Certificat bio</th></tr></thead>
+    <tbody>${lots.map(l => `<tr>
+      <td>${l.mp_nom}</td>
+      <td style="font-family:var(--mono);">${l.n_lot}</td>
+      <td>${l.fournisseur}</td>
+      <td>${new Date(l.date_reception).toLocaleDateString('fr-FR')}</td>
+      <td>${l.n_certificat_bio || '—'}</td>
+    </tr>`).join('')}</tbody></table>`;
 }
 
 (async () => {
