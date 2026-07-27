@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Pain Nature — Import commande PDF</title>
+<title>Pain Nature — Import PDF</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#546054">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -14,634 +14,521 @@
 .topbar .retour{color:#fff;text-decoration:none;font-size:1.3rem;opacity:.85;}
 main{max-width:700px;margin:1.2rem auto 4rem;padding:0 1.2rem;}
 
+/* Choix du mode */
+.mode-choix{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.5rem;}
+.btn-mode{
+  padding:20px 16px;border:2px solid var(--border-strong);border-radius:var(--r-lg);
+  background:var(--surface);cursor:pointer;text-align:center;transition:all .2s;
+  font-family:inherit;
+}
+.btn-mode:hover{border-color:#546054;background:rgba(84,96,84,.05);}
+.btn-mode.actif{border-color:#546054;background:#546054;color:#fff;}
+.btn-mode-icon{font-size:1.8rem;display:block;margin-bottom:6px;}
+.btn-mode-label{font-weight:800;font-size:.9rem;}
+.btn-mode-sous{font-size:.75rem;opacity:.75;margin-top:3px;}
+
 /* Zone d'upload */
 .zone-upload{
   border:2.5px dashed var(--border-strong);border-radius:var(--r-lg);
-  padding:2.5rem;text-align:center;cursor:pointer;transition:all .2s;
+  padding:2rem;text-align:center;cursor:pointer;transition:all .2s;
   background:var(--surface);margin-bottom:1.2rem;
 }
-.zone-upload:hover,.zone-upload.dragover{border-color:var(--sauge);background:rgba(84,96,84,.05);}
-.zone-upload-icon{font-size:2.5rem;margin-bottom:.5rem;}
-.zone-upload-texte{font-weight:700;font-size:.95rem;color:var(--text);}
+.zone-upload:hover,.zone-upload.dragover{border-color:#546054;background:rgba(84,96,84,.05);}
+.zone-upload-icon{font-size:2rem;margin-bottom:.5rem;}
+.zone-upload-texte{font-weight:700;font-size:.95rem;}
 .zone-upload-sous{font-size:.8rem;color:var(--text-light);margin-top:4px;}
-#input-pdf{display:none;}
+#input-cmd{display:none;}
+#input-liv{display:none;}
 
-/* Aperçu du bon */
-.apercu-bon{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r-lg);padding:16px;margin-bottom:1rem;}
-.apercu-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;flex-wrap:wrap;gap:8px;}
-.apercu-client{font-weight:800;font-size:1rem;color:var(--sauge);}
+/* Aperçu */
+.apercu-bon{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r-lg);padding:14px 16px;margin-bottom:1rem;}
+.apercu-header{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;}
+.apercu-client{font-weight:800;font-size:1rem;color:#546054;}
 .apercu-meta{font-family:var(--mono);font-size:.78rem;color:var(--text-light);}
 .apercu-badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;}
 .badge{padding:3px 10px;border-radius:99px;font-size:.72rem;font-weight:700;font-family:var(--mono);}
-.badge-client{background:var(--sauge);color:#fff;}
+.badge-client{background:#546054;color:#fff;}
 .badge-cmd{background:var(--wheat-light);color:var(--wheat);}
 
-/* Date retrait */
-.date-retrait-bloc{background:var(--wheat-light);border:1.5px solid var(--wheat);border-radius:var(--r-lg);padding:12px 16px;margin-bottom:1rem;display:flex;align-items:center;gap:12px;}
+.date-retrait-bloc{background:var(--wheat-light);border:1.5px solid var(--wheat);border-radius:var(--r-lg);padding:12px 16px;margin-bottom:1rem;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
 .date-retrait-label{font-weight:700;font-size:.88rem;color:var(--wheat);flex-shrink:0;}
-.date-retrait-input{padding:9px 12px;border:1.5px solid var(--wheat);border-radius:var(--r);font-family:var(--mono);font-size:.9rem;flex:1;background:#fff;}
+.date-retrait-input{padding:9px 12px;border:1.5px solid var(--wheat);border-radius:var(--r);font-family:var(--mono);font-size:.9rem;flex:1;min-width:130px;background:#fff;}
 
-/* Lignes produits */
 .lignes-titre{font-family:var(--mono);font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;color:var(--text-light);margin-bottom:.5rem;}
-.ligne-produit{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r-lg);margin-bottom:6px;}
-.ligne-produit.non-reconnu{border-color:#e53e3e;background:#fff5f5;}
-.ligne-produit.reconnu{border-color:#38a169;background:#f0fff4;}
-.lp-code{font-family:var(--mono);font-size:.7rem;color:var(--text-light);width:70px;flex-shrink:0;}
-.lp-designation{font-size:.82rem;color:var(--text-light);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.lp-qte{font-family:var(--mono);font-weight:800;font-size:1rem;color:var(--sauge);width:32px;text-align:right;flex-shrink:0;}
-.lp-recette{font-weight:700;font-size:.88rem;flex:1;min-width:0;}
-.lp-recette select{width:100%;padding:6px 8px;border:1px solid var(--border-strong);border-radius:var(--r);font-size:.82rem;background:#fff;}
-.lp-badge-ok{color:#38a169;font-size:1.1rem;flex-shrink:0;}
-.lp-badge-ko{color:#e53e3e;font-size:1.1rem;flex-shrink:0;}
 .nb-non-reconnus{background:#fff3cd;border:1px solid #ffc107;border-radius:var(--r);padding:8px 14px;font-size:.85rem;font-weight:600;margin-bottom:1rem;}
+
+.ligne-produit{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r-lg);margin-bottom:6px;}
+.ligne-produit.reconnu{border-color:#38a169;background:#f0fff4;}
+.ligne-produit.non-reconnu{border-color:#e53e3e;background:#fff5f5;}
+.lp-code{font-family:var(--mono);font-size:.7rem;color:var(--text-light);width:60px;flex-shrink:0;}
+.lp-designation{font-size:.82rem;color:var(--text-light);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.lp-qte{font-family:var(--mono);font-weight:800;font-size:1rem;color:#546054;flex-shrink:0;}
+.lp-recette{font-weight:700;font-size:.88rem;flex:1;}
+.lp-recette select{width:100%;padding:6px 8px;border:1px solid var(--border-strong);border-radius:var(--r);font-size:.82rem;background:#fff;}
 
 .btn-importer{width:100%;padding:16px;font-size:1.05rem;font-weight:800;background:#546054;color:#fff;border:none;border-radius:var(--r-lg);cursor:pointer;margin-top:1rem;}
 .btn-importer:disabled{opacity:.4;cursor:not-allowed;}
 .msg-succes{background:#f0fff4;border:1.5px solid #38a169;border-radius:var(--r-lg);padding:16px;text-align:center;display:none;margin-top:1rem;}
 .msg-succes.visible{display:block;}
 .msg-succes-titre{font-weight:800;font-size:1.1rem;color:#38a169;}
+.msg-erreur-zone{background:#fff5f5;border:1.5px solid #e53e3e;border-radius:var(--r-lg);padding:12px 16px;margin-bottom:1rem;font-size:.88rem;color:#c53030;display:none;}
+.msg-erreur-zone.visible{display:block;}
 </style>
 </head>
 <body>
-
 <div class="topbar">
-  <span class="marque"><a href="accueil.html" class="retour">←</a> 📥 IMPORT COMMANDE PDF</span>
+  <span class="marque"><a href="accueil.html" class="retour">←</a> 📥 IMPORT PDF</span>
 </div>
-
 <main>
-  <!-- Zone d'upload -->
-  <div class="zone-upload" id="zone-upload"
-       onclick="document.getElementById('input-pdf').click()">
-    <div class="zone-upload-icon">📄</div>
-    <div class="zone-upload-texte">Déposer le bon de commande PDF ici</div>
-    <div class="zone-upload-sous">ou cliquer pour choisir un fichier</div>
-  </div>
-  <input type="file" id="input-pdf" accept=".pdf" onchange="traiterPDF(this.files[0])">
 
-  <!-- Badge type visible dès le début, hors du bloc caché -->
-  <div id="badge-type" style="margin-bottom:.8rem;"></div>
-
-  <div id="contenu-import" style="display:none;">
-    <!-- Aperçu client / commande -->
-    <div class="apercu-bon">
-      <div class="apercu-header">
-        <div>
-          <div class="apercu-client" id="ap-client"></div>
-          <div class="apercu-meta" id="ap-meta"></div>
-        </div>
-        <div class="apercu-badges">
-          <span class="badge badge-client" id="ap-badge-client"></span>
-          <span class="badge badge-cmd" id="ap-badge-cmd"></span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Date de retrait (saisie manuelle) -->
-    <div class="date-retrait-bloc">
-      <span class="date-retrait-label">📅 Date de retrait</span>
-      <input type="date" id="date-retrait" class="date-retrait-input">
-      <input type="time" id="heure-retrait" step="900" style="padding:9px 12px;border:1.5px solid var(--wheat);border-radius:var(--r);font-family:var(--mono);font-size:.88rem;background:#fff;" placeholder="Heure">
-    </div>
-
-    <!-- Lignes produits -->
-    <div class="lignes-titre">Produits — <span id="nb-lignes"></span></div>
-    <div id="nb-non-reconnus-bloc" class="nb-non-reconnus" style="display:none;"></div>
-    <div id="liste-lignes"></div>
-
-    <div class="msg-succes" id="msg-succes">
-      <div class="msg-succes-titre">✅ Commande importée !</div>
-      <div id="msg-succes-detail" style="margin-top:4px;font-size:.88rem;color:#2d6a4f;"></div>
-    </div>
-
-    <button class="btn-importer" id="btn-importer" onclick="importerCommande()">
-      💾 Enregistrer la commande
+  <!-- Choix du mode -->
+  <div class="mode-choix">
+    <button class="btn-mode actif" id="btn-mode-cmd" onclick="setMode('commande')">
+      <span class="btn-mode-icon">📋</span>
+      <div class="btn-mode-label">Bon de commande</div>
+      <div class="btn-mode-sous">Colibri Puilboreau / Angoulins</div>
+    </button>
+    <button class="btn-mode" id="btn-mode-liv" onclick="setMode('livraison')">
+      <span class="btn-mode-icon">📦</span>
+      <div class="btn-mode-label">Livraison / Facture</div>
+      <div class="btn-mode-sous">Coup de Vague · Bourseau</div>
     </button>
   </div>
+
+  <!-- ===== MODE COMMANDE ===== -->
+  <div id="section-commande">
+    <div class="zone-upload" id="zone-cmd" onclick="document.getElementById('input-cmd').click()">
+      <div class="zone-upload-icon">📄</div>
+      <div class="zone-upload-texte">Déposer le bon de commande PDF</div>
+      <div class="zone-upload-sous">ou cliquer pour choisir</div>
+    </div>
+    <input type="file" id="input-cmd" accept=".pdf" onchange="traiterBonCommande_upload(this.files[0])">
+    <div class="msg-erreur-zone" id="erreur-cmd"></div>
+
+    <div id="apercu-cmd" style="display:none;">
+      <div class="apercu-bon">
+        <div class="apercu-header">
+          <div>
+            <div class="apercu-client" id="cmd-client-nom"></div>
+            <div class="apercu-meta" id="cmd-meta"></div>
+          </div>
+          <div class="apercu-badges">
+            <span class="badge badge-cmd" id="cmd-badge-no"></span>
+          </div>
+        </div>
+      </div>
+      <div class="date-retrait-bloc">
+        <span class="date-retrait-label">📅 Date de retrait</span>
+        <input type="date" id="cmd-date-retrait" class="date-retrait-input">
+        <input type="time" id="cmd-heure-retrait" step="900" class="date-retrait-input" style="min-width:auto;flex:0;" placeholder="Heure">
+      </div>
+      <div class="lignes-titre">Produits — <span id="cmd-nb-lignes"></span></div>
+      <div class="nb-non-reconnus" id="cmd-nb-nr" style="display:none;"></div>
+      <div id="cmd-liste-lignes"></div>
+      <div class="msg-succes" id="cmd-msg-succes">
+        <div class="msg-succes-titre">✅ Commande importée !</div>
+        <div id="cmd-msg-detail" style="margin-top:4px;font-size:.88rem;color:#2d6a4f;"></div>
+      </div>
+      <button class="btn-importer" id="cmd-btn-importer" onclick="importerCommande()">💾 Enregistrer la commande</button>
+    </div>
+  </div>
+
+  <!-- ===== MODE LIVRAISON ===== -->
+  <div id="section-livraison" style="display:none;">
+    <div class="zone-upload" id="zone-liv" onclick="document.getElementById('input-liv').click()">
+      <div class="zone-upload-icon">📄</div>
+      <div class="zone-upload-texte">Déposer le bon de livraison ou la facture PDF</div>
+      <div class="zone-upload-sous">Coup de Vague (BDL) · Minoterie Bourseau (Facture)</div>
+    </div>
+    <input type="file" id="input-liv" accept=".pdf" onchange="traiterLivraison_upload(this.files[0])">
+    <div class="msg-erreur-zone" id="erreur-liv"></div>
+
+    <div id="apercu-liv" style="display:none;">
+      <div class="apercu-bon">
+        <div class="apercu-header">
+          <div>
+            <div class="apercu-client" id="liv-fournisseur"></div>
+            <div class="apercu-meta" id="liv-meta"></div>
+          </div>
+          <div class="apercu-badges">
+            <span class="badge badge-cmd" id="liv-badge-ref"></span>
+            <span class="badge badge-cmd" id="liv-badge-date"></span>
+          </div>
+        </div>
+      </div>
+      <div class="date-retrait-bloc">
+        <span class="date-retrait-label">📅 Date de réception</span>
+        <input type="date" id="liv-date-reception" class="date-retrait-input">
+      </div>
+      <div class="lignes-titre">Réceptions — <span id="liv-nb-lignes"></span></div>
+      <div class="nb-non-reconnus" id="liv-nb-nr" style="display:none;"></div>
+      <div id="liv-liste-lignes"></div>
+      <div class="msg-succes" id="liv-msg-succes">
+        <div class="msg-succes-titre">✅ Réceptions enregistrées !</div>
+        <div id="liv-msg-detail" style="margin-top:4px;font-size:.88rem;color:#2d6a4f;"></div>
+      </div>
+      <button class="btn-importer" id="liv-btn-importer" onclick="importerLivraison()">📦 Enregistrer les réceptions</button>
+    </div>
+  </div>
+
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<!-- PDF.js pour extraction côté client -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="js/supabase-client.js"></script>
 <script>
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
 let profilCourant = null;
-let donneesExtraites = null;  // { client, noCommande, articles }
-let mapping = {};             // code_article → { recette_id, variante_id, nom }
+let mapping = {};           // commandes Colibri
+let mappingLivraison = {};  // livraison fournisseurs
 let toutesRecettes = [];
+let toutesMP = [];
 let clientsPro = [];
+let donneesCommande = null;
+let donneesLivraison = null;
 
-// ─── Chargement initial ──────────────────────────────────────────────────────
+// ─── Init ─────────────────────────────────────────────────────────────────────
 (async () => {
   profilCourant = await exigerRole(['gerant','boulanger','patissier','vendeur']);
   if (!profilCourant) return;
 
-  // Charger le mapping existant
-  const { data: mappingData } = await sb.from('mapping_produits_fournisseur')
-    .select('code_article_externe, recette_id, variante_id, recettes(nom), recette_variantes(nom)')
-    .eq('actif', true);
-  (mappingData || []).forEach(m => {
+  const [
+    { data: mappingCmd },
+    { data: mappingLiv },
+    { data: recs },
+    { data: mps },
+    { data: clients }
+  ] = await Promise.all([
+    sb.from('mapping_produits_fournisseur').select('code_article_externe, recette_id, variante_id, recettes(nom), recette_variantes(nom)').eq('actif', true),
+    sb.from('mapping_articles_fournisseur').select('fournisseur_nom, code_article, designation, mp_id, matieres_premieres(nom)').eq('actif', true),
+    sb.from('recettes').select('id, nom, metier').eq('actif', true).order('nom'),
+    sb.from('matieres_premieres').select('id, nom, categorie').order('categorie').order('nom'),
+    sb.from('clients').select('id, raison_sociale').eq('is_pro', true).order('raison_sociale')
+  ]);
+
+  (mappingCmd || []).forEach(m => {
     mapping[m.code_article_externe] = {
-      recette_id: m.recette_id,
-      variante_id: m.variante_id,
+      recette_id: m.recette_id, variante_id: m.variante_id,
       nom: m.recettes?.nom + (m.recette_variantes ? ` (${m.recette_variantes.nom})` : '')
     };
   });
-
-  // Charger toutes les recettes pour le sélecteur
-  const { data: recs } = await sb.from('recettes').select('id, nom, metier').eq('actif', true).order('nom');
+  (mappingLiv || []).forEach(m => {
+    mappingLivraison[`${m.fournisseur_nom}|${m.code_article}`] = {
+      mp_id: m.mp_id, nom: m.matieres_premieres?.nom || m.designation
+    };
+  });
   toutesRecettes = recs || [];
-
-  // Charger les clients pro
-  const { data: clients } = await sb.from('clients').select('id, raison_sociale').eq('is_pro', true).order('raison_sociale');
+  toutesMP = mps || [];
   clientsPro = clients || [];
-})();
 
-// ─── Drag & drop ─────────────────────────────────────────────────────────────
-function onDrop(e) {
-  e.preventDefault();
-  document.getElementById('zone-upload').classList.remove('dragover');
-  const file = e.dataTransfer.files[0];
-  if (file && file.type === 'application/pdf') traiterPDF(file);
-}
-
-// Event listeners sur la zone d'upload
-document.addEventListener('DOMContentLoaded', () => {
-  const zone = document.getElementById('zone-upload');
-
-  zone.addEventListener('dragover', e => {
-    e.preventDefault();
-    e.stopPropagation();
-    zone.classList.add('dragover');
+  // Drag & drop
+  ['zone-cmd','zone-liv'].forEach(id => {
+    const z = document.getElementById(id);
+    z.addEventListener('dragover', e => { e.preventDefault(); z.classList.add('dragover'); });
+    z.addEventListener('dragleave', e => { e.preventDefault(); z.classList.remove('dragover'); });
+    z.addEventListener('drop', e => {
+      e.preventDefault(); z.classList.remove('dragover');
+      const f = e.dataTransfer.files[0];
+      if (!f || f.type !== 'application/pdf') return;
+      if (id === 'zone-cmd') traiterBonCommande_upload(f);
+      else traiterLivraison_upload(f);
+    });
   });
-
-  zone.addEventListener('dragleave', e => {
-    e.preventDefault();
-    e.stopPropagation();
-    zone.classList.remove('dragover');
-  });
-
-  zone.addEventListener('drop', e => {
-    e.preventDefault();
-    e.stopPropagation();
-    zone.classList.remove('dragover');
-    const file = e.dataTransfer.files[0];
-    if (file && file.type === 'application/pdf') traiterPDF(file);
-  });
-
-  // Empêcher le navigateur d'ouvrir le PDF si on rate la zone
   document.body.addEventListener('dragover', e => e.preventDefault());
   document.body.addEventListener('drop', e => e.preventDefault());
-});
+})();
 
-// ─── Extraction PDF (côté client via PDF.js) ─────────────────────────────────
-async function traiterPDF(file) {
-  const zone = document.getElementById('zone-upload');
-  zone.innerHTML = `<div class="zone-upload-icon">⏳</div><div class="zone-upload-texte">Analyse du PDF…</div>`;
+// ─── Bascule de mode ──────────────────────────────────────────────────────────
+function setMode(mode) {
+  document.getElementById('btn-mode-cmd').classList.toggle('actif', mode === 'commande');
+  document.getElementById('btn-mode-liv').classList.toggle('actif', mode === 'livraison');
+  document.getElementById('section-commande').style.display = mode === 'commande' ? '' : 'none';
+  document.getElementById('section-livraison').style.display = mode === 'livraison' ? '' : 'none';
+}
 
+// ─── Extraction PDF commune ───────────────────────────────────────────────────
+async function extraireTexte(file) {
+  const ab = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
+  const page = await pdf.getPage(1);
+  const content = await page.getTextContent();
+  return content.items.map(i => i.str).join(' ');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// MODE COMMANDE
+// ═══════════════════════════════════════════════════════════════════
+async function traiterBonCommande_upload(file) {
+  const zone = document.getElementById('zone-cmd');
+  zone.innerHTML = `<div class="zone-upload-icon">⏳</div><div class="zone-upload-texte">Analyse…</div>`;
+  document.getElementById('erreur-cmd').classList.remove('visible');
   try {
-    const arrayBuffer = await file.arrayBuffer();
+    const texte = await extraireTexte(file);
 
-    // Chargement avec timeout de 15 secondes
-    const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
-    const pdfPromise = loadingTask.promise;
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Timeout — PDF trop long à charger')), 15000)
-    );
-    const pdf = await Promise.race([pdfPromise, timeoutPromise]);
+    let clientNom, clientType;
+    if (/ANGOULINS/i.test(texte)) { clientNom = 'Colibri Angoulins'; clientType = 'angoulins'; }
+    else if (/PUILBOREAU/i.test(texte)) { clientNom = 'Colibri Beaulieu'; clientType = 'beaulieu'; }
+    else { clientNom = 'Fournisseur non reconnu'; clientType = null; }
 
-    const page = await pdf.getPage(1);
-    const content = await page.getTextContent();
-    const texte = content.items.map(i => i.str).join(' ');
+    let noCommande = null;
+    const m1 = texte.match(/(\d{4,6})\s+\d{2}\/\d{2}\/\d{4}/);
+    const m2 = texte.match(/Cde\s+0*(\d+)/);
+    if (m1) noCommande = m1[1];
+    else if (m2) noCommande = m2[1];
 
-    if (!texte || texte.trim().length < 20) {
-      throw new Error('PDF vide ou non lisible — vérifiez que ce n\'est pas un scan image.');
+    const articles = [];
+    const re1 = /(\d{13})\s+FR\s+(.+?)\s+([\d,]+)\s*[€ÄA]\s+(\d+)\s+([\d,]+)/g;
+    let m;
+    while ((m = re1.exec(texte)) !== null)
+      articles.push({ code: m[1], designation: m[2].trim(), quantite: parseInt(m[4]) });
+    if (!articles.length) {
+      const re2 = /(\d{13})\s+\1\s+FR\s+(.+?)\s+([\d,\.]+)\s+([\d\.]+)\s+([\d\.]+)/g;
+      while ((m = re2.exec(texte)) !== null)
+        articles.push({ code: m[1], designation: m[2].trim(), quantite: Math.round(parseFloat(m[3].replace(',','.'))) });
     }
 
-  // Détecter le type de document
-  const modeCmd = document.getElementById('mode-commande');
-  const modeLiv = document.getElementById('mode-livraison');
+    donneesCommande = { clientNom, clientType, noCommande, articles };
 
-  if (/MINOTERIE\s+BOURSEAU/i.test(texte)) {
-    typePDF = 'livraison';
-    document.getElementById('badge-type').innerHTML = '<span class="badge-type badge-type-livraison">📦 Facture Minoterie Bourseau</span>';
-    document.getElementById('contenu-import').style.display = 'block';
-    if (modeCmd) modeCmd.style.display = 'none';
-    if (modeLiv) modeLiv.style.display = '';
-    traiterFactureBourseau(texte);
-  } else if (/BON DE\s+LIVRAISON|BDL\d+/i.test(texte)) {
-    typePDF = 'livraison';
-    document.getElementById('badge-type').innerHTML = '<span class="badge-type badge-type-livraison">📦 Bon de livraison</span>';
-    document.getElementById('contenu-import').style.display = 'block';
-    if (modeCmd) modeCmd.style.display = 'none';
-    if (modeLiv) modeLiv.style.display = '';
-    traiterBonLivraison(texte);
-  } else {
-    typePDF = 'commande';
-    document.getElementById('badge-type').innerHTML = '<span class="badge-type badge-type-commande">📋 Bon de commande</span>';
-    document.getElementById('contenu-import').style.display = 'block';
-    if (modeCmd) modeCmd.style.display = '';
-    if (modeLiv) modeLiv.style.display = 'none';
-    traiterBonCommande(texte);
-  }
+    // Affichage
+    document.getElementById('cmd-client-nom').textContent = clientNom;
+    document.getElementById('cmd-meta').textContent = `${articles.length} article(s)`;
+    document.getElementById('cmd-badge-no').textContent = noCommande ? `Bon n°${noCommande}` : '—';
+    const demain = new Date(); demain.setDate(demain.getDate()+1);
+    document.getElementById('cmd-date-retrait').value = demain.toISOString().slice(0,10);
+    document.getElementById('cmd-nb-lignes').textContent = `${articles.length} articles`;
 
-  } catch(err) {
-    document.getElementById('zone-upload').innerHTML = `
-      <div class="zone-upload-icon">❌</div>
-      <div class="zone-upload-texte">Erreur : ${err.message}</div>
-      <div class="zone-upload-sous">Cliquer pour réessayer</div>`;
-    console.error('Erreur PDF:', err);
-  }
-}
-
-// ─── FACTURE MINOTERIE BOURSEAU ──────────────────────────────────────────────
-function traiterFactureBourseau(texte) {
-  const fournisseur = 'MINOTERIE BOURSEAU';
-
-  // N° pièce et date
-  const dateM = texte.match(/(\d{2}\/\d{2}\/\d{4})\s+(\d{9})/);
-  const noPiece = dateM ? dateM[2] : '?';
-  const dateDoc = dateM ? dateM[1] : null;
-
-  // N° BDL dans le corps
-  const bdlM = texte.match(/BON DE LIVRAISON N°\s*(\d+)\s+(\d{2}\/\d{2}\/\d{4})/);
-  const noBdl = bdlM ? bdlM[1] : noPiece;
-  const dateLiv = bdlM ? bdlM[2] : dateDoc;
-
-  // Détecter si AVOIR (quantités négatives)
-  const estAvoir = /AVOIR/i.test(texte);
-
-  // Articles : Réf (num) + désignation + Nbre + SAC - 25 KG + poids
-  const articles = [];
-  const re = /(\d{2,3})\s+(FAR[\w.\s-]+?(?:BIO|S25|R2|CYL|BAGATELLE)(?:\s+S25)?(?:\s+\(\d\))?)\s+(\d+)\s+SAC\s+-\s+25\s+KG\s+(-?\d+)/g;
-  let m;
-  while ((m = re.exec(texte)) !== null) {
-    const ref = m[1];
-    const designation = m[2].trim();
-    const poids = Math.abs(parseInt(m[4]));
-    if (poids > 0) {
-      articles.push({
-        code: ref,
-        designation,
-        quantite: poids,
-        lots: [{ num: noBdl, qte: poids }],
-        fournisseur
-      });
-    }
-  }
-
-  donneesExtraites = { type: 'livraison', fournisseur, noBdl, dateLiv, articles, estAvoir };
-  afficherLivraison(estAvoir ? `AVOIR N°${noPiece}` : `Facture N°${noPiece}`);
-}
-
-// ─── BON DE LIVRAISON COUP DE VAGUE ──────────────────────────────────────────
-function traiterBonLivraison(texte) {
-  const fournisseurM = texte.match(/SARL\s+([A-Z\s]+?)(?:\s+LE COUP|\s+Email|\s+\d{5})/);
-  const fournisseur = 'COUP DE VAGUE';
-
-  const noBdlM = texte.match(/N°\s*:\s*(BDL\S+)/);
-  const noBdl = noBdlM ? noBdlM[1] : '?';
-  const dateLivM = texte.match(/Date de livraison\s*:\s*(\d{2}\/\d{2}\/\d{4})/);
-  const dateLiv = dateLivM ? dateLivM[1] : null;
-
-  const lignes = texte.split(/\s{2,}|\n/).map(l => l.trim()).filter(Boolean);
-  const articles = [];
-
-  for (let i = 0; i < lignes.length; i++) {
-    const artM = lignes[i].match(/^(ART\d+)\s+-(.+?)\s+([\d,]+)\s+kg$/);
-    if (artM) {
-      const code = artM[1];
-      const designation = artM[2].trim();
-      const quantite = parseFloat(artM[3].replace(',', '.'));
-      const lots = [];
-      let j = i + 1;
-      while (j < lignes.length) {
-        const l = lignes[j];
-        if (/^ART\d+|^Produits|^Règlement|^Bon pour/.test(l)) break;
-        const lotsM = [...l.matchAll(/(?:lot\s+)?(\d{6,})(?:=(\d+)\s*kg)?/gi)];
-        if (lotsM.length > 0) {
-          lotsM.forEach(m => lots.push({ num: m[1], qte: m[2] ? parseFloat(m[2]) : quantite }));
-        }
-        j++;
-      }
-      if (lots.length === 0) lots.push({ num: '', qte: quantite });
-      articles.push({ code, designation, quantite, lots, fournisseur });
-      i = j - 1;
-    }
-  }
-
-  donneesExtraites = { type: 'livraison', fournisseur, noBdl, dateLiv, articles };
-  afficherLivraison(`N° ${noBdl}`);
-}
-
-// ─── Affichage commun bons de livraison ──────────────────────────────────────
-function afficherLivraison(refDoc) {
-  const { fournisseur, dateLiv, articles } = donneesExtraites;
-  const nbReceptions = articles.reduce((s, a) => s + a.lots.length, 0);
-
-  document.getElementById('ll-fournisseur').textContent = fournisseur;
-  document.getElementById('ll-meta').textContent = `${articles.length} produit(s) · ${nbReceptions} réception(s) à créer`;
-  document.getElementById('ll-badge-bdl').textContent = refDoc;
-  document.getElementById('ll-badge-date').textContent = dateLiv ? `Livraison ${dateLiv}` : 'Date ?';
-  document.getElementById('ll-nb-lignes').textContent = `${nbReceptions} réceptions`;
-
-  if (dateLiv) {
-    const parts = dateLiv.split('/');
-    document.getElementById('ll-date-reception').value = `${parts[2]}-${parts[1]}-${parts[0]}`;
-  } else {
-    document.getElementById('ll-date-reception').value = new Date().toISOString().slice(0,10);
-  }
-
-  const optionsMP = toutesMP.map(m => `<option value="${m.id}">${m.nom}</option>`).join('');
-  let nbNonReconnus = 0;
-  let html = '';
-  let ligneIndex = 0;
-
-  articles.forEach(a => {
-    const cle = `${a.fournisseur.toUpperCase()}|${a.code}`;
-    const mappé = mappingLivraison[cle];
-    a.lots.forEach(lot => {
-      const idx = ligneIndex++;
-      if (mappé && mappé.mp_id) {
-        html += `<div class="ligne-livraison reconnu" id="ll-${idx}">
-          <div class="ll-info">
-            <div class="ll-nom">${a.designation}</div>
-            <div class="ll-lot">Lot ${lot.num || '—'} · <strong>${mappé.nom}</strong></div>
-          </div>
-          <div class="ll-qte">${lot.qte} kg ✓</div>
-          <input type="hidden" id="ll-mp-${idx}" value="${mappé.mp_id}">
-          <input type="hidden" id="ll-lot-${idx}" value="${lot.num}">
-          <input type="hidden" id="ll-qte-${idx}" value="${lot.qte}">
-        </div>`;
-      } else {
-        nbNonReconnus++;
-        html += `<div class="ligne-livraison non-reconnu" id="ll-${idx}">
-          <div class="ll-info">
-            <div class="ll-nom">${a.code} — ${a.designation}</div>
-            <div class="ll-lot">Lot ${lot.num || '—'} · ${lot.qte} kg</div>
-            <div class="ll-mp">
-              <select id="ll-mp-${idx}" onchange="memoriserMPFournisseur('${a.fournisseur}','${a.code}','${a.designation}',this.value)">
-                <option value="">— Associer à une matière première —</option>
-                ${optionsMP}
-              </select>
-            </div>
-          </div>
-          <input type="hidden" id="ll-lot-${idx}" value="${lot.num}">
-          <input type="hidden" id="ll-qte-${idx}" value="${lot.qte}">
-        </div>`;
-      }
-    });
-  });
-
-  document.getElementById('ll-liste-lignes').innerHTML = html;
-  document.getElementById('ll-nb-lignes').textContent = `${ligneIndex} réceptions`;
-
-  const bloc = document.getElementById('ll-nb-non-reconnus-bloc');
-  if (nbNonReconnus > 0) {
-    bloc.style.display = 'block';
-    bloc.textContent = `⚠️ ${nbNonReconnus} produit(s) non reconnu(s) — associez-les avant d'enregistrer.`;
-  } else {
-    bloc.style.display = 'none';
-  }
-
-  document.getElementById('contenu-import').style.display = 'block';
-  document.getElementById('zone-upload').innerHTML = `
-    <div class="zone-upload-icon">✅</div>
-    <div class="zone-upload-texte">PDF analysé — ${ligneIndex} réceptions</div>
-    <div class="zone-upload-sous">Cliquer pour changer de fichier</div>`;
-}
-
-// ─── BON DE COMMANDE COLIBRI ─────────────────────────────────────────────────
-function traiterBonCommande(texte) {
-  let clientNom, clientType;
-  if (/ANGOULINS/i.test(texte)) { clientNom = 'Colibri Angoulins'; clientType = 'angoulins'; }
-  else if (/PUILBOREAU/i.test(texte)) { clientNom = 'Colibri Beaulieu'; clientType = 'beaulieu'; }
-  else { clientNom = 'Client inconnu'; clientType = null; }
-
-  let noCommande = null;
-  const m1 = texte.match(/(?:N[o°]\s*Commande\s*)?(\d{4,6})\s+\d{2}\/\d{2}\/\d{4}/);
-  const m2 = texte.match(/Cde\s+0*(\d+)/);
-  if (m1) noCommande = m1[1];
-  else if (m2) noCommande = m2[1];
-
-  const articles = [];
-  const re1 = /(\d{13})\s+FR\s+(.+?)\s+([\d,]+)\s*[€ÄA]\s+(\d+)\s+([\d,]+)/g;
-  let match;
-  while ((match = re1.exec(texte)) !== null) {
-    articles.push({ code: match[1], designation: match[2].trim(), quantite: parseInt(match[4]) });
-  }
-  if (articles.length === 0) {
-    const re2 = /(\d{13})\s+\1\s+FR\s+(.+?)\s+([\d,\.]+)\s+([\d\.]+)\s+([\d\.]+)/g;
-    while ((match = re2.exec(texte)) !== null) {
-      articles.push({ code: match[1], designation: match[2].trim(), quantite: Math.round(parseFloat(match[3].replace(',','.'))) });
-    }
-  }
-
-  donneesExtraites = { clientNom, clientType, noCommande, articles };
-  afficherApercu();
-}
-
-// ─── Mémorisation apprentissage livraison ────────────────────────────────────
-async function memoriserMPFournisseur(fournisseur, code, designation, mpId) {
-  if (!mpId) return;
-  const mp = toutesMP.find(m => m.id === mpId);
-  await sb.from('mapping_articles_fournisseur').upsert({
-    fournisseur_nom: fournisseur.toUpperCase(),
-    code_article: code, designation, mp_id: mpId, actif: true
-  }, { onConflict: 'fournisseur_nom,code_article' });
-  const cle = `${fournisseur.toUpperCase()}|${code}`;
-  mappingLivraison[cle] = { mp_id: mpId, nom: mp?.nom || designation };
-  // Re-afficher
-  if (donneesExtraites?.type === 'livraison') afficherLivraison(document.getElementById('ll-badge-bdl').textContent);
-}
-
-// ─── Import livraison ────────────────────────────────────────────────────────
-async function importerLivraison() {
-  const dateReception = document.getElementById('ll-date-reception').value;
-  if (!dateReception) { alert('Renseignez la date de réception.'); return; }
-
-  const { fournisseur, noBdl } = donneesExtraites;
-  const btn = document.getElementById('ll-btn-importer');
-  btn.disabled = true; btn.textContent = 'Enregistrement…';
-
-  const lignesEls = document.querySelectorAll('[id^="ll-qte-"]');
-  const receptions = [];
-  let erreur = false;
-
-  lignesEls.forEach((el, i) => {
-    const mpId = document.getElementById(`ll-mp-${i}`)?.value;
-    const lot = document.getElementById(`ll-lot-${i}`)?.value || '';
-    const qte = parseFloat(el.value || 0);
-    if (!mpId) { erreur = true; return; }
-    receptions.push({
-      mp_id: mpId, fournisseur, n_lot: lot || noBdl,
-      n_certificat_bio: 'FR-BIO-09', quantite: qte,
-      unite_quantite: 'kg', date_reception: dateReception,
-      etat_emballage: 'correct', conforme: true
-    });
-  });
-
-  if (erreur) { alert('Certains produits ne sont pas associés.'); btn.disabled = false; btn.textContent = '📦 Enregistrer la réception'; return; }
-
-  const { error } = await sb.from('tracabilite_lots').insert(receptions);
-  if (error) { alert('Erreur : ' + error.message); btn.disabled = false; btn.textContent = '📦 Enregistrer la réception'; return; }
-
-  document.getElementById('ll-msg-succes').classList.add('visible');
-  document.getElementById('ll-msg-succes-detail').textContent =
-    `${receptions.length} réception(s) créée(s) — ${fournisseur} · ${noBdl}`;
-  btn.textContent = '✅ Enregistré';
-}
-
-function afficherApercu() {
-  const { clientNom, noCommande, articles } = donneesExtraites;
-
-  document.getElementById('ap-client').textContent = clientNom;
-  document.getElementById('ap-badge-client').textContent = clientNom;
-  document.getElementById('ap-badge-cmd').textContent = noCommande ? `Bon n°${noCommande}` : 'N° inconnu';
-  document.getElementById('ap-meta').textContent = `${articles.length} article(s) détecté(s)`;
-  document.getElementById('nb-lignes').textContent = `${articles.length} articles`;
-
-  // Demain par défaut pour la date de retrait
-  const demain = new Date();
-  demain.setDate(demain.getDate() + 1);
-  document.getElementById('date-retrait').value = demain.toISOString().slice(0,10);
-
-  // Résoudre chaque article via le mapping
-  let nbNonReconnus = 0;
-  const lignesHtml = articles.map((a, i) => {
-    const m = mapping[a.code];
-    if (m) {
-      return `<div class="ligne-produit reconnu">
+    let nbNR = 0;
+    const optRec = toutesRecettes.map(r => `<option value="${r.id}">${r.nom}</option>`).join('');
+    document.getElementById('cmd-liste-lignes').innerHTML = articles.map((a, i) => {
+      const mp = mapping[a.code];
+      if (mp) return `<div class="ligne-produit reconnu">
         <span class="lp-code">${a.code.slice(-4)}</span>
         <span class="lp-designation" title="${a.designation}">${a.designation}</span>
         <span class="lp-qte">${a.quantite}</span>
-        <span class="lp-recette">${m.nom}</span>
-        <span class="lp-badge-ok">✓</span>
+        <span class="lp-recette">${mp.nom}</span> ✓
       </div>`;
-    } else {
-      nbNonReconnus++;
-      const options = toutesRecettes.map(r =>
-        `<option value="${r.id}">${r.nom}</option>`
-      ).join('');
+      nbNR++;
       return `<div class="ligne-produit non-reconnu">
         <span class="lp-code">${a.code.slice(-4)}</span>
         <span class="lp-designation" title="${a.designation}">${a.designation}</span>
         <span class="lp-qte">${a.quantite}</span>
-        <div class="lp-recette">
-          <select id="assoc-${i}" onchange="memoriserAssociation('${a.code}','${a.designation}',this.value)">
-            <option value="">— Associer à une recette —</option>
-            ${options}
-          </select>
-        </div>
-        <span class="lp-badge-ko">⚠️</span>
+        <div class="lp-recette"><select id="assoc-cmd-${i}" onchange="memoriserCmd('${a.code}','${a.designation}',this.value)">
+          <option value="">— Associer —</option>${optRec}
+        </select></div>
       </div>`;
-    }
-  }).join('');
+    }).join('');
 
-  document.getElementById('liste-lignes').innerHTML = lignesHtml;
+    const blocNR = document.getElementById('cmd-nb-nr');
+    if (nbNR > 0) { blocNR.style.display='block'; blocNR.textContent=`⚠️ ${nbNR} produit(s) non reconnu(s) — associez-les.`; }
+    else blocNR.style.display='none';
 
-  const blocNR = document.getElementById('nb-non-reconnus-bloc');
-  if (nbNonReconnus > 0) {
-    blocNR.style.display = 'block';
-    blocNR.textContent = `⚠️ ${nbNonReconnus} produit${nbNonReconnus > 1 ? 's' : ''} non reconnu${nbNonReconnus > 1 ? 's' : ''} — associez-les avant d'importer.`;
-  } else {
-    blocNR.style.display = 'none';
+    document.getElementById('apercu-cmd').style.display = 'block';
+    zone.innerHTML = `<div class="zone-upload-icon">✅</div><div class="zone-upload-texte">${articles.length} articles analysés</div><div class="zone-upload-sous">Cliquer pour changer de fichier</div>`;
+  } catch(e) {
+    zone.innerHTML = `<div class="zone-upload-icon">📄</div><div class="zone-upload-texte">Déposer le bon de commande PDF</div><div class="zone-upload-sous">ou cliquer pour choisir</div>`;
+    const err = document.getElementById('erreur-cmd');
+    err.textContent = `Erreur : ${e.message}`; err.classList.add('visible');
   }
-
-  document.getElementById('contenu-import').style.display = 'block';
-  document.getElementById('zone-upload').innerHTML = `
-    <div class="zone-upload-icon">✅</div>
-    <div class="zone-upload-texte">PDF analysé — ${donneesExtraites.articles.length} articles</div>
-    <div class="zone-upload-sous">Cliquer pour changer de fichier</div>`;
 }
 
-// ─── Mémorisation apprentissage ───────────────────────────────────────────────
-async function memoriserAssociation(code, designation, recetteId) {
+async function memoriserCmd(code, designation, recetteId) {
   if (!recetteId) return;
-  // Sauvegarder dans le mapping pour la prochaine fois
-  const { error } = await sb.from('mapping_produits_fournisseur').upsert({
-    code_article_externe: code,
-    designation_externe: designation,
-    recette_id: recetteId,
-    client_pro_id: null,
-    actif: true
-  }, { onConflict: 'client_pro_id,code_article_externe' });
-
-  if (!error) {
-    // Mettre à jour le mapping local
-    const rec = toutesRecettes.find(r => r.id === recetteId);
-    mapping[code] = { recette_id: recetteId, variante_id: null, nom: rec?.nom || '?' };
-    // Mettre à jour l'affichage de cette ligne
-    afficherApercu();
-  }
+  const rec = toutesRecettes.find(r => r.id === recetteId);
+  await sb.from('mapping_produits_fournisseur').upsert({ code_article_externe: code, designation_externe: designation, recette_id: recetteId, client_pro_id: null, actif: true }, { onConflict: 'client_pro_id,code_article_externe' });
+  mapping[code] = { recette_id: recetteId, variante_id: null, nom: rec?.nom || designation };
+  if (donneesCommande) traiterBonCommande_upload(null); // pas idéal mais OK
 }
 
-// ─── Import final ─────────────────────────────────────────────────────────────
 async function importerCommande() {
-  const dateRetrait = document.getElementById('date-retrait').value;
-  const heureRetrait = document.getElementById('heure-retrait').value || null;
-  if (!dateRetrait) { alert('Renseignez la date de retrait.'); return; }
+  const dateRetrait = document.getElementById('cmd-date-retrait').value;
+  const heureRetrait = document.getElementById('cmd-heure-retrait').value || null;
+  if (!dateRetrait) { alert('Date de retrait obligatoire.'); return; }
+  if (!donneesCommande) return;
 
-  const { clientType, articles } = donneesExtraites;
+  const { clientType, noCommande, articles } = donneesCommande;
+  const clientPro = clientsPro.find(c => clientType === 'angoulins' ? /angoulins/i.test(c.raison_sociale) : /beaulieu/i.test(c.raison_sociale));
+  if (!clientPro) { alert('Client introuvable en base.'); return; }
 
-  // Trouver le client pro correspondant
-  let clientId = null;
-  const clientsPro2 = clientsPro.filter(c =>
-    clientType === 'angoulins'
-      ? /angoulins/i.test(c.raison_sociale)
-      : /beaulieu/i.test(c.raison_sociale)
-  );
-  if (clientsPro2.length > 0) clientId = clientsPro2[0].id;
+  const nonRes = articles.filter(a => !mapping[a.code]);
+  if (nonRes.length) { alert(`${nonRes.length} produit(s) non associé(s).`); return; }
 
-  if (!clientId) {
-    alert(`Client "${donneesExtraites.clientNom}" introuvable dans la base. Vérifiez qu'il existe dans les clients pro.`);
-    return;
-  }
-
-  // Vérifier que tous les articles sont résolus
-  const nonResolus = articles.filter(a => !mapping[a.code]);
-  if (nonResolus.length > 0) {
-    alert(`${nonResolus.length} produit(s) non associé(s). Associez-les avant d'importer.`);
-    return;
-  }
-
-  const btn = document.getElementById('btn-importer');
-  btn.disabled = true; btn.textContent = 'Import en cours…';
-
+  const btn = document.getElementById('cmd-btn-importer');
+  btn.disabled = true; btn.textContent = 'Enregistrement…';
   try {
-    // Créer la commande
     const { data: cmd, error: errCmd } = await sb.from('commandes').insert({
-      client_id: clientId,
-      date_retrait: dateRetrait,
-      heure_retrait: heureRetrait,
-      statut: 'todo',
-      collectee: false,
-      pris_par: profilCourant.id,
-      contenu: `Import PDF — Bon n°${donneesExtraites.noCommande || '?'}`
+      client_id: clientPro.id, date_retrait: dateRetrait, heure_retrait: heureRetrait,
+      statut: 'todo', collectee: false, pris_par: profilCourant.id,
+      contenu: `Import PDF — Bon n°${noCommande || '?'}`
     }).select().single();
     if (errCmd) throw errCmd;
 
-    // Créer les lignes
-    const lignes = articles.map(a => ({
-      commande_id: cmd.id,
-      recette_id: mapping[a.code].recette_id,
-      variante_id: mapping[a.code].variante_id || null,
-      quantite: a.quantite
-    }));
-    const { error: errLignes } = await sb.from('commande_lignes').insert(lignes);
-    if (errLignes) throw errLignes;
+    const { error: errL } = await sb.from('commande_lignes').insert(
+      articles.map(a => ({ commande_id: cmd.id, recette_id: mapping[a.code].recette_id, variante_id: mapping[a.code].variante_id || null, quantite: a.quantite }))
+    );
+    if (errL) throw errL;
 
-    // Succès
-    document.getElementById('msg-succes').classList.add('visible');
-    document.getElementById('msg-succes-detail').textContent =
-      `${articles.length} produits importés pour ${donneesExtraites.clientNom} — retrait le ${new Date(dateRetrait).toLocaleDateString('fr-FR')}`;
+    document.getElementById('cmd-msg-succes').classList.add('visible');
+    document.getElementById('cmd-msg-detail').textContent = `${articles.length} produits · ${donneesCommande.clientNom} · retrait le ${new Date(dateRetrait).toLocaleDateString('fr-FR')}`;
     btn.textContent = '✅ Importé';
+  } catch(e) { alert('Erreur : '+e.message); btn.disabled=false; btn.textContent='💾 Enregistrer la commande'; }
+}
 
-  } catch(err) {
-    alert('Erreur : ' + err.message);
-    btn.disabled = false; btn.textContent = '💾 Enregistrer la commande';
+// ═══════════════════════════════════════════════════════════════════
+// MODE LIVRAISON
+// ═══════════════════════════════════════════════════════════════════
+async function traiterLivraison_upload(file) {
+  const zone = document.getElementById('zone-liv');
+  zone.innerHTML = `<div class="zone-upload-icon">⏳</div><div class="zone-upload-texte">Analyse…</div>`;
+  document.getElementById('erreur-liv').classList.remove('visible');
+  try {
+    const texte = await extraireTexte(file);
+
+    let fournisseur, noBdl, dateLiv, articles = [];
+
+    if (/MINOTERIE\s+BOURSEAU/i.test(texte)) {
+      fournisseur = 'MINOTERIE BOURSEAU';
+      const dateM = texte.match(/(\d{2}\/\d{2}\/\d{4})\s+(\d{9})/);
+      const noPiece = dateM ? dateM[2] : '?';
+      const bdlM = texte.match(/BON DE LIVRAISON N°\s*(\d+)\s+(\d{2}\/\d{2}\/\d{4})/);
+      noBdl = bdlM ? bdlM[1] : noPiece;
+      dateLiv = bdlM ? bdlM[2] : (dateM ? dateM[1] : null);
+      const re = /(\d{2,3})\s+(FAR[\w.\s-]+?(?:BIO|S25|R2|CYL|BAGATELLE)(?:\s+S25)?(?:\s+\(\d\))?)\s+(\d+)\s+SAC\s+-\s+25\s+KG\s+(-?\d+)/g;
+      let m;
+      while ((m = re.exec(texte)) !== null) {
+        const poids = Math.abs(parseInt(m[4]));
+        if (poids > 0) articles.push({ code: m[1], designation: m[2].trim(), lots: [{ num: noBdl, qte: poids }], fournisseur });
+      }
+    } else {
+      fournisseur = 'COUP DE VAGUE';
+      const noBdlM = texte.match(/N°\s*:\s*(BDL\S+)/);
+      noBdl = noBdlM ? noBdlM[1] : '?';
+      const dateLivM = texte.match(/Date de livraison\s*:\s*(\d{2}\/\d{2}\/\d{4})/);
+      dateLiv = dateLivM ? dateLivM[1] : null;
+      const lignes = texte.split(/\s{2,}|\n/).map(l => l.trim()).filter(Boolean);
+      for (let i = 0; i < lignes.length; i++) {
+        const artM = lignes[i].match(/^(ART\d+)\s+-(.+?)\s+([\d,]+)\s+kg$/);
+        if (artM) {
+          const quantite = parseFloat(artM[3].replace(',','.'));
+          const lots = [];
+          let j = i+1;
+          while (j < lignes.length) {
+            if (/^ART\d+|^Produits|^Règlement|^Bon pour/.test(lignes[j])) break;
+            for (const lm of lignes[j].matchAll(/(?:lot\s+)?(\d{6,})(?:=(\d+)\s*kg)?/gi))
+              lots.push({ num: lm[1], qte: lm[2] ? parseFloat(lm[2]) : quantite });
+            j++;
+          }
+          if (!lots.length) lots.push({ num: '', qte: quantite });
+          articles.push({ code: artM[1], designation: artM[2].trim(), lots, fournisseur });
+          i = j-1;
+        }
+      }
+    }
+
+    donneesLivraison = { fournisseur, noBdl, dateLiv, articles };
+    const nbReceptions = articles.reduce((s,a) => s+a.lots.length, 0);
+
+    document.getElementById('liv-fournisseur').textContent = fournisseur;
+    document.getElementById('liv-meta').textContent = `${articles.length} produit(s) · ${nbReceptions} réception(s)`;
+    document.getElementById('liv-badge-ref').textContent = noBdl;
+    document.getElementById('liv-badge-date').textContent = dateLiv ? `Livraison ${dateLiv}` : '—';
+    document.getElementById('liv-nb-lignes').textContent = `${nbReceptions} réceptions`;
+
+    if (dateLiv) {
+      const p = dateLiv.split('/');
+      document.getElementById('liv-date-reception').value = `${p[2]}-${p[1]}-${p[0]}`;
+    } else {
+      document.getElementById('liv-date-reception').value = new Date().toISOString().slice(0,10);
+    }
+
+    const optMP = toutesMP.map(m => `<option value="${m.id}">${m.nom}</option>`).join('');
+    let nbNR = 0, idx = 0;
+    document.getElementById('liv-liste-lignes').innerHTML = articles.flatMap(a => {
+      const cle = `${a.fournisseur}|${a.code}`;
+      const mp = mappingLivraison[cle];
+      return a.lots.map(lot => {
+        const i = idx++;
+        if (mp && mp.mp_id) return `<div class="ligne-produit reconnu">
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:700;">${a.designation}</div>
+            <div style="font-size:.72rem;color:#2d6a4f;font-family:var(--mono);">Lot ${lot.num||'—'} · <strong>${mp.nom}</strong></div>
+          </div>
+          <span class="lp-qte">${lot.qte} kg ✓</span>
+          <input type="hidden" id="liv-mp-${i}" value="${mp.mp_id}">
+          <input type="hidden" id="liv-lot-${i}" value="${lot.num}">
+          <input type="hidden" id="liv-qte-${i}" value="${lot.qte}">
+        </div>`;
+        nbNR++;
+        return `<div class="ligne-produit non-reconnu">
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:700;">${a.code} — ${a.designation}</div>
+            <div style="font-size:.72rem;color:var(--text-light);font-family:var(--mono);">Lot ${lot.num||'—'} · ${lot.qte} kg</div>
+            <select id="liv-mp-${i}" style="margin-top:4px;width:100%;padding:6px;font-size:.82rem;border:1px solid var(--border-strong);border-radius:var(--r);" onchange="memoriserLiv('${a.fournisseur}','${a.code}','${a.designation}',this.value)">
+              <option value="">— Associer à une matière —</option>${optMP}
+            </select>
+          </div>
+          <input type="hidden" id="liv-lot-${i}" value="${lot.num}">
+          <input type="hidden" id="liv-qte-${i}" value="${lot.qte}">
+        </div>`;
+      });
+    }).join('');
+
+    const blocNR = document.getElementById('liv-nb-nr');
+    if (nbNR > 0) { blocNR.style.display='block'; blocNR.textContent=`⚠️ ${nbNR} produit(s) non reconnu(s) — associez-les.`; }
+    else blocNR.style.display='none';
+
+    document.getElementById('apercu-liv').style.display = 'block';
+    zone.innerHTML = `<div class="zone-upload-icon">✅</div><div class="zone-upload-texte">${nbReceptions} réceptions analysées</div><div class="zone-upload-sous">Cliquer pour changer de fichier</div>`;
+  } catch(e) {
+    zone.innerHTML = `<div class="zone-upload-icon">📄</div><div class="zone-upload-texte">Déposer le bon de livraison ou la facture PDF</div><div class="zone-upload-sous">Coup de Vague · Minoterie Bourseau</div>`;
+    const err = document.getElementById('erreur-liv');
+    err.textContent = `Erreur : ${e.message}`; err.classList.add('visible');
   }
+}
+
+async function memoriserLiv(fournisseur, code, designation, mpId) {
+  if (!mpId) return;
+  const mp = toutesMP.find(m => m.id === mpId);
+  await sb.from('mapping_articles_fournisseur').upsert({ fournisseur_nom: fournisseur, code_article: code, designation, mp_id: mpId, actif: true }, { onConflict: 'fournisseur_nom,code_article' });
+  mappingLivraison[`${fournisseur}|${code}`] = { mp_id: mpId, nom: mp?.nom || designation };
+}
+
+async function importerLivraison() {
+  const dateReception = document.getElementById('liv-date-reception').value;
+  if (!dateReception) { alert('Date de réception obligatoire.'); return; }
+  if (!donneesLivraison) return;
+
+  const btn = document.getElementById('liv-btn-importer');
+  btn.disabled = true; btn.textContent = 'Enregistrement…';
+
+  const els = document.querySelectorAll('[id^="liv-qte-"]');
+  const receptions = [];
+  let erreur = false;
+
+  els.forEach((el, i) => {
+    const mpId = document.getElementById(`liv-mp-${i}`)?.value;
+    if (!mpId) { erreur = true; return; }
+    receptions.push({
+      mp_id: mpId,
+      fournisseur: donneesLivraison.fournisseur,
+      n_lot: document.getElementById(`liv-lot-${i}`)?.value || donneesLivraison.noBdl,
+      n_certificat_bio: 'FR-BIO-09',
+      quantite: parseFloat(el.value || 0),
+      unite_quantite: 'kg',
+      date_reception: dateReception,
+      etat_emballage: 'correct',
+      conforme: true
+    });
+  });
+
+  if (erreur) { alert('Certains produits ne sont pas associés.'); btn.disabled=false; btn.textContent='📦 Enregistrer les réceptions'; return; }
+
+  const { error } = await sb.from('tracabilite_lots').insert(receptions);
+  if (error) { alert('Erreur : '+error.message); btn.disabled=false; btn.textContent='📦 Enregistrer les réceptions'; return; }
+
+  document.getElementById('liv-msg-succes').classList.add('visible');
+  document.getElementById('liv-msg-detail').textContent = `${receptions.length} réception(s) créée(s) dans Traçabilité · ${donneesLivraison.fournisseur}`;
+  btn.textContent = '✅ Enregistré';
 }
 </script>
 </body>
