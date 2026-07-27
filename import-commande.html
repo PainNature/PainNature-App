@@ -434,12 +434,11 @@ async function traiterLivraison_upload(file) {
       dateLiv = dateLivM ? dateLivM[1] : null;
 
       // Extraire articles sur texte continu (PDF.js joint tout avec espaces)
-      const artRe = /(ART\d+)\s+-\s*(.+?)\s+([\d,]+)\s+kg/g;
+      const artRe = /(ART\d+)\s+-\s*(.+?)\s+(\d+[,.]\d+)\s+kg(?!\d)/g;
       const articlesRaw = [];
       let artM;
       while ((artM = artRe.exec(texte)) !== null) {
-        articlesRaw.push({ code: artM[1], designation: artM[2].trim(), quantite: parseFloat(artM[3].replace(',','.')), pos: artM.index, fin: artM.index + artM[0].length });
-      }
+        articlesRaw.push({ code: artM[1], designation: artM[2].trim(), quantite: parseFloat(artM[3].replace(',','.')), pos: artM.index, fin: artM.index + artM[0].length });      }
       // Lots stricts : "lot XXXXX" ou "XXXXX=YY kg" uniquement
       const lotStrictRe = /lot\s+(\d{5,8})|(\d{5,8})=(\d+)\s*kg/gi;
       const tousLots = [];
