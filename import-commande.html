@@ -409,9 +409,24 @@ async function traiterLivraison_upload(file) {
       const bdlM = texte.match(/BON DE LIVRAISON N°\s*(\d+)\s+(\d{2}\/\d{2}\/\d{4})/);
       noBdl = bdlM ? bdlM[1] : noPiece;
       dateLiv = bdlM ? bdlM[2] : (dateM ? dateM[1] : null);
+
+      // Fusionner les lignes orphelines : désignation FAR sur une ligne, numéro sur la suivante
+      const lignesBRS = texte.split('\n');
+      const lignesFus = [];
+      for (let i = 0; i < lignesBRS.length; i++) {
+        const l = lignesBRS[i].trim();
+        if (/^FAR[.\s]/.test(l) && !/^\d+\s+FAR/.test(l) && i+1 < lignesBRS.length) {
+          const suivante = lignesBRS[i+1].trim();
+          const numM = suivante.match(/^(\d{2,3})\s+(.+)/);
+          if (numM) { lignesFus.push(`${numM[1]} ${l} ${numM[2]}`); i++; continue; }
+        }
+        lignesFus.push(l);
+      }
+
       const re = /(\d{2,3})\s+(FAR[\w.\s-]+?(?:BIO|S25|R2|CYL|BAGATELLE)(?:\s+S25)?(?:\s+\(\d\))?)\s+(\d+)\s+SAC\s+-\s+25\s+KG\s+(-?\d+)/g;
+      const texteFus = lignesFus.join('\n');
       let m;
-      while ((m = re.exec(texte)) !== null) {
+      while ((m = re.exec(texteFus)) !== null) {
         const poids = Math.abs(parseInt(m[4]));
         if (poids > 0) articles.push({ code: m[1], designation: m[2].trim(), lots: [{ num: noBdl, qte: poids, dlc: null, unite: 'kg' }], fournisseur });
       }
