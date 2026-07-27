@@ -253,7 +253,10 @@ async function extraireTexte(file) {
   const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
   const page = await pdf.getPage(1);
   const content = await page.getTextContent();
-  return content.items.map(i => i.str).join(' ');
+  const texte = content.items.map(i => i.str).join(' ');
+  // DEBUG TEMPORAIRE
+  console.log('=== TEXTE EXTRAIT ===\n' + texte.slice(0, 1000));
+  return texte;
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -404,25 +407,22 @@ async function traiterLivraison_upload(file) {
       fournisseur = "LES OEUFS D'ANTAN";
       const blM = texte.match(/Bon de livraison n°\s*(\d+)/i);
       noBdl = blM ? blM[1] : '?';
-      const dateM = texte.match(/^(\d{2}\/\d{2}\/\d{4})/m);
+      const dateM = texte.match(/(\d{2}\/\d{2}\/\d{4})/);
       dateLiv = dateM ? dateM[1] : null;
-      const lignes = texte.split('\n');
-      for (let i = 0; i < lignes.length; i++) {
-        const lotM = lignes[i].match(/N°\s+lot\s+(\S+)/);
-        if (lotM && i+1 < lignes.length) {
-          const artM = lignes[i+1].match(/(A\d+)\s+(.+?)\s+([\d.,]+)\s+€\s*\/\s*Unité\s+(\d+)/);
-          if (artM) {
-            let dlc = null;
-            if (i+2 < lignes.length) {
-              const dlcM = lignes[i+2].match(/DLC\s+(\d{2}\/\d{2}\/\d{2,4})/);
-              if (dlcM) dlc = dlcM[1];
-            }
-            articles.push({
-              code: artM[1], designation: artM[2].trim(),
-              lots: [{ num: lotM[1], qte: parseInt(artM[4]), dlc, unite: 'pièce' }],
-              fournisseur
-            });
-          }
+
+      // Texte continu : chercher N° lot puis article puis DLC
+      const lotRe = /N°\s+lot\s+(\S+)/g;
+      let lotM;
+      while ((lotM = lotRe.exec(texte)) !== null) {
+        const apres = texte.slice(lotM.index);
+        const artM = apres.match(/(A\d+)\s+(.+?)\s+[\d.,]+\s+€\s*\/\s*Unité\s+(\d+)/);
+        if (artM) {
+          const dlcM = apres.match(/DLC\s+(\d{2}\/\d{2}\/\d{2,4})/);
+          articles.push({
+            code: artM[1], designation: artM[2].trim(),
+            lots: [{ num: lotM[1], qte: parseInt(artM[3]), dlc: dlcM ? dlcM[1] : null, unite: 'pièce' }],
+            fournisseur
+          });
         }
       }
 
@@ -432,24 +432,31 @@ async function traiterLivraison_upload(file) {
       noBdl = noBdlM ? noBdlM[1] : '?';
       const dateLivM = texte.match(/Date de livraison\s*:\s*(\d{2}\/\d{2}\/\d{4})/);
       dateLiv = dateLivM ? dateLivM[1] : null;
-      const lignes = texte.split(/\s{2,}|\n/).map(l => l.trim()).filter(Boolean);
-      for (let i = 0; i < lignes.length; i++) {
-        const artM = lignes[i].match(/^(ART\d+)\s+-(.+?)\s+([\d,]+)\s+kg$/);
-        if (artM) {
-          const quantite = parseFloat(artM[3].replace(',','.'));
-          const lots = [];
-          let j = i+1;
-          while (j < lignes.length) {
-            if (/^ART\d+|^Produits|^Règlement|^Bon pour/.test(lignes[j])) break;
-            for (const lm of lignes[j].matchAll(/(?:lot\s+)?(\d{6,})(?:=(\d+)\s*kg)?/gi))
-              lots.push({ num: lm[1], qte: lm[2] ? parseFloat(lm[2]) : quantite });
-            j++;
-          }
-          if (!lots.length) lots.push({ num: '', qte: quantite });
-          articles.push({ code: artM[1], designation: artM[2].trim(), lots, fournisseur });
-          i = j-1;
-        }
+
+      // Extraire articles sur texte continu (PDF.js joint tout avec espaces)
+      const artRe = /(ART\d+)\s+-\s*(.+?)\s+([\d,]+)\s+kg/g;
+      const articlesRaw = [];
+      let artM;
+      while ((artM = artRe.exec(texte)) !== null) {
+        articlesRaw.push({ code: artM[1], designation: artM[2].trim(), quantite: parseFloat(artM[3].replace(',','.')), pos: artM.index });
       }
+      // Extraire tous les lots avec leurs quantités
+      const lotRe = /lot\s+(\d{6,})(?:=(\d+)\s*kg)?/gi;
+      const tousLots = [];
+      let lotM;
+      while ((lotM = lotRe.exec(texte)) !== null) {
+        tousLots.push({ num: lotM[1], qte: lotM[2] ? parseFloat(lotM[2]) : null, pos: lotM.index });
+      }
+      // Associer chaque lot à l'article le plus proche
+      articlesRaw.forEach((art, ai) => {
+        const posDebut = art.pos;
+        const posFin = ai + 1 < articlesRaw.length ? articlesRaw[ai+1].pos : texte.length;
+        const lotsArticle = tousLots.filter(l => l.pos > posDebut && l.pos < posFin);
+        const lots = lotsArticle.length > 0
+          ? lotsArticle.map(l => ({ num: l.num, qte: l.qte || art.quantite, dlc: null, unite: 'kg' }))
+          : [{ num: '', qte: art.quantite, dlc: null, unite: 'kg' }];
+        articles.push({ code: art.code, designation: art.designation, lots, fournisseur });
+      });
     }
 
     donneesLivraison = { fournisseur, noBdl, dateLiv, articles };
