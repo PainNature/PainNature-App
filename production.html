@@ -332,6 +332,16 @@ function calculerRecette(recette) {
       totalPate += n * fmtSpecial.poids_g; totalPieces += n;
       extra.special = { format: fmtSpecial, qty: n };
     }
+    // Variantes en plus des formats (ex: Galet d'automne + formats 650g/1300g/2500g)
+    if (variantes.length > 0) {
+      variantes.forEach(v => {
+        const nVar = getNbPieces(recette.id, null, v.id);
+        const poidsBaseParPiece = v.poids_piece_g / (1 + (v.ratio_ajout_pct || 0) / 100);
+        totalPate += nVar * poidsBaseParPiece;
+        totalPieces += nVar;
+        extra.variante = { v, qty: nVar, ajoutTotal: nVar * (v.poids_piece_g - poidsBaseParPiece) };
+      });
+    }
   } else if (variantes.length > 0) {
     const nNature = getNbPieces(recette.id, null, null);
     totalPate += nNature * (recette.poids_piece_g || 0);
