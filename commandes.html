@@ -473,8 +473,12 @@ async function chargerCatalogueProduits() {
 
   // Construire les groupes
   const groupes = {};
+  const produitsCommerciaux = {};
   toutesRecettesCatalogue.forEach(r => {
-    if (r.produit_commercial) return; // géré séparément
+    if (r.produit_commercial) {
+      (produitsCommerciaux[r.produit_commercial] = produitsCommerciaux[r.produit_commercial] || []).push(r);
+      return;
+    }
     const metierLabel = labelsMetierGroupe[r.metier] || r.metier;
     const familleLabel = r.famille ? labelsFamilleGroupe[r.famille] : null;
     const cle = familleLabel ? `${metierLabel} — ${familleLabel}` : metierLabel;
