@@ -516,21 +516,89 @@ function renderFiltreMetier() {
 
   if (metiersPresents.length <= 1) { conteneur.innerHTML = ''; return; }
 
-  let html = `<button class="filtre-metier-btn ${metierFiltre === null ? 'active' : ''}" onclick="basculerFiltreMetier(null)">Tous</button>`;
+  let html = `<button class="filtre-metier-btn" onclick="metierFiltre=null;renderEcranChoixMetier()">← Métier</button>`;
   metiersPresents.forEach(m => {
     html += `<button class="filtre-metier-btn ${metierFiltre === m ? 'active' : ''}" onclick="basculerFiltreMetier('${m}')">${labelsMetierFiltre[m]}<span class="count">${compteParMetier[m]}</span></button>`;
   });
   conteneur.innerHTML = html;
 }
 
+function renderEcranChoixMetier() {
+  const zone = document.getElementById('zone-recettes');
+  const compteParMetier = {};
+  toutesRecettes.forEach(r => { compteParMetier[r.metier] = (compteParMetier[r.metier] || 0) + 1; });
+  const emojis = { B: '🍞', V: '🥐', GV: '🎂', P: '🧁', T: '🍽️' };
+
+  zone.innerHTML = `
+    <div style="max-width:500px;margin:2rem auto;padding:0 1rem;">
+      <div style="font-family:var(--mono);font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-light);margin-bottom:1rem;">Choisir un métier</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        ${Object.entries(compteParMetier)
+          .filter(([m]) => labelsMetierFiltre[m])
+          .map(([m, n]) => `
+            <button onclick="basculerFiltreMetier('${m}')" style="
+              padding:24px 16px;border:2px solid var(--border-strong);border-radius:var(--r-lg);
+              background:var(--surface);cursor:pointer;text-align:center;font-family:inherit;
+              transition:all .15s;
+            " onmouseover="this.style.borderColor='#546054';this.style.background='rgba(84,96,84,.06)'"
+               onmouseout="this.style.borderColor='var(--border-strong)';this.style.background='var(--surface)'">
+              <div style="font-size:2rem;margin-bottom:6px;">${emojis[m] || '📋'}</div>
+              <div style="font-weight:800;font-size:.95rem;">${labelsMetierFiltre[m]}</div>
+              <div style="font-size:.75rem;color:var(--text-light);margin-top:3px;font-family:var(--mono);">${n} recette${n>1?'s':''}</div>
+            </button>
+          `).join('')}
+        <button onclick="basculerFiltreMetier('_tous')" style="
+          padding:24px 16px;border:2px dashed var(--border-strong);border-radius:var(--r-lg);
+          background:transparent;cursor:pointer;text-align:center;font-family:inherit;
+          transition:all .15s;grid-column:1/-1;
+        " onmouseover="this.style.borderColor='#546054'" onmouseout="this.style.borderColor='var(--border-strong)'">
+          <div style="font-weight:700;font-size:.88rem;color:var(--text-light);">Voir tous les métiers</div>
+        </button>
+      </div>
+    </div>`;
+
+  // Masquer la barre de filtres — inutile sur cet écran
+  const bar = document.getElementById('filtre-metier-bar');
+  if (bar) bar.innerHTML = '';
+}
+
 function basculerFiltreMetier(metier) {
-  metierFiltre = metier;
+  metierFiltre = metier === '_tous' ? null : metier;
+  // Si "tous" choisi depuis l'écran, forcer l'affichage complet sans repasser par l'écran
+  if (metier === '_tous') {
+    const zone = document.getElementById('zone-recettes');
+    renderFiltreMetier();
+    // Afficher directement sans passer par renderTout qui renverrait vers l'écran choix
+    const parMetier = { B: [], V: [], GV: [], P: [], T: [] };
+    toutesRecettes.forEach(r => { if (parMetier[r.metier]) parMetier[r.metier].push(r); });
+    const labelsMetier = { B: 'Boulangerie', V: 'Viennoiserie', GV: 'Gâteaux de voyage', P: 'Pâtisserie', T: 'Traiteur' };
+    let html = '';
+    ['B', 'V', 'GV', 'P', 'T'].forEach(m => {
+      if (!parMetier[m]?.length) return;
+      html += `<div class="recipe-section-title no-print">${labelsMetier[m]}</div>`;
+      for (let i = 0; i < parMetier[m].length; i += 2) {
+        html += '<div class="recipe-row">';
+        html += `<div class="recipe-col">${renderCarteRecette(parMetier[m][i])}</div>`;
+        if (parMetier[m][i+1]) html += `<div class="recipe-col">${renderCarteRecette(parMetier[m][i+1])}</div>`;
+        else html += `<div class="recipe-col recipe-col-empty"></div>`;
+        html += '</div>';
+      }
+    });
+    zone.innerHTML = html;
+    return;
+  }
   renderTout();
 }
 
 function renderTout() {
   const zone = document.getElementById('zone-recettes');
   if (toutesRecettes.length === 0) { zone.innerHTML = '<div class="vide">Aucune recette active.</div>'; return; }
+
+  // Si aucun métier sélectionné, afficher l'écran de choix
+  if (metierFiltre === null) {
+    renderEcranChoixMetier();
+    return;
+  }
 
   renderFiltreMetier();
 
