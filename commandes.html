@@ -468,11 +468,20 @@ function majOptionsFormatVariante() {
   const formats = tousFormatsCatalogue.filter(f => f.recette_id === recetteId);
   const variantes = toutesVariantesCatalogue.filter(v => v.recette_id === recetteId);
 
-  if (formats.length > 0) {
+  if (formats.length > 0 && variantes.length === 0) {
     selectFV.innerHTML = formats.map(f => {
       const labelAffiche = f.poids_cuit_g ? `${Math.round(f.poids_cuit_g)}g` : f.label;
       return `<option value="format:${f.id}">${labelAffiche}</option>`;
     }).join('');
+    selectFV.style.display = '';
+  } else if (formats.length > 0 && variantes.length > 0) {
+    // Recette avec formats ET variantes (ex: Galet + Galet d'automne)
+    const optsFormats = formats.map(f => {
+      const labelAffiche = f.poids_cuit_g ? `${Math.round(f.poids_cuit_g)}g` : f.label;
+      return `<option value="format:${f.id}">${labelAffiche}</option>`;
+    }).join('');
+    const optsVariantes = variantes.map(v => `<option value="variante:${v.id}">${v.nom}</option>`).join('');
+    selectFV.innerHTML = optsFormats + optsVariantes;
     selectFV.style.display = '';
   } else if (variantes.length > 0) {
     selectFV.innerHTML = `<option value="">Nature</option>` + variantes.map(v => `<option value="variante:${v.id}">${v.nom}</option>`).join('');
