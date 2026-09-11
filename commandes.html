@@ -443,22 +443,45 @@ async function chargerCatalogueProduits() {
   const { data: vars } = await sb.from('recette_variantes').select('*').order('ordre');
   toutesVariantesCatalogue = vars || [];
 
-  // Groupe par métier puis famille pour l'affichage <optgroup>
+  // Labels métiers et familles
+  const labelsMetierGroupe = { B: 'Boulangerie', V: 'Viennoiserie', GV: 'Gâteaux de voyage', P: 'Pâtisserie' };
+  const labelsFamilleGroupe = {
+    baguettes: 'Baguettes',
+    bles_levain: 'Blés au levain',
+    autres_cereales_levain: 'Autres céréales au levain',
+    pains_sucres: 'Pains sucrés',
+    brioches: 'Brioches',
+    croissants: 'Croissants',
+    chocolatines: 'Chocolatines',
+    suisses: 'Suisses'
+  };
+
+  // Ordre des groupes dans le select
+  const ordreGroupes = [
+    'Boulangerie — Baguettes',
+    'Boulangerie — Blés au levain',
+    'Boulangerie — Autres céréales au levain',
+    'Boulangerie — Pains sucrés',
+    'Boulangerie — Brioches',
+    'Viennoiserie — Croissants',
+    'Viennoiserie — Chocolatines',
+    'Viennoiserie — Suisses',
+    'Viennoiserie',
+    'Gâteaux de voyage',
+    'Pâtisserie'
+  ];
+
+  // Construire les groupes
   const groupes = {};
-  // Produits commerciaux groupés (ex: Cheesecake, Flan, Suisse)
-  const produitsCommerciaux = {};
   toutesRecettesCatalogue.forEach(r => {
-    if (r.produit_commercial) {
-      (produitsCommerciaux[r.produit_commercial] = produitsCommerciaux[r.produit_commercial] || []).push(r);
-      return; // Ne pas ajouter aussi dans groupes
-    }
-    const cle = r.metier === 'B' && r.famille
-      ? `${labelsMetierCatalogue[r.metier]} — ${labelsFamilleCatalogue[r.famille] || r.famille}`
-      : labelsMetierCatalogue[r.metier] || r.metier;
+    if (r.produit_commercial) return; // géré séparément
+    const metierLabel = labelsMetierGroupe[r.metier] || r.metier;
+    const familleLabel = r.famille ? labelsFamilleGroupe[r.famille] : null;
+    const cle = familleLabel ? `${metierLabel} — ${familleLabel}` : metierLabel;
     (groupes[cle] = groupes[cle] || []).push(r);
   });
 
-  // Options produits commerciaux — une seule entrée par produit
+  // Produits commerciaux (Cheesecake, Flan, Suisse)
   const optsProdComm = Object.entries(produitsCommerciaux)
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([nom, recettes]) =>
@@ -466,9 +489,16 @@ async function chargerCatalogueProduits() {
     ).join('');
 
   const select = document.getElementById('prod-recette');
+
+  // Trier les groupes selon l'ordre défini
+  const groupesTries = ordreGroupes
+    .filter(g => groupes[g])
+    .map(g => [g, groupes[g]])
+    .concat(Object.entries(groupes).filter(([g]) => !ordreGroupes.includes(g)));
+
   select.innerHTML = '<option value="">Choisir un produit…</option>' +
     (optsProdComm ? `<optgroup label="Pâtisserie">${optsProdComm}</optgroup>` : '') +
-    Object.entries(groupes).map(([groupe, recettes]) => `
+    groupesTries.map(([groupe, recettes]) => `
       <optgroup label="${groupe}">
         ${recettes.sort((a, b) => a.nom.localeCompare(b.nom)).map(r => `<option value="${r.id}">${r.nom}</option>`).join('')}
       </optgroup>
