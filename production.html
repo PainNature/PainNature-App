@@ -405,6 +405,12 @@ function renderCarteRecette(recette) {
     if (fmtSpecial) {
       controlsHtml += `<div class="cg sportif-cg"><label>🏃 ${fmtSpecial.label}</label><input type="number" min="0" ${dis} value="${getNbPieces(recette.id, fmtSpecial.id, null) || ''}" onchange="majProduction('${recette.id}','${fmtSpecial.id}',null,this.value)"></div>`;
     }
+    // Variantes en plus des formats (ex: Galet d'automne)
+    if (res.variantes.length > 0) {
+      res.variantes.forEach(v => {
+        controlsHtml += `<div class="cg sportif-cg"><label>🍂 ${v.nom}</label><input type="number" min="0" ${dis} value="${getNbPieces(recette.id, null, v.id) || ''}" onchange="majProduction('${recette.id}',null,'${v.id}',this.value)"></div>`;
+      });
+    }
   } else if (res.variantes.length > 0) {
     controlsHtml += `<div class="cg"><label>Nature</label><input type="number" min="0" ${dis} value="${getNbPieces(recette.id, null, null) || ''}" onchange="majProduction('${recette.id}',null,null,this.value)"></div>`;
     res.variantes.forEach(v => {
