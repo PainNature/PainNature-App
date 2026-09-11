@@ -436,7 +436,7 @@ const labelsFamilleCatalogue = {
 };
 
 async function chargerCatalogueProduits() {
-  const { data: recs } = await sb.from('recettes').select('id, nom, metier, famille, poids_piece_g').eq('actif', true);
+  const { data: recs } = await sb.from('recettes').select('id, nom, metier, famille, poids_piece_g, produit_commercial').eq('actif', true);
   toutesRecettesCatalogue = recs || [];
   const { data: fmts } = await sb.from('recette_formats').select('*').order('ordre');
   tousFormatsCatalogue = fmts || [];
@@ -445,15 +445,29 @@ async function chargerCatalogueProduits() {
 
   // Groupe par métier puis famille pour l'affichage <optgroup>
   const groupes = {};
+  // Produits commerciaux groupés (ex: Cheesecake, Flan, Suisse)
+  const produitsCommerciaux = {};
   toutesRecettesCatalogue.forEach(r => {
+    if (r.produit_commercial) {
+      (produitsCommerciaux[r.produit_commercial] = produitsCommerciaux[r.produit_commercial] || []).push(r);
+      return; // Ne pas ajouter aussi dans groupes
+    }
     const cle = r.metier === 'B' && r.famille
       ? `${labelsMetierCatalogue[r.metier]} — ${labelsFamilleCatalogue[r.famille] || r.famille}`
       : labelsMetierCatalogue[r.metier] || r.metier;
     (groupes[cle] = groupes[cle] || []).push(r);
   });
 
+  // Options produits commerciaux — une seule entrée par produit
+  const optsProdComm = Object.entries(produitsCommerciaux)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([nom, recettes]) =>
+      `<option value="commercial:${recettes.map(r => r.id).join(',')}">${nom}</option>`
+    ).join('');
+
   const select = document.getElementById('prod-recette');
   select.innerHTML = '<option value="">Choisir un produit…</option>' +
+    (optsProdComm ? `<optgroup label="Pâtisserie">${optsProdComm}</optgroup>` : '') +
     Object.entries(groupes).map(([groupe, recettes]) => `
       <optgroup label="${groupe}">
         ${recettes.sort((a, b) => a.nom.localeCompare(b.nom)).map(r => `<option value="${r.id}">${r.nom}</option>`).join('')}
@@ -462,9 +476,17 @@ async function chargerCatalogueProduits() {
 }
 
 function majOptionsFormatVariante() {
-  const recetteId = document.getElementById('prod-recette').value;
+  const valeur = document.getElementById('prod-recette').value;
   const selectFV = document.getElementById('prod-format-variante');
 
+  // Produit commercial → pas de format/variante, on masque le sélecteur
+  if (valeur.startsWith('commercial:')) {
+    selectFV.innerHTML = '';
+    selectFV.style.display = 'none';
+    return;
+  }
+
+  const recetteId = valeur;
   const formats = tousFormatsCatalogue.filter(f => f.recette_id === recetteId);
   const variantes = toutesVariantesCatalogue.filter(v => v.recette_id === recetteId);
 
@@ -493,20 +515,38 @@ function majOptionsFormatVariante() {
 }
 
 function ajouterLigneProduit() {
-  const recetteId = document.getElementById('prod-recette').value;
+  const valeur = document.getElementById('prod-recette').value;
   const fvValeur = document.getElementById('prod-format-variante').value;
   const quantite = parseFloat(document.getElementById('prod-quantite').value);
   const unite = document.getElementById('prod-unite').value;
 
-  if (!recetteId) { alert('Choisissez un produit.'); return; }
+  if (!valeur) { alert('Choisissez un produit.'); return; }
   if (!quantite || quantite <= 0) { alert('Renseignez une quantité valide.'); return; }
-
-  let formatId = null, varianteId = null;
-  if (fvValeur.startsWith('format:')) formatId = fvValeur.replace('format:', '');
-  else if (fvValeur.startsWith('variante:')) varianteId = fvValeur.replace('variante:', '');
 
   const qtePieces = unite === 'pieces' ? quantite : null;
   const qteG = unite === 'grammes' ? quantite : null;
+
+  // Produit commercial → ajouter une ligne par sous-recette
+  if (valeur.startsWith('commercial:')) {
+    const recetteIds = valeur.replace('commercial:', '').split(',');
+    const nomCommercial = document.getElementById('prod-recette').options[document.getElementById('prod-recette').selectedIndex].text;
+    recetteIds.forEach(recetteId => {
+      const rec = toutesRecettesCatalogue.find(r => r.id === recetteId);
+      lignesProduitsCourantes.push({
+        recette_id: recetteId, format_id: null, variante_id: null,
+        quantite: qtePieces, quantite_g: qteG,
+        libelle: `${nomCommercial} — ${rec?.nom || recetteId}`
+      });
+    });
+    renderLignesProduits();
+    document.getElementById('prod-quantite').value = '';
+    return;
+  }
+
+  const recetteId = valeur;
+  let formatId = null, varianteId = null;
+  if (fvValeur.startsWith('format:')) formatId = fvValeur.replace('format:', '');
+  else if (fvValeur.startsWith('variante:')) varianteId = fvValeur.replace('variante:', '');
 
   lignesProduitsCourantes.push({
     recette_id: recetteId, format_id: formatId, variante_id: varianteId,
