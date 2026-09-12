@@ -257,9 +257,16 @@ function renderCartesSel(recettes){
 
     let fmtHtml = '';
     if (p.formats.length > 0){
-      // Trier par poids
       const sorted = [...p.formats].sort((a,b) => (a.poids_g||0)-(b.poids_g||0));
-      fmtHtml = `<div class="card-formats">${sorted.map(f=>`<span class="fmt-badge">${f.label} × ${f.nb}</span>`).join('')}</div>`;
+      fmtHtml = `<div class="card-formats">${sorted.map(f=>`<span class="fmt-badge">${f.label} × ${f.nb}</span>`).join('')}`;
+      // Ajouter les variantes si présentes (ex: Galet d'automne)
+      if (p.variantes.length > 0) {
+        fmtHtml += p.variantes.map(v => {
+          const kg = v.poids_g > 0 ? ' · ' + ((v.nb * v.poids_g)/1000).toFixed(2) + ' kg' : '';
+          return `<span class="fmt-badge" style="background:var(--wheat);color:#fff;">🍂 ${v.nom} × ${v.nb}${kg}</span>`;
+        }).join('');
+      }
+      fmtHtml += `</div>`;
     } else if (p.variantes.length > 0){
       fmtHtml = `<div class="card-formats">${p.variantes.map(v=>{
         const kg = v.poids_g > 0 ? ' · ' + ((v.nb * v.poids_g)/1000).toFixed(2) + ' kg' : '';
@@ -380,7 +387,19 @@ function lancerAtelier(){
           <span class="fp-poids">${f.label}</span>
           <span class="fp-nb">${f.nb}</span>
           <span class="fp-unite">pce${f.nb>1?'s':''}</span>
-        </div>`).join('')}</div>`;
+        </div>`).join('')}`;
+      // Variantes en plus des formats (ex: Galet d'automne)
+      if (p.variantes.length > 0) {
+        fmtHtml += p.variantes.map(v => {
+          const pateKg = v.poids_g > 0 ? ((v.nb * v.poids_g) / 1000).toFixed(2) + ' kg' : '';
+          return `<div class="recette-fmt-pill" style="background:var(--wheat-light);border:1px solid var(--wheat);">
+            <span class="fp-poids">🍂 ${v.nom}</span>
+            <span class="fp-nb">${v.nb} pce${v.nb>1?'s':''}</span>
+            ${pateKg ? `<span class="fp-unite">${pateKg} pâte</span>` : ''}
+          </div>`;
+        }).join('');
+      }
+      fmtHtml += `</div>`;
     } else if (p.variantes.length > 0){
       fmtHtml = `<div class="recette-formats">${p.variantes.map(v=>{
         const pateKg = v.poids_g > 0 ? ((v.nb * v.poids_g) / 1000).toFixed(2) + ' kg' : '';
