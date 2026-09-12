@@ -385,7 +385,9 @@ function lancerAtelier(){
     const coupesParBac = estBaguette ? 10 : 6;
 
     let fmtHtml = '';
-    if (p.formats.length > 0){
+    // Baguettes Bio : pas de détail formats/variantes ni bacs — tout au même poids
+    if (!estBaguette || recette.nom !== 'Baguettes Bio') {
+      if (p.formats.length > 0){
       const sorted = [...p.formats].sort((a,b) => (a.poids_g||0)-(b.poids_g||0));
       fmtHtml = `<div class="recette-formats">${sorted.map(f=>`
         <div class="recette-fmt-pill">
@@ -413,9 +415,10 @@ function lancerAtelier(){
         </div>`;
       }).join('')}</div>`;
     }
+    } // fin condition !Baguettes Bio
 
-    // Info bacs
-    const infoBacs = nbBacsTotal > 0
+    // Info bacs — masqué pour Baguettes Bio
+    const infoBacs = (nbBacsTotal > 0 && recette.nom !== 'Baguettes Bio')
       ? `<div class="recette-fmt-pill" style="background:#546054;color:#fff;">
           <span class="fp-poids">🪣 ${nbBacsTotal} bac${nbBacsTotal>1?'s':''}</span>
           <span class="fp-unite">÷${coupesParBac} pces/bac</span>
