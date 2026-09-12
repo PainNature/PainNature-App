@@ -611,14 +611,14 @@ function renderTout() {
   const labelsMetier = { B: 'Boulangerie', V: 'Viennoiserie', GV: 'Gâteaux de voyage', P: 'Pâtisserie', T: 'Traiteur' };
   const labelsFamille = {
     baguettes: 'Baguettes', bles_levain: 'Blés au levain',
-    autres_cereales_levain: 'Autres céréales au levain', pains_sucres: 'Pains sucrés'
+    autres_cereales_levain: 'Autres céréales au levain', pains_sucres: 'Pains sucrés', brioches: 'Brioches'
   };
   // Ordre demandé pour l'impression quotidienne (Boulangerie en priorité) :
   // Page 1 = Levains (déjà avant dans le HTML) + Pains sucrés
   // Page 2 = Baguettes
   // Page 3 = Blés au levain
   // Page 4 = Autres céréales au levain
-  const ordreFamilles = ['pains_sucres', 'baguettes', 'bles_levain', 'autres_cereales_levain'];
+  const ordreFamilles = ['pains_sucres', 'brioches', 'baguettes', 'bles_levain', 'autres_cereales_levain'];
   // Familles qui doivent démarrer une NOUVELLE page (pains_sucres reste
   // sur la même page que les levains, donc pas de saut avant elle).
   const famillesAvecSautPage = new Set(['baguettes', 'bles_levain', 'autres_cereales_levain']);
