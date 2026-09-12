@@ -463,12 +463,8 @@ async function chargerCatalogueProduits() {
     'Boulangerie — Autres céréales au levain',
     'Boulangerie — Pains sucrés',
     'Boulangerie — Brioches',
-    'Viennoiserie — Croissants',
-    'Viennoiserie — Chocolatines',
-    'Viennoiserie — Suisses',
     'Viennoiserie',
-    'Gâteaux de voyage',
-    'Pâtisserie'
+    'Gâteaux de voyage'
   ];
 
   // Construire les groupes
@@ -479,17 +475,22 @@ async function chargerCatalogueProduits() {
       (produitsCommerciaux[r.produit_commercial] = produitsCommerciaux[r.produit_commercial] || []).push(r);
       return;
     }
+    // Crumble et autres P sans produit_commercial → groupe Pâtisserie dans les produits commerciaux
+    if (r.metier === 'P') {
+      (produitsCommerciaux[r.nom] = produitsCommerciaux[r.nom] || []).push(r);
+      return;
+    }
     const metierLabel = labelsMetierGroupe[r.metier] || r.metier;
-    const familleLabel = r.famille ? labelsFamilleGroupe[r.famille] : null;
-    const cle = familleLabel ? `${metierLabel} — ${familleLabel}` : metierLabel;
+    // Viennoiserie : toujours regroupée sans sous-famille
+    const cle = r.metier === 'V' ? 'Viennoiserie' : (r.famille ? `${metierLabel} — ${labelsFamilleGroupe[r.famille]}` : metierLabel);
     (groupes[cle] = groupes[cle] || []).push(r);
   });
 
-  // Produits commerciaux (Cheesecake, Flan, Suisse)
+  // Produits commerciaux + Pâtisserie en bas
   const optsProdComm = Object.entries(produitsCommerciaux)
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([nom, recettes]) =>
-      `<option value="commercial:${recettes.map(r => r.id).join(',')}">${nom}</option>`
+      `<option value="${recettes.length > 1 ? 'commercial:' + recettes.map(r => r.id).join(',') : recettes[0].id}">${nom}</option>`
     ).join('');
 
   const select = document.getElementById('prod-recette');
@@ -501,12 +502,12 @@ async function chargerCatalogueProduits() {
     .concat(Object.entries(groupes).filter(([g]) => !ordreGroupes.includes(g)));
 
   select.innerHTML = '<option value="">Choisir un produit…</option>' +
-    (optsProdComm ? `<optgroup label="Pâtisserie">${optsProdComm}</optgroup>` : '') +
     groupesTries.map(([groupe, recettes]) => `
       <optgroup label="${groupe}">
         ${recettes.sort((a, b) => a.nom.localeCompare(b.nom)).map(r => `<option value="${r.id}">${r.nom}</option>`).join('')}
       </optgroup>
-    `).join('');
+    `).join('') +
+    (optsProdComm ? `<optgroup label="Pâtisserie">${optsProdComm}</optgroup>` : '');
 }
 
 function majOptionsFormatVariante() {
