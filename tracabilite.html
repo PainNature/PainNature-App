@@ -772,7 +772,7 @@ async function chargerEntrees(debut, fin) {
     .not('quantite', 'is', null);
 
   // Sorties : consommation bio uniquement
-  const { data: sorties } = await sb.rpc('get_besoins_matieres', { p_date_debut: debut, p_date_fin: fin });
+  const { data: sorties } = await sb.rpc('get_consommation_matieres', { p_date_debut: debut, p_date_fin: fin });
 
   // Agréger les entrées bio par matière
   const entrees = {};
