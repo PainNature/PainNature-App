@@ -423,9 +423,7 @@ function lancerAtelier(){
     const coupesParBac = estBaguette ? 10 : 6;
 
     let fmtHtml = '';
-    // Baguettes Bio : pas de détail formats/variantes ni bacs — tout au même poids
-    if (!estBaguette || recette.nom !== 'Baguettes Bio') {
-      if (p.formats.length > 0){
+    if (p.formats.length > 0){
       const sorted = [...p.formats].sort((a,b) => (a.poids_g||0)-(b.poids_g||0));
       fmtHtml = `<div class="recette-formats">${sorted.map(f=>`
         <div class="recette-fmt-pill">
@@ -433,40 +431,30 @@ function lancerAtelier(){
           <span class="fp-nb">${f.nb}</span>
         </div>`).join('')}`;
       if (p.variantes.length > 0) {
-        fmtHtml += p.variantes.map(v => {
-          const pateKgV = v.poids_g > 0 ? ((v.nb * v.poids_g) / 1000).toFixed(2) + ' kg' : '';
-          return `<div class="recette-fmt-pill" style="background:#7a6040;color:#fff;border:1px solid #5c4a30;">
+        fmtHtml += p.variantes.map(v => `
+          <div class="recette-fmt-pill" style="background:#7a6040;color:#fff;border:1px solid #5c4a30;">
             <span class="fp-poids">🍂 ${v.nom}</span>
-            <span class="fp-nb">${v.nb} pce${v.nb>1?'s':''}</span>
-            ${pateKgV ? `<span class="fp-unite" style="color:rgba(255,255,255,.8);">${pateKgV}</span>` : ''}
-          </div>`;
-        }).join('');
+            <span class="fp-nb">${v.nb}</span>
+          </div>`).join('');
       }
       fmtHtml += `</div>`;
     } else if (p.variantes.length > 0){
-      fmtHtml = `<div class="recette-formats">${p.variantes.map(v=>{
-        const pateKgV = v.poids_g > 0 ? ((v.nb * v.poids_g) / 1000).toFixed(2) + ' kg' : '';
-        return `<div class="recette-fmt-pill">
+      fmtHtml = `<div class="recette-formats">${p.variantes.map(v=>`
+        <div class="recette-fmt-pill">
           <span class="fp-poids">${v.nom}</span>
-          <span class="fp-nb">${v.nb} pce${v.nb>1?'s':''}</span>
-          ${pateKgV ? `<span class="fp-unite">${pateKgV}</span>` : ''}
-        </div>`;
-      }).join('')}</div>`;
+          <span class="fp-nb">${v.nb}</span>
+        </div>`).join('')}</div>`;
+    } else if (p.total > 0){
+      fmtHtml = `<div class="recette-formats">
+        <div class="recette-fmt-pill">
+          <span class="fp-poids">Pièces</span>
+          <span class="fp-nb">${p.total}</span>
+        </div></div>`;
     }
-    } // fin condition !Baguettes Bio
-
-    // Info bacs — masqué pour Baguettes Bio
-    const infoBacs = (nbBacsTotal > 0 && recette.nom !== 'Baguettes Bio')
-      ? `<div class="recette-fmt-pill" style="background:#546054;color:#fff;">
-          <span class="fp-poids">🪣 ${nbBacsTotal} bac${nbBacsTotal>1?'s':''}</span>
-          <span class="fp-unite">÷${coupesParBac} pces/bac</span>
-        </div>`
-      : '';
 
     if (index > 0) html += `<div class="section-separator">— suite —</div>`;
     html += `<div class="section-recette">
       <div class="recette-nom">${recette.nom}</div>
-      <div class="recette-formats" style="margin-bottom:4px;">${infoBacs}</div>
       ${fmtHtml}
       <div class="recette-meta">
         <div style="display:flex;flex-direction:column;gap:2px;"><span class="rmi-label">Pâte totale</span><span class="rmi-val">${pateKg} kg</span></div>
