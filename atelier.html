@@ -155,7 +155,8 @@ async function chargerDonnees(){
     { data: recs },
     { data: ings },
     { data: plan },
-    { data: levains }
+    { data: levains },
+    { data: levains_mucilage_data }
   ] = await Promise.all([
     sb.from('recettes').select('id,nom,metier,poids_piece_g,poids_cuit_g').eq('actif', true),
     sb.from('recette_ingredients').select('*').order('ordre'),
@@ -164,7 +165,8 @@ async function chargerDonnees(){
       recette_formats(id, label, poids_g, poids_cuit_g),
       recette_variantes(id, nom, poids_piece_g)
     `).eq('date_prod', date),
-    sb.rpc('get_besoins_levains', { p_date: date })
+    sb.rpc('get_besoins_levains', { p_date: date }),
+    sb.rpc('get_besoin_mucilage')
   ]);
 
   toutesRecettes = recs || [];
@@ -172,6 +174,10 @@ async function chargerDonnees(){
   (ings || []).forEach(i => {
     (tousIngredients[i.recette_id] = tousIngredients[i.recette_id] || []).push(i);
   });
+
+  // Mucilage
+  const mucilageTotal = (levains_mucilage_data || []).find(r => r.recette_nom === 'TOTAL MUCILAGE');
+  const mucilageDetail = (levains_mucilage_data || []).filter(r => r.recette_nom !== 'TOTAL MUCILAGE');
 
   // Construire planJour avec les labels déjà résolus par la jointure
   planJour = {};
@@ -356,6 +362,38 @@ function lancerAtelier(){
     });
     html += `</div>`;
   }
+
+  // Mucilage de graines — affiché uniquement mercredi et samedi
+  const jourSemaine = new Date(date).getDay(); // 0=dim, 3=mer, 6=sam
+  if (mucilageTotal && Number(mucilageTotal.graines_preparation_g) > 0 && (jourSemaine === 3 || jourSemaine === 6)) {
+    const jourLabel = jourSemaine === 3 ? 'mercredi' : 'samedi';
+    html += `<div class="section-levains" style="background:#f0f7f0;border-bottom-color:#4a7c59;">
+      <div class="section-levains-titre" style="color:#4a7c59;">🌱 Mucilage de graines — préparation du ${jourLabel}</div>
+      <div style="font-size:.78rem;color:#4a7c59;margin-bottom:12px;font-family:var(--mono);">
+        ½ du besoin hebdomadaire · 2 préparations/semaine (mercredi + samedi)
+      </div>
+      ${mucilageDetail.map(m => `
+        <div class="levain-ligne">
+          <div class="levain-ligne-label">${m.recette_nom}</div>
+          <div class="levain-ligne-val">${fmt(m.graines_moy_semaine_g)} g/sem</div>
+        </div>`).join('')}
+      <div class="levain-ligne" style="border-top:2px solid #4a7c59;margin-top:8px;padding-top:8px;">
+        <div><div class="levain-ligne-label">Graines torréfiées</div><div class="levain-ligne-sous">mélange toasté</div></div>
+        <div class="levain-ligne-val">${fmt(mucilageTotal.graines_preparation_g)} g</div>
+      </div>
+      <div class="levain-ligne">
+        <div class="levain-ligne-label">Eau de trempage</div>
+        <div class="levain-ligne-val">${fmt(mucilageTotal.eau_g)} g</div>
+      </div>
+      <div class="levain-ligne">
+        <div class="levain-ligne-label">Levain (inoculation)</div>
+        <div class="levain-ligne-val">${fmt(mucilageTotal.levain_g)} g</div>
+      </div>
+      <div class="levain-ligne" style="font-weight:800;">
+        <div class="levain-ligne-label">Total mucilage</div>
+        <div class="levain-ligne-val">${fmt(mucilageTotal.total_mucilage_g)} g</div>
+      </div>
+    </div>`}
 
   // Recettes
   recettesSelectionnees.forEach((recetteId, index) => {
