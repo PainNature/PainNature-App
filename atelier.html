@@ -168,7 +168,7 @@ async function chargerDonnees(){
       recette_variantes(id, nom, poids_piece_g)
     `).eq('date_prod', date),
     sb.rpc('get_besoins_levains', { p_date: date }),
-    sb.rpc('get_besoin_mucilage')
+    sb.rpc('get_besoin_mucilage', { p_date: date })
   ]);
 
   toutesRecettes = recs || [];
@@ -340,11 +340,21 @@ function onDrop(e,targetId){
 }
 function onDragEnd(){ document.querySelectorAll('.selection-card').forEach(c=>c.classList.remove('dragging','drag-over')); dragSrc=null; }
 
-function lancerAtelier(){
+let derniereDateMucilage = null;
+
+async function lancerAtelier(){
   if (!recettesSelectionnees.length) return;
   const date = document.getElementById('date-jour').value;
   document.getElementById('atelier-date-affiche').textContent =
-    new Date(date).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+    new Date(date + 'T12:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+
+  // Recharger le mucilage si la date a changé depuis le dernier chargement
+  if (date !== derniereDateMucilage) {
+    const { data: mucData } = await sb.rpc('get_besoin_mucilage', { p_date: date });
+    mucilageTotal = (mucData || []).find(r => r.recette_nom === 'TOTAL MUCILAGE');
+    mucilageDetail = (mucData || []).filter(r => r.recette_nom !== 'TOTAL MUCILAGE');
+    derniereDateMucilage = date;
+  }
 
   let html = '';
 
