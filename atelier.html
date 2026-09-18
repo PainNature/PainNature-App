@@ -375,10 +375,9 @@ async function lancerAtelier(){
     html += `</div>`;
   }
 
-  // Mucilage de graines — affiché uniquement mercredi et samedi
-  const jourSemaine = new Date(date + 'T12:00:00').getDay(); // T12 évite le décalage UTC
-  if (mucilageTotal && Number(mucilageTotal.graines_preparation_g) > 0 && (jourSemaine === 3 || jourSemaine === 6)) {
-    const jourLabel = jourSemaine === 3 ? 'mercredi' : 'samedi';
+  // Mucilage — affiché uniquement mercredi et samedi (basé sur la réponse SQL)
+  if (mucilageTotal && mucilageTotal.jour_preparation && Number(mucilageTotal.total_mucilage_g) > 0) {
+    const jourLabel = mucilageTotal.jour_preparation;
     html += `<div class="section-levains" style="background:#f0f7f0;border-bottom-color:#4a7c59;">
       <div class="section-levains-titre" style="color:#4a7c59;">🌱 Mucilage de graines — préparation du ${jourLabel}</div>
       <div style="font-size:.78rem;color:#4a7c59;margin-bottom:12px;font-family:var(--mono);">
