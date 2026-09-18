@@ -127,6 +127,8 @@ let profilCourant = null;
 let toutesRecettes = [];
 let tousIngredients = {};
 let donneesLevains = [];
+let mucilageTotal = null;
+let mucilageDetail = [];
 let recettesSelectionnees = [];
 
 // planJour[recette_id] = { total: N, formats: [{label, nb, poids_g}], variantes: [{nom, nb}] }
@@ -176,8 +178,8 @@ async function chargerDonnees(){
   });
 
   // Mucilage
-  const mucilageTotal = (levains_mucilage_data || []).find(r => r.recette_nom === 'TOTAL MUCILAGE');
-  const mucilageDetail = (levains_mucilage_data || []).filter(r => r.recette_nom !== 'TOTAL MUCILAGE');
+  mucilageTotal = (levains_mucilage_data || []).find(r => r.recette_nom === 'TOTAL MUCILAGE');
+  mucilageDetail = (levains_mucilage_data || []).filter(r => r.recette_nom !== 'TOTAL MUCILAGE');
 
   // Construire planJour avec les labels déjà résolus par la jointure
   planJour = {};
@@ -364,7 +366,7 @@ function lancerAtelier(){
   }
 
   // Mucilage de graines — affiché uniquement mercredi et samedi
-  const jourSemaine = new Date(date).getDay(); // 0=dim, 3=mer, 6=sam
+  const jourSemaine = new Date(date + 'T12:00:00').getDay(); // T12 évite le décalage UTC
   if (mucilageTotal && Number(mucilageTotal.graines_preparation_g) > 0 && (jourSemaine === 3 || jourSemaine === 6)) {
     const jourLabel = jourSemaine === 3 ? 'mercredi' : 'samedi';
     html += `<div class="section-levains" style="background:#f0f7f0;border-bottom-color:#4a7c59;">
