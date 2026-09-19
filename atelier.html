@@ -379,30 +379,18 @@ async function lancerAtelier(){
   if (mucilageTotal && mucilageTotal.jour_preparation && Number(mucilageTotal.total_mucilage_g) > 0) {
     const jourLabel = mucilageTotal.jour_preparation;
     html += `<div class="section-levains" style="background:#f0f7f0;border-bottom-color:#4a7c59;">
-      <div class="section-levains-titre" style="color:#4a7c59;">🌱 Mucilage de graines — préparation du ${jourLabel}</div>
-      <div style="font-size:.78rem;color:#4a7c59;margin-bottom:12px;font-family:var(--mono);">
-        ½ du besoin hebdomadaire · 2 préparations/semaine (mercredi + samedi)
-      </div>
-      ${mucilageDetail.map(m => `
-        <div class="levain-ligne">
-          <div class="levain-ligne-label">${m.recette_nom}</div>
-          <div class="levain-ligne-val">${fmt(m.graines_moy_semaine_g)} g/sem</div>
-        </div>`).join('')}
-      <div class="levain-ligne" style="border-top:2px solid #4a7c59;margin-top:8px;padding-top:8px;">
-        <div><div class="levain-ligne-label">Graines torréfiées</div><div class="levain-ligne-sous">mélange toasté</div></div>
+      <div class="section-levains-titre" style="color:#4a7c59;">🌱 Mucilage de graines — ${jourLabel}</div>
+      <div class="levain-ligne">
+        <div class="levain-ligne-label">Graines torréfiées</div>
         <div class="levain-ligne-val">${fmt(mucilageTotal.graines_preparation_g)} g</div>
       </div>
       <div class="levain-ligne">
-        <div class="levain-ligne-label">Eau de trempage</div>
+        <div class="levain-ligne-label">Eau</div>
         <div class="levain-ligne-val">${fmt(mucilageTotal.eau_g)} g</div>
       </div>
-      <div class="levain-ligne">
-        <div class="levain-ligne-label">Levain (inoculation)</div>
-        <div class="levain-ligne-val">${fmt(mucilageTotal.levain_g)} g</div>
-      </div>
       <div class="levain-ligne" style="font-weight:800;">
-        <div class="levain-ligne-label">Total mucilage</div>
-        <div class="levain-ligne-val">${fmt(mucilageTotal.total_mucilage_g)} g</div>
+        <div class="levain-ligne-label">Levain</div>
+        <div class="levain-ligne-val">${fmt(mucilageTotal.levain_g)} g</div>
       </div>
     </div>`}
 
