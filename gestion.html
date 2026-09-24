@@ -658,44 +658,59 @@ function calculerResultat(coutTotalMP, poidsTotalIngredients, financeActuelle) {
   const poidsCru = parseFloat(document.getElementById('finance-poids')?.value || 0) || poidsTotalIngredients || 0;
   const poidsCuit = parseFloat(document.getElementById('finance-poids-cuit')?.value || 0) || poidsCru || 0;
 
-  // Coût ramené au poids cru saisi (si différent du poids total des
-  // ingrédients de la fiche — ex: une partie seulement est utilisée).
+  // Mode à la part : ramener le coût au poids d'une part cuite
+  const modePart = document.getElementById('finance-mode-part')?.checked || false;
+  const poidsPart = parseFloat(document.getElementById('finance-poids-part')?.value || 0);
+  const emballagePart = parseFloat(document.getElementById('finance-emballage-part')?.value || 0);
+
   let coutBaseHT = coutTotalMP;
   if (poidsTotalIngredients > 0 && poidsCru > 0) {
     coutBaseHT = (coutTotalMP / poidsTotalIngredients) * poidsCru;
   }
 
-  // ⚠️ Formule fidèle à l'ancien outil : la perte AUGMENTE le coût
-  // (facteur multiplicatif 1 + perte%), elle ne le divise pas.
-  const facteurPerte = perte > 0 ? 1 + perte / 100 : 1;
-  const coutAvecPerteHT = coutBaseHT * facteurPerte;
+  // Si mode à la part : ramener le coût au poids de la part cuite
+  // Le ratio se fait sur le poids cuit : poids_part / poids_cuit_tournée
+  let coutUnitaire = coutBaseHT;
+  let emballageEffectif = emballage;
+  let poidsCalc = poidsCuit > 0 ? poidsCuit : poidsCru;
 
-  const prixMagCoefHT = (coutBaseHT * facteurPerte * coef) + emballage;
-  const prixMagMargeHT = margePct >= 100 ? 0 : (coutBaseHT * facteurPerte / (1 - margePct / 100)) + emballage;
+  if (modePart && poidsPart > 0 && poidsCalc > 0) {
+    const ratioPart = poidsPart / poidsCalc;
+    coutUnitaire = coutBaseHT * ratioPart;
+    emballageEffectif = emballagePart; // emballage par part, pas par tournée
+    poidsCalc = poidsPart;
+  }
+
+  const facteurPerte = perte > 0 ? 1 + perte / 100 : 1;
+  const coutAvecPerteHT = coutUnitaire * facteurPerte;
+
+  const prixMagCoefHT = (coutUnitaire * facteurPerte * coef) + emballageEffectif;
+  const prixMagMargeHT = margePct >= 100 ? 0 : (coutUnitaire * facteurPerte / (1 - margePct / 100)) + emballageEffectif;
   const prixMagCoefTTC = prixMagCoefHT * tva;
   const prixMagMargeTTC = prixMagMargeHT * tva;
 
-  // Prix final = moyenne des deux méthodes, comme l'ancien outil
   const prixVenteTtc = (prixMagCoefTTC + prixMagMargeTTC) / 2;
   const prixVenteHt = (prixMagCoefHT + prixMagMargeHT) / 2;
 
-  const poidsRef = poidsCuit > 0 ? poidsCuit : poidsCru;
+  const poidsRef = poidsCalc;
   const prixKiloTtc = poidsRef > 0 ? (prixVenteTtc / poidsRef) * 1000 : 0;
-  // Coût matière au kilo : permet de comparer deux recettes de poids
-  // différents sans se laisser tromper par les valeurs absolues
-  // (ex : 1100g de pâte coûtent forcément moins en absolu que 2347g,
-  // même si le coût AU KILO est plus élevé).
   const coutMatiereKiloHt = poidsRef > 0 ? (coutAvecPerteHT / poidsRef) * 1000 : 0;
-  const avertissementPoids = (!document.getElementById('finance-poids-cuit')?.value) && poidsCru > 0
-    ? '<div class="resultat-ligne" style="color:var(--text-light);font-size:.75rem;">⚠ Poids cuit non renseigné — calcul basé sur le poids cru</div>'
+  const avertissementPoids = modePart && poidsPart > 0 ? '' :
+    (!document.getElementById('finance-poids-cuit')?.value) && poidsCru > 0
+      ? '<div class="resultat-ligne" style="color:var(--text-light);font-size:.75rem;">⚠ Poids cuit non renseigné — calcul basé sur le poids cru</div>'
+      : '';
+
+  // Ligne info mode à la part
+  const infoModePart = modePart && poidsPart > 0
+    ? `<div class="resultat-ligne" style="color:#2d6a4f;font-size:.8rem;">🍰 Calcul sur la part de ${poidsPart}g (tournée : ${poidsCuit || poidsCru}g)</div>`
     : '';
 
   const canal = document.getElementById('finance-sim-canal')?.value || 'boutique';
   const estPro = canal === 'pro' || canal === 'traiteur';
 
   let htmlResultat = `
-    <div class="resultat-ligne"><span>Coût matière (poids fiche)</span><span class="resultat-val">${coutTotalMP.toFixed(4)} €</span></div>
-    <div class="resultat-ligne"><span>Coût ramené au poids cru</span><span class="resultat-val">${coutBaseHT.toFixed(4)} €</span></div>
+    ${infoModePart}
+    <div class="resultat-ligne"><span>Coût matière ${modePart && poidsPart > 0 ? 'par part' : '(poids fiche)'}</span><span class="resultat-val">${(modePart && poidsPart > 0 ? coutUnitaire : coutTotalMP).toFixed(4)} €</span></div>
     <div class="resultat-ligne"><span>Coût + perte</span><span class="resultat-val">${coutAvecPerteHT.toFixed(4)} €</span></div>
     <div class="resultat-ligne"><span>Coût matière (€/kg)</span><span class="resultat-val">${coutMatiereKiloHt.toFixed(3)} €/kg</span></div>`;
 
