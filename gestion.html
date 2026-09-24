@@ -554,8 +554,8 @@ async function chargerFicheRecette(recetteId) {
       <select id="finance-simulation-select" style="flex:1;padding:8px 10px;border:1.5px solid var(--border-strong);border-radius:var(--r);font-size:.9rem;background:#fff;" onchange="changerSimulation(this.value)">
         ${(finances || []).map(f => `<option value="${f.id}" ${f.id === finance.id ? 'selected' : ''}>${f.label || 'Boutique'} ${f.canal === 'pro' ? '(Pro HT)' : f.canal === 'marche' ? '(Marché)' : ''}</option>`).join('')}
       </select>
-      <button class="btn btn-ghost" style="padding:6px 10px;font-size:.8rem;white-space:nowrap;" onclick="dupliquerSimulation('${finance.id}')">⊕ Dupliquer</button>
-      <button class="btn btn-ghost" style="padding:6px 10px;font-size:.8rem;color:var(--red);border-color:var(--red);" onclick="supprimerSimulation('${finance.id}')" ${(finances||[]).length <= 1 ? 'disabled' : ''}>🗑️</button>
+      <button class="btn btn-ghost" style="padding:6px 10px;font-size:.8rem;white-space:nowrap;" onclick="dupliquerSimulation(document.getElementById('finance-sim-id').value)">⊕ Dupliquer</button>
+      <button class="btn btn-ghost" style="padding:6px 10px;font-size:.8rem;color:var(--red);border-color:var(--red);" onclick="supprimerSimulation(document.getElementById('finance-sim-id').value)" ${(finances||[]).length <= 1 ? 'disabled' : ''}>🗑️</button>
     </div>
 
     <!-- Label et canal de la simulation -->
@@ -875,11 +875,19 @@ async function dupliquerSimulation(simId) {
   if (!source) return;
 
   const { data: nouvelle } = await sb.from('recette_finance').insert({
-    ...source,
-    id: undefined,
+    recette_id: source.recette_id,
+    coefficient: source.coefficient,
+    marge_pct: source.marge_pct,
+    tva_pct: source.tva_pct,
+    prix_emballage_ht: source.prix_emballage_ht,
+    taux_perte_pct: source.taux_perte_pct,
     label: (source.label || 'Boutique') + ' (copie)',
-    actif: true,
-    updated_at: new Date().toISOString()
+    canal: source.canal || 'boutique',
+    poids_vente_g: source.poids_vente_g,
+    mode_part: source.mode_part,
+    poids_part_g: source.poids_part_g,
+    emballage_part_ht: source.emballage_part_ht,
+    actif: true
   }).select().single();
 
   if (nouvelle) {
