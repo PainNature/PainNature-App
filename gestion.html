@@ -494,14 +494,16 @@ async function chargerFicheRecette(recetteId) {
     .from('recette_ingredients')
     .select('id, quantite_base_g, nom_affiche, mp_id, recette_source_id, matieres_premieres(prix_ht_kg, bio)')
     .eq('recette_id', recetteId);
-  let { data: finances } = await sb.from('recette_finance').select('*').eq('recette_id', recetteId).eq('actif', true).order('created_at');
+  let { data: finances, error: errF } = await sb.from('recette_finance').select('*').eq('recette_id', recetteId).order('updated_at');
+  // Filtrer actif côté JS pour être compatible avant et après migration SQL 240
+  if (finances) finances = finances.filter(f => f.actif !== false);
   let finance = finances?.[0];
 
   if (!finance) {
-    const { data: nf } = await sb.from('recette_finance').insert({
-      recette_id: recetteId, coefficient: 3.5, marge_pct: 70, tva_pct: 10,
-      label: 'Boutique', canal: 'boutique', actif: true
-    }).select().single();
+    const insertData = { recette_id: recetteId, coefficient: 3.5, marge_pct: 70, tva_pct: 10, label: 'Boutique', canal: 'boutique' };
+    // Ajouter actif seulement si la colonne existe (après migration 240)
+    if (!errF) insertData.actif = true;
+    const { data: nf } = await sb.from('recette_finance').insert(insertData).select().single();
     finance = nf;
     finances = [finance];
   }
@@ -895,7 +897,7 @@ async function supprimerSimulation(simId) {
   if (!confirm('Supprimer cette simulation ?')) return;
   await sb.from('recette_finance').update({ actif: false }).eq('id', simId);
   // Recharger la fiche
-  afficherPanneau(recetteSelectionneeId);
+  chargerFicheRecette(recetteSelectionneeId);
 }
 
 // ---------------- ÉDITION DES INGRÉDIENTS ----------------
