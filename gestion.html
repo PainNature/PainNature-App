@@ -871,10 +871,20 @@ async function changerSimulation(simId) {
 }
 
 async function dupliquerSimulation(simId) {
-  const { data: source } = await sb.from('recette_finance').select('*').eq('id', simId).single();
-  if (!source) return;
+  console.log('[dupliquer] simId reçu:', simId);
+  if (!simId) {
+    alert('Erreur : aucune simulation sélectionnée (simId vide)');
+    return;
+  }
 
-  const { data: nouvelle } = await sb.from('recette_finance').insert({
+  const { data: source, error: errSource } = await sb.from('recette_finance').select('*').eq('id', simId).single();
+  console.log('[dupliquer] source:', source, 'erreur:', errSource);
+  if (!source) {
+    alert('Erreur lecture source : ' + (errSource?.message || 'inconnu'));
+    return;
+  }
+
+  const payload = {
     recette_id: source.recette_id,
     coefficient: source.coefficient,
     marge_pct: source.marge_pct,
@@ -888,7 +898,16 @@ async function dupliquerSimulation(simId) {
     poids_part_g: source.poids_part_g,
     emballage_part_ht: source.emballage_part_ht,
     actif: true
-  }).select().single();
+  };
+  console.log('[dupliquer] payload insert:', payload);
+
+  const { data: nouvelle, error: errInsert } = await sb.from('recette_finance').insert(payload).select().single();
+  console.log('[dupliquer] nouvelle:', nouvelle, 'erreur insert:', errInsert);
+
+  if (errInsert) {
+    alert('Erreur duplication : ' + errInsert.message);
+    return;
+  }
 
   if (nouvelle) {
     const select = document.getElementById('finance-simulation-select');
