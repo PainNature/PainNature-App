@@ -611,7 +611,8 @@ function renderTout() {
   const labelsMetier = { B: 'Boulangerie', V: 'Viennoiserie', GV: 'Gâteaux de voyage', P: 'Pâtisserie', T: 'Traiteur' };
   const labelsFamille = {
     baguettes: 'Baguettes', bles_levain: 'Blés au levain',
-    autres_cereales_levain: 'Autres céréales au levain', pains_sucres: 'Pains sucrés', brioches: 'Brioches'
+    autres_cereales_levain: 'Autres céréales au levain', pains_sucres: 'Pains sucrés', brioches: 'Brioches',
+    sous_recettes: 'Sous recettes', recette_assemblee: 'Recettes assemblées'
   };
   // Ordre demandé pour l'impression quotidienne (Boulangerie en priorité) :
   // Page 1 = Levains (déjà avant dans le HTML) + Pains sucrés
@@ -667,6 +668,36 @@ function renderTout() {
         const sfVide = sansFamille.every(r => calculerRecette(r).totalPate === 0);
         html += `<div class="recipe-section-title ${sfVide ? 'section-vide' : ''} page-break-avant" style="font-size:8px; opacity:.75; margin-top:.5rem; border-bottom-style:dashed;">↳ Sans famille</div>`;
         html += renderGroupeRecettes(sansFamille);
+      }
+    } else if (metier === 'P') {
+      // Pâtisserie : sous_recettes en premier, recette_assemblee ensuite, puis le reste
+      const ordreFamillesP = ['sous_recettes', 'recette_assemblee'];
+      const parFamilleP = {};
+      const sansFamilleP = [];
+      recs.forEach(r => {
+        if (r.famille) { (parFamilleP[r.famille] = parFamilleP[r.famille] || []).push(r); }
+        else sansFamilleP.push(r);
+      });
+      // Familles ordonnées en premier
+      ordreFamillesP.forEach(fam => {
+        if (parFamilleP[fam] && parFamilleP[fam].length > 0) {
+          const famVide = parFamilleP[fam].every(r => calculerRecette(r).totalPate === 0);
+          html += `<div class="recipe-section-title ${famVide ? 'section-vide' : ''}" style="font-size:8px; opacity:.75; margin-top:.5rem; border-bottom-style:dashed;">↳ ${labelsFamille[fam]}</div>`;
+          html += renderGroupeRecettes(parFamilleP[fam]);
+          delete parFamilleP[fam];
+        }
+      });
+      // Autres familles pâtisserie
+      Object.keys(parFamilleP).forEach(fam => {
+        if (parFamilleP[fam].length > 0) {
+          const famVide = parFamilleP[fam].every(r => calculerRecette(r).totalPate === 0);
+          html += `<div class="recipe-section-title ${famVide ? 'section-vide' : ''}" style="font-size:8px; opacity:.75; margin-top:.5rem; border-bottom-style:dashed;">↳ ${labelsFamille[fam] || fam}</div>`;
+          html += renderGroupeRecettes(parFamilleP[fam]);
+        }
+      });
+      // Sans famille
+      if (sansFamilleP.length > 0) {
+        html += renderGroupeRecettes(sansFamilleP);
       }
     } else {
       html += renderGroupeRecettes(recs);
