@@ -533,13 +533,23 @@ async function chargerFicheRecette(recetteId) {
           <option value="T" ${recette.metier === 'T' ? 'selected' : ''}>Traiteur</option>
         </select>
       </div>
-      <div class="field"><label>Famille (si Boulangerie)</label>
-        <select id="finance-famille" style="width:100%; padding:9px 11px; border:1.5px solid var(--border-strong); border-radius:var(--r); font-size:.9rem; background:#fff;">
+      <div class="field"><label>Famille</label>
+        <select id="finance-famille" style="width:100%; padding:9px 11px; border:1.5px solid var(--border-strong); border-radius:var(--r); font-size:.9rem; background:#fff;" onchange="">
           <option value="" ${!recette.famille ? 'selected' : ''}>—</option>
-          <option value="baguettes" ${recette.famille === 'baguettes' ? 'selected' : ''}>Baguettes</option>
-          <option value="bles_levain" ${recette.famille === 'bles_levain' ? 'selected' : ''}>Blés au levain</option>
-          <option value="autres_cereales_levain" ${recette.famille === 'autres_cereales_levain' ? 'selected' : ''}>Autres céréales au levain</option>
-          <option value="pains_sucres" ${recette.famille === 'pains_sucres' ? 'selected' : ''}>Pains sucrés</option>
+          ${recette.metier === 'B' ? `
+          <optgroup label="Boulangerie">
+            <option value="baguettes" ${recette.famille === 'baguettes' ? 'selected' : ''}>Baguettes</option>
+            <option value="bles_levain" ${recette.famille === 'bles_levain' ? 'selected' : ''}>Blés au levain</option>
+            <option value="autres_cereales_levain" ${recette.famille === 'autres_cereales_levain' ? 'selected' : ''}>Autres céréales au levain</option>
+            <option value="pains_sucres" ${recette.famille === 'pains_sucres' ? 'selected' : ''}>Pains sucrés</option>
+          </optgroup>
+          ` : ''}
+          ${recette.metier === 'P' ? `
+          <optgroup label="Pâtisserie">
+            <option value="sous_recettes" ${recette.famille === 'sous_recettes' ? 'selected' : ''}>Sous recettes</option>
+            <option value="recette_assemblee" ${recette.famille === 'recette_assemblee' ? 'selected' : ''}>Recette assemblée</option>
+          </optgroup>
+          ` : ''}
         </select>
       </div>
     </div>
