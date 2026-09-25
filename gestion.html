@@ -115,7 +115,10 @@ tr:last-child td{border-bottom:none;}
         <input type="checkbox" id="cb-voir-desactivees" onchange="chargerListeRecettes()">
         Voir les recettes désactivées
       </label>
-      <button class="btn btn-primary btn-nouvelle" style="width:auto;" onclick="ouvrirModaleNouvelleRecette()">+ Nouvelle recette</button>
+      <div style="display:flex;gap:6px;">
+        <button class="btn btn-ghost" style="width:auto;font-size:.8rem;padding:6px 10px;" onclick="exporterTarifs()">↓ Exporter tarifs</button>
+        <button class="btn btn-primary btn-nouvelle" style="width:auto;" onclick="ouvrirModaleNouvelleRecette()">+ Nouvelle recette</button>
+      </div>
     </div>
     <div class="fiche-recette">
       <div>
@@ -1043,6 +1046,66 @@ async function confirmerAjoutIngredient() {
   await chargerMP();
   await chargerListeRecettes();
 })();
+
+async function exporterTarifs() {
+  // Charger toutes les recettes actives
+  const { data: recettes } = await sb.from('recettes')
+    .select('id, nom, metier, famille')
+    .eq('actif', true)
+    .order('metier').order('nom');
+
+  // Charger toutes les simulations actives
+  const { data: finances } = await sb.from('recette_finance')
+    .select('recette_id, label, canal, prix_vente_ttc, tva_pct')
+    .neq('actif', false);
+
+  if (!recettes || !finances) { alert('Erreur lors du chargement des données'); return; }
+
+  // Indexer par recette_id -> liste de simulations
+  const financeParRecette = {};
+  finances.forEach(f => {
+    if (!financeParRecette[f.recette_id]) financeParRecette[f.recette_id] = [];
+    financeParRecette[f.recette_id].push(f);
+  });
+
+  const labelsMetier = { B: 'Boulangerie', V: 'Viennoiserie', GV: 'Gâteaux de voyage', P: 'Pâtisserie', T: 'Traiteur' };
+
+  // Construire le CSV
+  const lignes = [['Recette', 'Métier', 'Prix vente TTC boutique (€)', 'Prix vente HT pro (€)']];
+
+  recettes.forEach(r => {
+    const sims = financeParRecette[r.id] || [];
+
+    // Boutique : canal = 'boutique' ou 'marche' → prix_vente_ttc
+    const boutique = sims.find(f => f.canal === 'boutique' || f.canal === 'marche');
+    const prixBoutiqueTtc = boutique?.prix_vente_ttc != null
+      ? boutique.prix_vente_ttc.toFixed(2).replace('.', ',')
+      : '';
+
+    // Pro : canal = 'pro' → prix_vente_ttc est en réalité le prix HT
+    const pro = sims.find(f => f.canal === 'pro');
+    const prixProHt = pro?.prix_vente_ttc != null
+      ? pro.prix_vente_ttc.toFixed(2).replace('.', ',')
+      : '';
+
+    lignes.push([
+      r.nom,
+      labelsMetier[r.metier] || r.metier,
+      prixBoutiqueTtc,
+      prixProHt
+    ]);
+  });
+
+  const csvContent = lignes.map(row => row.map(cell => `"${cell}"`).join(';')).join('\n');
+  const bom = '﻿'; // BOM UTF-8 pour Excel
+  const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `tarifs-pain-nature-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 </script>
 <!-- Modale édition complète matière première -->
 <div class="overlay" id="overlay-edition-mp">
