@@ -1356,6 +1356,8 @@ let recurrencesAValider = [];
 let indexValidationCourant = 0;
 let lignesValidationCourantes = [];
 let recettesDisponibles = []; // pour l'ajout de produit
+let formatsDisponibles = [];
+let variantesDisponibles = [];
 let joursValidationCourants = []; // jours_semaine modifiables
 
 async function ouvrirValidationReconduction() {
@@ -1373,10 +1375,14 @@ async function ouvrirValidationReconduction() {
     alert('Aucune commande récurrente active.'); return;
   }
 
-  // Charger la liste des recettes pour l'ajout de produit
+  // Charger la liste des recettes, formats et variantes pour l'ajout de produit
   const { data: recettes } = await sb.from('recettes')
     .select('id, nom, metier').eq('actif', true).order('nom');
   recettesDisponibles = recettes || [];
+  const { data: fmts } = await sb.from('recette_formats').select('*').order('ordre');
+  formatsDisponibles = fmts || [];
+  const { data: vars } = await sb.from('recette_variantes').select('*').order('ordre');
+  variantesDisponibles = vars || [];
 
   recurrencesAValider = recs;
   indexValidationCourant = 0;
@@ -1468,10 +1474,11 @@ function renderLignesValidation() {
       <button onclick="afficherAjoutProduit()" style="background:none;border:1.5px dashed var(--border-strong);border-radius:var(--r);padding:6px 12px;font-size:.82rem;color:var(--text-muted);cursor:pointer;width:100%;">+ Ajouter un produit</button>
     </div>
     <div id="ajout-produit-form" style="display:none;margin-top:8px;background:var(--surface2);border-radius:var(--r);padding:10px;">
-      <select id="ajout-produit-select" style="width:100%;padding:7px 8px;border:1.5px solid var(--border-strong);border-radius:var(--r);font-size:.85rem;margin-bottom:8px;">
+      <select id="ajout-produit-select" onchange="mettreAJourSelectFV()" style="width:100%;padding:7px 8px;border:1.5px solid var(--border-strong);border-radius:var(--r);font-size:.85rem;margin-bottom:6px;">
         <option value="">— Choisir un produit —</option>
         ${recettesDisponibles.map(r => `<option value="${r.id}">[${r.metier}] ${r.nom}</option>`).join('')}
       </select>
+      <select id="ajout-produit-fv" style="display:none;width:100%;padding:7px 8px;border:1.5px solid var(--border-strong);border-radius:var(--r);font-size:.85rem;margin-bottom:6px;"></select>
       <div style="display:flex;align-items:center;gap:8px;">
         <input type="number" id="ajout-produit-qte" min="1" value="1" placeholder="Qté" style="width:65px;padding:6px 8px;border:1.5px solid var(--border-strong);border-radius:var(--r);font-family:var(--mono);font-size:.85rem;">
         <span style="font-size:.82rem;color:var(--text-muted);">pce(s)</span>
@@ -1492,20 +1499,55 @@ function annulerAjoutProduit() {
   document.getElementById('zone-ajout-produit').querySelector('button').style.display = '';
 }
 
+function mettreAJourSelectFV() {
+  const recetteId = document.getElementById('ajout-produit-select').value;
+  const selectFV = document.getElementById('ajout-produit-fv');
+  if (!recetteId) { selectFV.style.display = 'none'; return; }
+  const formats = formatsDisponibles.filter(f => f.recette_id === recetteId);
+  const variantes = variantesDisponibles.filter(v => v.recette_id === recetteId);
+  if (formats.length === 0 && variantes.length === 0) {
+    selectFV.style.display = 'none'; return;
+  }
+  let opts = '';
+  if (formats.length > 0) {
+    opts += formats.map(f => {
+      const label = f.poids_cuit_g ? `${Math.round(f.poids_cuit_g)}g` : f.label;
+      return `<option value="format:${f.id}">${label}</option>`;
+    }).join('');
+  }
+  if (variantes.length > 0) {
+    if (formats.length === 0) opts += `<option value="">Nature</option>`;
+    opts += variantes.map(v => `<option value="variante:${v.id}">${v.nom}</option>`).join('');
+  }
+  selectFV.innerHTML = opts;
+  selectFV.style.display = '';
+}
+
 function confirmerAjoutProduit() {
-  const sel = document.getElementById('ajout-produit-select');
-  const recetteId = sel.value;
+  const recetteId = document.getElementById('ajout-produit-select').value;
   const qte = parseInt(document.getElementById('ajout-produit-qte').value) || 1;
   if (!recetteId) { alert('Sélectionne un produit.'); return; }
   const recette = recettesDisponibles.find(r => r.id === recetteId);
+  const selectFV = document.getElementById('ajout-produit-fv');
+  const fvVal = selectFV.style.display !== 'none' ? selectFV.value : '';
+  let formatId = null, varianteId = null, libelleSuffix = '';
+  if (fvVal.startsWith('format:')) {
+    formatId = fvVal.replace('format:', '');
+    const fmt = formatsDisponibles.find(f => f.id === formatId);
+    libelleSuffix = fmt ? ` (${fmt.poids_cuit_g ? Math.round(fmt.poids_cuit_g) + 'g' : fmt.label})` : '';
+  } else if (fvVal.startsWith('variante:')) {
+    varianteId = fvVal.replace('variante:', '');
+    const vari = variantesDisponibles.find(v => v.id === varianteId);
+    libelleSuffix = vari ? ` (${vari.nom})` : '';
+  }
   lignesValidationCourantes.push({
     id: null,
     recette_id: recetteId,
-    format_id: null,
-    variante_id: null,
+    format_id: formatId,
+    variante_id: varianteId,
     quantite: qte,
     quantite_g: null,
-    libelle: recette?.nom || '?',
+    libelle: (recette?.nom || '?') + libelleSuffix,
     _supprimee: false,
     _nouveau: true
   });
@@ -1555,9 +1597,9 @@ async function validerClientReconduction() {
       recurrence_id: rec.id,
       recette_id: l.recette_id,
       quantite: l.quantite,
-      quantite_g: null,
-      format_id: null,
-      variante_id: null
+      quantite_g: l.quantite_g || null,
+      format_id: l.format_id || null,
+      variante_id: l.variante_id || null
     });
   }
   // Supprimer les lignes marquées supprimées
