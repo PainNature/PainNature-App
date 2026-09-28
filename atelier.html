@@ -160,7 +160,7 @@ async function chargerDonnees(){
     { data: levains },
     { data: levains_mucilage_data }
   ] = await Promise.all([
-    sb.from('recettes').select('id,nom,metier,poids_piece_g,poids_cuit_g').eq('actif', true),
+    sb.from('recettes').select('id,nom,metier,famille,poids_piece_g,poids_cuit_g').eq('actif', true),
     sb.from('recette_ingredients').select('*').order('ordre'),
     sb.from('production_jour').select(`
       recette_id, nb_pieces, format_id, variante_id,
@@ -207,7 +207,17 @@ async function chargerDonnees(){
   donneesLevains = (levains || []).filter(l => Number(l.total_g) > 0);
   afficherLevainsSelection();
 
-  const recettesAvecProd = toutesRecettes.filter(r => planJour[r.id] && planJour[r.id].total > 0);
+  const recettesAvecProd = toutesRecettes
+    .filter(r => planJour[r.id] && planJour[r.id].total > 0)
+    .sort((a, b) => {
+      // Ordre : sous_recettes pâtisserie en 1er, puis recette_assemblee, puis le reste
+      const ordreFamille = f => {
+        if (f === 'sous_recettes') return 0;
+        if (f === 'recette_assemblee') return 1;
+        return 2;
+      };
+      return ordreFamille(a.famille) - ordreFamille(b.famille);
+    });
   if (!recettesAvecProd.length){
     document.getElementById('liste-selection').innerHTML = '<div class="vide">Aucune production saisie pour ce jour.</div>';
     return;
@@ -378,19 +388,22 @@ async function lancerAtelier(){
   // Mucilage — affiché uniquement mercredi et samedi (basé sur la réponse SQL)
   if (mucilageTotal && mucilageTotal.jour_preparation && Number(mucilageTotal.total_mucilage_g) > 0) {
     const jourLabel = mucilageTotal.jour_preparation;
+    const graines4 = Math.round(Number(mucilageTotal.graines_preparation_g) / 4);
+    const eau4    = Math.round(Number(mucilageTotal.eau_g) / 4);
+    const levain4 = Math.round(Number(mucilageTotal.levain_g) / 4);
     html += `<div class="section-levains" style="background:#f0f7f0;border-bottom-color:#4a7c59;">
       <div class="section-levains-titre" style="color:#4a7c59;">🌱 Mucilage de graines — ${jourLabel}</div>
       <div class="levain-ligne">
         <div class="levain-ligne-label">Graines torréfiées</div>
-        <div class="levain-ligne-val">${fmt(mucilageTotal.graines_preparation_g)} g</div>
+        <div class="levain-ligne-val">${fmt(graines4)} g</div>
       </div>
       <div class="levain-ligne">
         <div class="levain-ligne-label">Eau</div>
-        <div class="levain-ligne-val">${fmt(mucilageTotal.eau_g)} g</div>
+        <div class="levain-ligne-val">${fmt(eau4)} g</div>
       </div>
       <div class="levain-ligne" style="font-weight:800;">
         <div class="levain-ligne-label">Levain</div>
-        <div class="levain-ligne-val">${fmt(mucilageTotal.levain_g)} g</div>
+        <div class="levain-ligne-val">${fmt(levain4)} g</div>
       </div>
     </div>`}
 
