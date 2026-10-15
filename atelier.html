@@ -125,17 +125,88 @@ main{max-width:720px;margin:1.2rem auto 4rem;padding:0 1.2rem;}
 <script>
 let profilCourant = null;
 let toutesRecettes = [];
+let tousFormats = [];
+let toutesVariantes = [];
 let tousIngredients = {};
 let donneesLevains = [];
 let mucilageTotal = null;
 let mucilageDetail = [];
 let recettesSelectionnees = [];
 
-// planJour[recette_id] = { total: N, formats: [{label, nb, poids_g}], variantes: [{nom, nb}] }
+// Même structure que production.html : planJour["recetteId|formatId|varianteId"] = nb_pieces
 let planJour = {};
 
 function dateAujourdhui(){ return new Date().toISOString().slice(0,10); }
 function fmt(n){ return Math.round(n).toLocaleString('fr-FR'); }
+
+// Copié de production.html
+function getNbPieces(recetteId, formatId, variantId) {
+  const cle = `${recetteId}|${formatId || ''}|${variantId || ''}`;
+  return planJour[cle] || 0;
+}
+
+// Copié de production.html
+function calculerRecette(recette) {
+  const formats = tousFormats.filter(f => f.recette_id === recette.id);
+  const variantes = toutesVariantes.filter(v => v.recette_id === recette.id);
+  let totalPate = 0, totalPieces = 0;
+  const extra = {};
+
+  if (formats.length > 0) {
+    formats.filter(f => !f.est_variante_speciale).forEach(f => {
+      const n = getNbPieces(recette.id, f.id, null);
+      totalPate += n * f.poids_g; totalPieces += n;
+    });
+    const fmtSpecial = formats.find(f => f.est_variante_speciale);
+    if (fmtSpecial) {
+      const n = getNbPieces(recette.id, fmtSpecial.id, null);
+      totalPate += n * fmtSpecial.poids_g; totalPieces += n;
+      extra.special = { format: fmtSpecial, qty: n };
+    }
+    if (variantes.length > 0) {
+      variantes.forEach(v => {
+        const nVar = getNbPieces(recette.id, null, v.id);
+        const poidsBaseParPiece = v.poids_piece_g / (1 + (v.ratio_ajout_pct || 0) / 100);
+        totalPate += nVar * poidsBaseParPiece;
+        totalPieces += nVar;
+        extra.variante = { v, qty: nVar, ajoutTotal: nVar * (v.poids_piece_g - poidsBaseParPiece) };
+      });
+    }
+  } else if (variantes.length > 0) {
+    const nNature = getNbPieces(recette.id, null, null);
+    totalPate += nNature * (recette.poids_piece_g || 0);
+    totalPieces += nNature;
+    variantes.forEach(v => {
+      const nVar = getNbPieces(recette.id, null, v.id);
+      const poidsBaseParPiece = v.poids_piece_g / (1 + (v.ratio_ajout_pct || 0) / 100);
+      totalPate += nVar * poidsBaseParPiece;
+      totalPieces += nVar;
+      extra.variante = { v, qty: nVar, ajoutTotal: nVar * (v.poids_piece_g - poidsBaseParPiece) };
+    });
+  } else {
+    const n = getNbPieces(recette.id, null, null);
+    totalPate = n * (recette.poids_piece_g || 0);
+    totalPieces = n;
+  }
+
+  return { totalPate, totalPieces, formats, variantes, extra };
+}
+
+// Copié de production.html
+function calculerHydratation(ingredients) {
+  let eau = 0, farine = 0;
+  ingredients.forEach(i => {
+    const nom = i.nom_affiche.toLowerCase();
+    const qte = Number(i.quantite_base_g);
+    if (nom === 'levain liquide') { eau += qte * 0.5; farine += qte * 0.5; }
+    else if (nom === 'levain dur') { eau += qte * (1 / 3); farine += qte * (2 / 3); }
+    else if (nom === 'levain liquide engrain') { eau += qte * 0.5; farine += qte * 0.5; }
+    else if (nom.includes('eau')) { eau += qte; }
+    else if (nom.includes('farine') || nom.includes('seigle') || nom.includes('josette') || nom.includes('engrain')) { farine += qte; }
+  });
+  if (farine === 0) return null;
+  return Math.round((eau / farine) * 100);
+}
 
 function changerJour(delta){
   const el = document.getElementById('date-jour');
@@ -152,67 +223,49 @@ async function chargerDonnees(){
   document.getElementById('bloc-levains-selection').style.display = 'none';
   recettesSelectionnees = [];
 
-  // Charge tout en parallèle — production_jour avec formats ET variantes joinés
+  // Même chargement que production.html : référentiels + plan séparés
   const [
     { data: recs },
+    { data: fmts },
+    { data: vars },
     { data: ings },
     { data: plan },
     { data: levains },
     { data: levains_mucilage_data }
   ] = await Promise.all([
-    sb.from('recettes').select('id,nom,metier,famille,poids_piece_g,poids_cuit_g,poids_bac_g').eq('actif', true),
+    sb.from('recettes').select('*').eq('actif', true),
+    sb.from('recette_formats').select('*').order('ordre'),
+    sb.from('recette_variantes').select('*').order('ordre'),
     sb.from('recette_ingredients').select('*').order('ordre'),
-    sb.from('production_jour').select(`
-      recette_id, nb_pieces, format_id, variante_id,
-      recette_formats(id, label, poids_g, poids_cuit_g),
-      recette_variantes(id, nom, poids_piece_g, ratio_ajout_pct)
-    `).eq('date_prod', date),
+    sb.from('production_jour').select('*').eq('date_prod', date),
     sb.rpc('get_besoins_levains', { p_date: date }),
     sb.rpc('get_besoin_mucilage', { p_date: date })
   ]);
 
   toutesRecettes = recs || [];
+  tousFormats = fmts || [];
+  toutesVariantes = vars || [];
   tousIngredients = {};
   (ings || []).forEach(i => {
     (tousIngredients[i.recette_id] = tousIngredients[i.recette_id] || []).push(i);
+  });
+
+  // Même structure planJour que production.html
+  planJour = {};
+  (plan || []).forEach(pj => {
+    const cle = `${pj.recette_id}|${pj.format_id || ''}|${pj.variante_id || ''}`;
+    planJour[cle] = pj.nb_pieces;
   });
 
   // Mucilage
   mucilageTotal = (levains_mucilage_data || []).find(r => r.recette_nom === 'TOTAL MUCILAGE');
   mucilageDetail = (levains_mucilage_data || []).filter(r => r.recette_nom !== 'TOTAL MUCILAGE');
 
-  // Construire planJour avec les labels déjà résolus par la jointure
-  planJour = {};
-  (plan || []).forEach(p => {
-    if (!planJour[p.recette_id]) planJour[p.recette_id] = { total: 0, formats: [], variantes: [] };
-    const nb = Number(p.nb_pieces) || 0;
-    planJour[p.recette_id].total += nb;
-
-    if (p.recette_formats && nb > 0) {
-      const f = p.recette_formats;
-      const poidsG = Number(f.poids_g) || Number(f.poids_cuit_g) || 0;
-      const label = poidsG > 0
-        ? (poidsG >= 1000 ? (poidsG/1000).toFixed(1)+' kg' : poidsG+' g')
-        : f.label;
-      planJour[p.recette_id].formats.push({ label, nb, poids_g: poidsG });
-    } else if (p.recette_variantes && nb > 0) {
-      const vPoidsPiece = Number(p.recette_variantes.poids_piece_g) || 0;
-      const vRatio = Number(p.recette_variantes.ratio_ajout_pct) || 0;
-      const vPateParPiece = vRatio > 0 ? vPoidsPiece / (1 + vRatio / 100) : vPoidsPiece;
-      planJour[p.recette_id].variantes.push({
-        nom: p.recette_variantes.nom,
-        nb,
-        poids_g: vPoidsPiece,
-        pate_par_piece: vPateParPiece
-      });
-    }
-  });
-
   donneesLevains = (levains || []).filter(l => Number(l.total_g) > 0);
   afficherLevainsSelection();
 
   const recettesAvecProd = toutesRecettes
-    .filter(r => planJour[r.id] && planJour[r.id].total > 0)
+    .filter(r => calculerRecette(r).totalPieces > 0)
     .sort((a, b) => {
       // Ordre : sous_recettes pâtisserie en 1er, puis recette_assemblee, puis le reste
       const ordreFamille = f => {
@@ -254,47 +307,35 @@ function afficherLevainsSelection(){
   bloc.style.display = 'block';
 }
 
-function getPateTotal(recette){
-  const p = planJour[recette.id];
-  if (!p) return 0;
-  if (p.formats.length > 0)
-    return p.formats.reduce((s, f) => s + f.nb * (f.poids_g || recette.poids_piece_g || 0), 0);
-  if (p.variantes.length > 0) {
-    const nbVariantes = p.variantes.reduce((s, v) => s + v.nb, 0);
-    const nbNature = p.total - nbVariantes;
-    const pateVariantes = p.variantes.reduce((s, v) => s + v.nb * (v.pate_par_piece || v.poids_g || recette.poids_piece_g || 0), 0);
-    const pateNature = nbNature * (recette.poids_piece_g || 0);
-    return pateVariantes + pateNature;
-  }
-  return p.total * (recette.poids_piece_g || 0);
-}
-
 let dragSrc = null;
 
 function renderCartesSel(recettes){
   const conteneur = document.getElementById('liste-selection');
   conteneur.innerHTML = recettes.map(r => {
-    const p = planJour[r.id] || { total: 0, formats: [], variantes: [] };
-    const pateKg = (getPateTotal(r)/1000).toFixed(2);
+    const res = calculerRecette(r);
+    const pateKg = (res.totalPate/1000).toFixed(2);
 
     let fmtHtml = '';
-    if (p.formats.length > 0){
-      const sorted = [...p.formats].sort((a,b) => (a.poids_g||0)-(b.poids_g||0));
-      fmtHtml = `<div class="card-formats">${sorted.map(f=>`<span class="fmt-badge">${f.label} × ${f.nb}</span>`).join('')}`;
-      // Ajouter les variantes si présentes (ex: Galet d'automne)
-      if (p.variantes.length > 0) {
-        fmtHtml += p.variantes.map(v => {
-          const pate = v.pate_par_piece || v.poids_g;
-          const kg = pate > 0 ? ' · ' + ((v.nb * pate)/1000).toFixed(2) + ' kg pâte' : '';
-          return `<span class="fmt-badge" style="background:var(--wheat);color:#fff;">🍂 ${v.nom} × ${v.nb}${kg}</span>`;
+    if (res.formats.length > 0){
+      const sorted = [...res.formats].filter(f => !f.est_variante_speciale).sort((a,b) => (a.poids_g||0)-(b.poids_g||0));
+      fmtHtml = `<div class="card-formats">${sorted.map(f => { const n = getNbPieces(r.id, f.id, null); return n > 0 ? `<span class="fmt-badge">${f.label} × ${n}</span>` : ''; }).join('')}`;
+      if (res.variantes.length > 0) {
+        fmtHtml += res.variantes.map(v => {
+          const nVar = getNbPieces(r.id, null, v.id);
+          if (!nVar) return '';
+          const pateParPiece = v.poids_piece_g / (1 + (v.ratio_ajout_pct || 0) / 100);
+          const kg = ' · ' + ((nVar * pateParPiece)/1000).toFixed(2) + ' kg pâte';
+          return `<span class="fmt-badge" style="background:var(--wheat);color:#fff;">🍂 ${v.nom} × ${nVar}${kg}</span>`;
         }).join('');
       }
       fmtHtml += `</div>`;
-    } else if (p.variantes.length > 0){
-      fmtHtml = `<div class="card-formats">${p.variantes.map(v=>{
-        const pate = v.pate_par_piece || v.poids_g;
-        const kg = pate > 0 ? ' · ' + ((v.nb * pate)/1000).toFixed(2) + ' kg pâte' : '';
-        return `<span class="fmt-badge">${v.nom} × ${v.nb}${kg}</span>`;
+    } else if (res.variantes.length > 0){
+      fmtHtml = `<div class="card-formats">${res.variantes.map(v => {
+        const nVar = getNbPieces(r.id, null, v.id);
+        if (!nVar) return '';
+        const pateParPiece = v.poids_piece_g / (1 + (v.ratio_ajout_pct || 0) / 100);
+        const kg = ' · ' + ((nVar * pateParPiece)/1000).toFixed(2) + ' kg pâte';
+        return `<span class="fmt-badge">${v.nom} × ${nVar}${kg}</span>`;
       }).join('')}</div>`;
     }
 
@@ -308,7 +349,7 @@ function renderCartesSel(recettes){
       <div class="card-ordre vide" id="ordre-${r.id}">—</div>
       <div class="card-info">
         <div class="card-nom">${r.nom}</div>
-        <div class="card-meta">${p.total} pces · ${pateKg} kg pâte</div>
+        <div class="card-meta">${res.totalPieces} pces · ${pateKg} kg pâte</div>
         ${fmtHtml}
       </div>
       <span class="card-handle">⠿</span>
@@ -413,62 +454,31 @@ async function lancerAtelier(){
       </div>
     </div>`}
 
-  // Recettes
+  // Recettes — même calcul que production.html
   recettesSelectionnees.forEach((recetteId, index) => {
     const recette = toutesRecettes.find(r => r.id === recetteId);
     if (!recette) return;
-    const p = planJour[recetteId] || { total: 0, formats: [], variantes: [] };
-    const pateG = getPateTotal(recette);
+    const res = calculerRecette(recette);
+    const pateG = res.totalPate;
     const pateKg = (pateG/1000).toFixed(2);
     const ings = tousIngredients[recetteId] || [];
     const totalBase = ings.reduce((s,i) => s + Number(i.quantite_base_g), 0);
     const coef = totalBase > 0 ? Math.ceil((pateG/totalBase)*10)/10 : 0;
-
-    // Hydratation — même logique que production.html (levain liquide 50/50, levain dur 1/3-2/3)
-    let tFarine=0, tEau=0;
-    ings.forEach(i => {
-      const n=(i.nom_affiche||'').toLowerCase();
-      const q=Number(i.quantite_base_g);
-      if(n === 'levain liquide' || n === 'levain liquide engrain') { tEau += q*0.5; tFarine += q*0.5; }
-      else if(n === 'levain dur') { tEau += q*(1/3); tFarine += q*(2/3); }
-      else if(n.includes('eau')) tEau += q;
-      else if(n.includes('farine')||n.includes('sarrasin')||n.includes('engrain')||n.includes('seigle')||n.includes('josette')) tFarine += q;
-    });
-    const hydratation = tFarine > 0 ? Math.round((tEau/tFarine)*100) : null;
-
-    // Bacs — utilise poids_bac_g de la recette comme production.html
-    const estBaguette = recette.famille === 'baguettes';
+    const hydratation = calculerHydratation(ings);
     const nbBacsTotal = recette.poids_bac_g > 0 && pateG > 0 ? Math.ceil(pateG / recette.poids_bac_g) : 0;
-    const coupesParBac = estBaguette ? 10 : 6;
 
     let fmtHtml = '';
-    if (p.formats.length > 0){
-      const sorted = [...p.formats].sort((a,b) => (a.poids_g||0)-(b.poids_g||0));
-      fmtHtml = `<div class="recette-formats">${sorted.map(f=>`
-        <div class="recette-fmt-pill">
-          <span class="fp-poids">${f.label}</span>
-          <span class="fp-nb">${f.nb}</span>
-        </div>`).join('')}`;
-      if (p.variantes.length > 0) {
-        fmtHtml += p.variantes.map(v => `
-          <div class="recette-fmt-pill" style="background:#7a6040;color:#fff;border:1px solid #5c4a30;">
-            <span class="fp-poids">🍂 ${v.nom}</span>
-            <span class="fp-nb">${v.nb}</span>
-          </div>`).join('');
+    if (res.formats.length > 0){
+      const sorted = [...res.formats].filter(f => !f.est_variante_speciale).sort((a,b) => (a.poids_g||0)-(b.poids_g||0));
+      fmtHtml = `<div class="recette-formats">${sorted.map(f => { const n = getNbPieces(recette.id, f.id, null); return n > 0 ? `<div class="recette-fmt-pill"><span class="fp-poids">${f.label}</span><span class="fp-nb">${n}</span></div>` : ''; }).join('')}`;
+      if (res.variantes.length > 0) {
+        fmtHtml += res.variantes.map(v => { const nVar = getNbPieces(recette.id, null, v.id); return nVar > 0 ? `<div class="recette-fmt-pill" style="background:#7a6040;color:#fff;border:1px solid #5c4a30;"><span class="fp-poids">🍂 ${v.nom}</span><span class="fp-nb">${nVar}</span></div>` : ''; }).join('');
       }
       fmtHtml += `</div>`;
-    } else if (p.variantes.length > 0){
-      fmtHtml = `<div class="recette-formats">${p.variantes.map(v=>`
-        <div class="recette-fmt-pill">
-          <span class="fp-poids">${v.nom}</span>
-          <span class="fp-nb">${v.nb}</span>
-        </div>`).join('')}</div>`;
-    } else if (p.total > 0){
-      fmtHtml = `<div class="recette-formats">
-        <div class="recette-fmt-pill">
-          <span class="fp-poids">Pièces</span>
-          <span class="fp-nb">${p.total}</span>
-        </div></div>`;
+    } else if (res.variantes.length > 0){
+      fmtHtml = `<div class="recette-formats">${res.variantes.map(v => { const nVar = getNbPieces(recette.id, null, v.id); return nVar > 0 ? `<div class="recette-fmt-pill"><span class="fp-poids">${v.nom}</span><span class="fp-nb">${nVar}</span></div>` : ''; }).join('')}</div>`;
+    } else if (res.totalPieces > 0){
+      fmtHtml = `<div class="recette-formats"><div class="recette-fmt-pill"><span class="fp-poids">Pièces</span><span class="fp-nb">${res.totalPieces}</span></div></div>`;
     }
 
     if (index > 0) html += `<div class="section-separator">— suite —</div>`;
