@@ -160,12 +160,12 @@ async function chargerDonnees(){
     { data: levains },
     { data: levains_mucilage_data }
   ] = await Promise.all([
-    sb.from('recettes').select('id,nom,metier,famille,poids_piece_g,poids_cuit_g').eq('actif', true),
+    sb.from('recettes').select('id,nom,metier,famille,poids_piece_g,poids_cuit_g,poids_bac_g').eq('actif', true),
     sb.from('recette_ingredients').select('*').order('ordre'),
     sb.from('production_jour').select(`
       recette_id, nb_pieces, format_id, variante_id,
       recette_formats(id, label, poids_g, poids_cuit_g),
-      recette_variantes(id, nom, poids_piece_g)
+      recette_variantes(id, nom, poids_piece_g, ratio_ajout_pct)
     `).eq('date_prod', date),
     sb.rpc('get_besoins_levains', { p_date: date }),
     sb.rpc('get_besoin_mucilage', { p_date: date })
@@ -196,10 +196,14 @@ async function chargerDonnees(){
         : f.label;
       planJour[p.recette_id].formats.push({ label, nb, poids_g: poidsG });
     } else if (p.recette_variantes && nb > 0) {
+      const vPoidsPiece = Number(p.recette_variantes.poids_piece_g) || 0;
+      const vRatio = Number(p.recette_variantes.ratio_ajout_pct) || 0;
+      const vPateParPiece = vRatio > 0 ? vPoidsPiece / (1 + vRatio / 100) : vPoidsPiece;
       planJour[p.recette_id].variantes.push({
         nom: p.recette_variantes.nom,
         nb,
-        poids_g: Number(p.recette_variantes.poids_piece_g) || 0
+        poids_g: vPoidsPiece,
+        pate_par_piece: vPateParPiece
       });
     }
   });
@@ -258,7 +262,7 @@ function getPateTotal(recette){
   if (p.variantes.length > 0) {
     const nbVariantes = p.variantes.reduce((s, v) => s + v.nb, 0);
     const nbNature = p.total - nbVariantes;
-    const pateVariantes = p.variantes.reduce((s, v) => s + v.nb * (v.poids_g || recette.poids_piece_g || 0), 0);
+    const pateVariantes = p.variantes.reduce((s, v) => s + v.nb * (v.pate_par_piece || v.poids_g || recette.poids_piece_g || 0), 0);
     const pateNature = nbNature * (recette.poids_piece_g || 0);
     return pateVariantes + pateNature;
   }
@@ -280,14 +284,16 @@ function renderCartesSel(recettes){
       // Ajouter les variantes si présentes (ex: Galet d'automne)
       if (p.variantes.length > 0) {
         fmtHtml += p.variantes.map(v => {
-          const kg = v.poids_g > 0 ? ' · ' + ((v.nb * v.poids_g)/1000).toFixed(2) + ' kg' : '';
+          const pate = v.pate_par_piece || v.poids_g;
+          const kg = pate > 0 ? ' · ' + ((v.nb * pate)/1000).toFixed(2) + ' kg pâte' : '';
           return `<span class="fmt-badge" style="background:var(--wheat);color:#fff;">🍂 ${v.nom} × ${v.nb}${kg}</span>`;
         }).join('');
       }
       fmtHtml += `</div>`;
     } else if (p.variantes.length > 0){
       fmtHtml = `<div class="card-formats">${p.variantes.map(v=>{
-        const kg = v.poids_g > 0 ? ' · ' + ((v.nb * v.poids_g)/1000).toFixed(2) + ' kg' : '';
+        const pate = v.pate_par_piece || v.poids_g;
+        const kg = pate > 0 ? ' · ' + ((v.nb * pate)/1000).toFixed(2) + ' kg pâte' : '';
         return `<span class="fmt-badge">${v.nom} × ${v.nb}${kg}</span>`;
       }).join('')}</div>`;
     }
@@ -418,20 +424,21 @@ async function lancerAtelier(){
     const totalBase = ings.reduce((s,i) => s + Number(i.quantite_base_g), 0);
     const coef = totalBase > 0 ? Math.ceil((pateG/totalBase)*10)/10 : 0;
 
+    // Hydratation — même logique que production.html (levain liquide 50/50, levain dur 1/3-2/3)
     let tFarine=0, tEau=0;
     ings.forEach(i => {
       const n=(i.nom_affiche||'').toLowerCase();
-      const q=Math.round(Number(i.quantite_base_g)*coef);
-      if(n.includes('farine')||n.includes('sarrasin')||n.includes('engrain')||n.includes('seigle')) tFarine+=q;
-      if(n.includes('eau')) tEau+=q;
+      const q=Number(i.quantite_base_g);
+      if(n === 'levain liquide' || n === 'levain liquide engrain') { tEau += q*0.5; tFarine += q*0.5; }
+      else if(n === 'levain dur') { tEau += q*(1/3); tFarine += q*(2/3); }
+      else if(n.includes('eau')) tEau += q;
+      else if(n.includes('farine')||n.includes('sarrasin')||n.includes('engrain')||n.includes('seigle')||n.includes('josette')) tFarine += q;
     });
     const hydratation = tFarine > 0 ? Math.round((tEau/tFarine)*100) : null;
-    const nbBacs = pateG > 0 ? Math.ceil(pateG/6000) : null;
 
-    // Formats triés par poids — affichage par bac uniquement (pas le nb de pièces)
-    // Bacs de 3500g : baguettes coupées en 10, pains en 6
+    // Bacs — utilise poids_bac_g de la recette comme production.html
     const estBaguette = recette.famille === 'baguettes';
-    const nbBacsTotal = pateG > 0 ? Math.ceil(pateG / 3500) : 0;
+    const nbBacsTotal = recette.poids_bac_g > 0 && pateG > 0 ? Math.ceil(pateG / recette.poids_bac_g) : 0;
     const coupesParBac = estBaguette ? 10 : 6;
 
     let fmtHtml = '';
@@ -472,6 +479,7 @@ async function lancerAtelier(){
         <div style="display:flex;flex-direction:column;gap:2px;"><span class="rmi-label">Pâte totale</span><span class="rmi-val">${pateKg} kg</span></div>
         <div style="display:flex;flex-direction:column;gap:2px;"><span class="rmi-label">Coefficient</span><span class="rmi-val">× ${coef}</span></div>
         ${hydratation?`<div style="display:flex;flex-direction:column;gap:2px;"><span class="rmi-label">Hydratation</span><span class="rmi-val">${hydratation}%</span></div>`:''}
+        ${nbBacsTotal>0?`<div style="display:flex;flex-direction:column;gap:2px;"><span class="rmi-label">Bacs</span><span class="rmi-val">${nbBacsTotal} bac${nbBacsTotal>1?'s':''}</span></div>`:''}
       </div>
       <table class="ing-table">
         <thead><tr><th>Ingrédient</th><th>Base g</th><th>Jour g</th></tr></thead>
@@ -495,6 +503,9 @@ async function lancerAtelier(){
       }
     });
 
+    // Ligne TOTAL — permet de vérifier que le coef donne bien la bonne masse de pâte
+    const totalJour = ings.reduce((s,i) => s + Math.round(Number(i.quantite_base_g)*coef), 0);
+    html += `<tr class="tr-total"><td style="font-weight:800;padding:6px 8px;">TOTAL</td><td style="font-family:var(--mono);font-size:.8rem;padding:6px 8px;">${fmt(totalBase)} g</td><td><span class="ing-val" style="font-weight:800;">${fmt(totalJour)} g</span></td></tr>`;
     html += `</tbody></table></div>`;
   });
 
