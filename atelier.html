@@ -519,11 +519,10 @@ async function lancerAtelier(){
     const totalJour = ings.reduce((s,i) => s + Math.round(Number(i.quantite_base_g)*coef), 0);
     html += `<tr class="tr-total"><td style="font-weight:800;padding:6px 8px;">TOTAL</td><td style="font-family:var(--mono);font-size:.8rem;padding:6px 8px;">${fmt(totalBase)} g</td><td><span class="ing-val" style="font-weight:800;">${fmt(totalJour)} g</span></td></tr>`;
 
-    // Ligne mélange sportif — ratio 200g/650g pâte crue (conservé quel que soit le format)
+    // Ligne mélange sportif — 200g/pce grand format, 50g/pce petit format
     p.sportifs.forEach(sp => {
       if (sp.nb > 0) {
-        const poidsRef = sp.poids_g > 0 ? sp.poids_g : 650;
-        const mixParPiece = Math.round(poidsRef * 200 / 650);
+        const mixParPiece = sp.poids_g <= 600 ? 50 : 200;
         const mixQty = sp.nb * mixParPiece;
         html += `<tr style="background:#e8f5e9;border-top:2px solid #2d6a2d;"><td style="font-weight:800;color:#2d6a2d;padding:8px 0;">🏃 Mélange sportif ${sp.label} ×${sp.nb}</td><td style="font-family:var(--mono);font-size:.8rem;color:#2d6a2d;">${mixParPiece} g/pce</td><td><span class="ing-val" style="color:#2d6a2d;">${fmt(mixQty)} g</span></td></tr>`;
       }
