@@ -184,7 +184,7 @@ async function chargerDonnees(){
   // Construire planJour avec les labels déjà résolus par la jointure
   planJour = {};
   (plan || []).forEach(p => {
-    if (!planJour[p.recette_id]) planJour[p.recette_id] = { total: 0, formats: [], variantes: [], sportif: null };
+    if (!planJour[p.recette_id]) planJour[p.recette_id] = { total: 0, formats: [], variantes: [], sportifs: [] };
     const nb = Number(p.nb_pieces) || 0;
     planJour[p.recette_id].total += nb;
 
@@ -192,7 +192,7 @@ async function chargerDonnees(){
       const f = p.recette_formats;
       const poidsG = Number(f.poids_g) || Number(f.poids_cuit_g) || 0;
       if (f.est_variante_speciale) {
-        planJour[p.recette_id].sportif = { label: f.label, nb };
+        planJour[p.recette_id].sportifs.push({ label: f.label, nb, poids_g: poidsG });
       } else {
         const label = poidsG > 0
           ? (poidsG >= 1000 ? (poidsG/1000).toFixed(1)+' kg' : poidsG+' g')
@@ -285,7 +285,7 @@ function renderCartesSel(recettes){
     if (p.formats.length > 0){
       const sorted = [...p.formats].sort((a,b) => (a.poids_g||0)-(b.poids_g||0));
       fmtHtml = `<div class="card-formats">${sorted.map(f=>`<span class="fmt-badge">${f.label} × ${f.nb}</span>`).join('')}`;
-      if (p.sportif) fmtHtml += `<span class="fmt-badge" style="background:#2d6a2d;">🏃 ${p.sportif.label} × ${p.sportif.nb}</span>`;
+      p.sportifs.forEach(sp => { fmtHtml += `<span class="fmt-badge" style="background:#2d6a2d;">🏃 ${sp.label} × ${sp.nb}</span>`; });
       // Ajouter les variantes si présentes (ex: Galet d'automne)
       if (p.variantes.length > 0) {
         fmtHtml += p.variantes.map(v => {
@@ -454,13 +454,13 @@ async function lancerAtelier(){
           <span class="fp-poids">${f.label}</span>
           <span class="fp-nb">${f.nb}</span>
         </div>`).join('')}`;
-      if (p.sportif) {
+      p.sportifs.forEach(sp => {
         fmtHtml += `
           <div class="recette-fmt-pill" style="background:#2d6a2d;">
-            <span class="fp-poids">🏃 ${p.sportif.label}</span>
-            <span class="fp-nb">${p.sportif.nb}</span>
+            <span class="fp-poids">🏃 ${sp.label}</span>
+            <span class="fp-nb">${sp.nb}</span>
           </div>`;
-      }
+      });
       if (p.variantes.length > 0) {
         fmtHtml += p.variantes.map(v => `
           <div class="recette-fmt-pill" style="background:#7a6040;color:#fff;border:1px solid #5c4a30;">
@@ -519,11 +519,15 @@ async function lancerAtelier(){
     const totalJour = ings.reduce((s,i) => s + Math.round(Number(i.quantite_base_g)*coef), 0);
     html += `<tr class="tr-total"><td style="font-weight:800;padding:6px 8px;">TOTAL</td><td style="font-family:var(--mono);font-size:.8rem;padding:6px 8px;">${fmt(totalBase)} g</td><td><span class="ing-val" style="font-weight:800;">${fmt(totalJour)} g</span></td></tr>`;
 
-    // Ligne mélange sportif — 200g par pain sportif
-    if (p.sportif && p.sportif.nb > 0) {
-      const mixQty = p.sportif.nb * 200;
-      html += `<tr style="background:#e8f5e9;border-top:2px solid #2d6a2d;"><td style="font-weight:800;color:#2d6a2d;padding:8px 0;">🏃 Mélange sportif ×${p.sportif.nb}</td><td style="font-family:var(--mono);font-size:.8rem;color:#2d6a2d;">200 g/pce</td><td><span class="ing-val" style="color:#2d6a2d;">${fmt(mixQty)} g</span></td></tr>`;
-    }
+    // Ligne mélange sportif — ratio 200g/650g pâte crue (conservé quel que soit le format)
+    p.sportifs.forEach(sp => {
+      if (sp.nb > 0) {
+        const poidsRef = sp.poids_g > 0 ? sp.poids_g : 650;
+        const mixParPiece = Math.round(poidsRef * 200 / 650);
+        const mixQty = sp.nb * mixParPiece;
+        html += `<tr style="background:#e8f5e9;border-top:2px solid #2d6a2d;"><td style="font-weight:800;color:#2d6a2d;padding:8px 0;">🏃 Mélange sportif ${sp.label} ×${sp.nb}</td><td style="font-family:var(--mono);font-size:.8rem;color:#2d6a2d;">${mixParPiece} g/pce</td><td><span class="ing-val" style="color:#2d6a2d;">${fmt(mixQty)} g</span></td></tr>`;
+      }
+    });
 
     html += `</tbody></table></div>`;
   });
