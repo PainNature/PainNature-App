@@ -334,24 +334,26 @@ function calculerRecette(recette) {
     }
     // Variantes en plus des formats (ex: Galet d'automne + formats 650g/1300g/2500g)
     if (variantes.length > 0) {
+      extra.variantes = [];
       variantes.forEach(v => {
         const nVar = getNbPieces(recette.id, null, v.id);
         const poidsBaseParPiece = v.poids_piece_g / (1 + (v.ratio_ajout_pct || 0) / 100);
         totalPate += nVar * poidsBaseParPiece;
         totalPieces += nVar;
-        extra.variante = { v, qty: nVar, ajoutTotal: nVar * (v.poids_piece_g - poidsBaseParPiece) };
+        extra.variantes.push({ v, qty: nVar, ajoutTotal: nVar * (v.poids_piece_g - poidsBaseParPiece) });
       });
     }
   } else if (variantes.length > 0) {
     const nNature = getNbPieces(recette.id, null, null);
     totalPate += nNature * (recette.poids_piece_g || 0);
     totalPieces += nNature;
+    extra.variantes = [];
     variantes.forEach(v => {
       const nVar = getNbPieces(recette.id, null, v.id);
       const poidsBaseParPiece = v.poids_piece_g / (1 + (v.ratio_ajout_pct || 0) / 100);
       totalPate += nVar * poidsBaseParPiece;
       totalPieces += nVar;
-      extra.variante = { v, qty: nVar, ajoutTotal: nVar * (v.poids_piece_g - poidsBaseParPiece) };
+      extra.variantes.push({ v, qty: nVar, ajoutTotal: nVar * (v.poids_piece_g - poidsBaseParPiece) });
     });
   } else {
     const n = getNbPieces(recette.id, null, null);
@@ -405,12 +407,10 @@ function renderCarteRecette(recette) {
     if (fmtSpecial) {
       controlsHtml += `<div class="cg sportif-cg"><label>🏃 ${fmtSpecial.label}</label><input type="number" min="0" ${dis} value="${getNbPieces(recette.id, fmtSpecial.id, null) || ''}" onchange="majProduction('${recette.id}','${fmtSpecial.id}',null,this.value)"></div>`;
     }
-    // Variantes en plus des formats (ex: Galet d'automne)
-    if (res.variantes.length > 0) {
-      res.variantes.forEach(v => {
-        controlsHtml += `<div class="cg sportif-cg"><label>🍂 ${v.nom}</label><input type="number" min="0" ${dis} value="${getNbPieces(recette.id, null, v.id) || ''}" onchange="majProduction('${recette.id}',null,'${v.id}',this.value)"></div>`;
-      });
-    }
+    // Variantes en plus des formats (ex: Galet d'automne, Pain de Sarrasin petit format)
+    res.variantes.forEach(v => {
+      controlsHtml += `<div class="cg sportif-cg"><label>🍂 ${v.nom}</label><input type="number" min="0" ${dis} value="${getNbPieces(recette.id, null, v.id) || ''}" onchange="majProduction('${recette.id}',null,'${v.id}',this.value)"></div>`;
+    });
   } else if (res.variantes.length > 0) {
     controlsHtml += `<div class="cg"><label>Nature</label><input type="number" min="0" ${dis} value="${getNbPieces(recette.id, null, null) || ''}" onchange="majProduction('${recette.id}',null,null,this.value)"></div>`;
     res.variantes.forEach(v => {
@@ -456,10 +456,12 @@ function renderCarteRecette(recette) {
     const mixQty = res.extra.special.qty * 200;
     lignesHtml += `<tr class="row-sportif"><td class="td-name">🏃 Mélange sportif ×${res.extra.special.qty}</td><td class="td-base">200</td><td class="td-jour"><strong>${fmt(mixQty)}</strong></td></tr>`;
   }
-  if (res.extra.variante) {
-    const baseParPiece = res.extra.variante.v.poids_piece_g / (1 + (res.extra.variante.v.ratio_ajout_pct || 0) / 100);
-    const ajoutParPiece = res.extra.variante.v.poids_piece_g - baseParPiece;
-    lignesHtml += `<tr class="row-cran"><td class="td-name">🍒 ${res.extra.variante.v.nom} ×${res.extra.variante.qty}</td><td class="td-base">${fmt(ajoutParPiece)}</td><td class="td-jour"><strong>${fmt(res.extra.variante.ajoutTotal)}</strong></td></tr>`;
+  if (res.extra.variantes && res.extra.variantes.length > 0) {
+    res.extra.variantes.forEach(ev => {
+      const baseParPiece = ev.v.poids_piece_g / (1 + (ev.v.ratio_ajout_pct || 0) / 100);
+      const ajoutParPiece = ev.v.poids_piece_g - baseParPiece;
+      lignesHtml += `<tr class="row-cran"><td class="td-name">🍒 ${ev.v.nom} ×${ev.qty}</td><td class="td-base">${fmt(ajoutParPiece)}</td><td class="td-jour"><strong>${fmt(ev.ajoutTotal)}</strong></td></tr>`;
+    });
   }
 
   lignesHtml += `<tr class="tr-total"><td class="td-name">TOTAL</td><td class="td-base">${fmt(totalBase)}</td><td class="td-jour">${hasProd ? `<strong>${fmt(res.totalPate)} g</strong>` : '<span class="no-prod">0 pièce</span>'}</td></tr>`;
