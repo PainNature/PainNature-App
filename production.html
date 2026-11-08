@@ -453,8 +453,9 @@ function renderCarteRecette(recette) {
 
   if (res.extra.specials && res.extra.specials.length > 0) {
     res.extra.specials.forEach(sp => {
-      const mixQty = sp.qty * 200;
-      lignesHtml += `<tr class="row-sportif"><td class="td-name">🏃 Mélange sportif ${sp.format.label} ×${sp.qty}</td><td class="td-base">200</td><td class="td-jour"><strong>${fmt(mixQty)}</strong></td></tr>`;
+      const mixParPiece = sp.format.poids_g <= 600 ? 50 : 200;
+      const mixQty = sp.qty * mixParPiece;
+      lignesHtml += `<tr class="row-sportif"><td class="td-name">🏃 Mélange sportif ${sp.format.label} ×${sp.qty}</td><td class="td-base">${mixParPiece}</td><td class="td-jour"><strong>${fmt(mixQty)}</strong></td></tr>`;
     });
   }
   if (res.extra.variantes && res.extra.variantes.length > 0) {
