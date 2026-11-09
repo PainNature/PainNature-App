@@ -258,19 +258,21 @@ function afficherLevainsSelection(){
   bloc.style.display = 'block';
 }
 
+// Même logique que calculerRecette() de production.html :
+// formats normaux + formats spéciaux (sportifs) + variantes (pâte de base hors ajout).
 function getPateTotal(recette){
   const p = planJour[recette.id];
   if (!p) return 0;
-  if (p.formats.length > 0)
-    return p.formats.reduce((s, f) => s + f.nb * (f.poids_g || recette.poids_piece_g || 0), 0);
-  if (p.variantes.length > 0) {
-    const nbVariantes = p.variantes.reduce((s, v) => s + v.nb, 0);
-    const nbNature = p.total - nbVariantes;
-    const pateVariantes = p.variantes.reduce((s, v) => s + v.nb * (v.pate_par_piece || v.poids_g || recette.poids_piece_g || 0), 0);
-    const pateNature = nbNature * (recette.poids_piece_g || 0);
-    return pateVariantes + pateNature;
-  }
-  return p.total * (recette.poids_piece_g || 0);
+  const poidsBase = recette.poids_piece_g || 0;
+  const pateFormats  = p.formats.reduce((s, f) => s + f.nb * (f.poids_g || poidsBase), 0);
+  const pateSportifs = (p.sportifs || []).reduce((s, sp) => s + sp.nb * (sp.poids_g || poidsBase), 0);
+  const pateVariantes = p.variantes.reduce((s, v) => s + v.nb * (v.pate_par_piece || v.poids_g || poidsBase), 0);
+  if (p.formats.length > 0 || (p.sportifs || []).length > 0)
+    return pateFormats + pateSportifs + pateVariantes;
+  // Pas de format : pièces « nature » au poids de base + variantes
+  const nbVariantes = p.variantes.reduce((s, v) => s + v.nb, 0);
+  const nbNature = Math.max(0, p.total - nbVariantes);
+  return pateVariantes + nbNature * poidsBase;
 }
 
 let dragSrc = null;
